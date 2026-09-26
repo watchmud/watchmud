@@ -1,14 +1,11 @@
 package world
 
 import (
-	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/player"
 )
 
-func logWizCommand(p *player.Player, command string, msg string, args ...interface{}) {
-	log.Warn().
-		Str("playerId", p.Id().String()).
-		Str("playerName", p.Name()).
+func logWizCommand(p *player.Player, command string, msg string, args ...any) {
+	p.Log().Warn().
 		Str("commandType", "wiz").
 		Str("command", command).
 		Msgf(msg, args...)

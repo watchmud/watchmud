@@ -22,7 +22,7 @@ func (w *World) handleRestore(msg *gameserver.HandlerParameter, cmd command.Rest
 		return
 	}
 
-	// find a matching mob
+	// or, find a matching mob
 	if targetMob, found := targetRoom.FindMobile(cmd.Target); found {
 		targetMob.RestoreMaxHealth()
 		targetRoom.Notify(event.Restored{
