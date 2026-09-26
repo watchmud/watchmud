@@ -14,8 +14,7 @@ func (w *World) handleRestore(msg *gameserver.HandlerParameter, cmd command.Rest
 
 	// find a matching player
 	if targetPlayer, found := targetRoom.FindPlayer(cmd.Target); found {
-		// TODO implement restore
-		//targetPlayer.Restore()
+		targetPlayer.RestoreMaxHealth()
 		targetRoom.Notify(event.Restored{
 			IsPlayer: true,
 			Target:   targetPlayer.Name(),
@@ -25,7 +24,7 @@ func (w *World) handleRestore(msg *gameserver.HandlerParameter, cmd command.Rest
 
 	// find a matching mob
 	if targetMob, found := targetRoom.FindMobile(cmd.Target); found {
-		targetMob.Restore()
+		targetMob.RestoreMaxHealth()
 		targetRoom.Notify(event.Restored{
 			IsPlayer: false,
 			Target:   targetMob.Name(),

@@ -97,6 +97,10 @@ func (p *Player) Send(msg any) {
 	p.out.Send(msg)
 }
 
+func (p *Player) RestoreMaxHealth() {
+	p.curHealth = p.maxHealth
+}
+
 func (p *Player) RestoreHealth(amount int) {
 	p.curHealth = min(p.curHealth+amount, p.maxHealth)
 }

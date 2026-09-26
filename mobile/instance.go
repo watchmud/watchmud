@@ -146,12 +146,10 @@ func (mob *Instance) Matches(target string) bool {
 	return mob.Definition.Matches(target)
 }
 
-// Restore mob's health completely.
-func (mob *Instance) Restore() {
+func (mob *Instance) RestoreMaxHealth() {
 	mob.CurHealth = mob.Definition.MaxHealth
 }
 
-// Restore mob's health by a given amount.
 func (mob *Instance) RestoreHealth(amount int) {
 	mob.CurHealth = min(mob.CurHealth+amount, mob.Definition.MaxHealth)
 }
