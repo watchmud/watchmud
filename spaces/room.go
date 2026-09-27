@@ -5,10 +5,12 @@ import (
 	"math/rand"
 	"sort"
 	"time"
+	"uuid"
 
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/mobile"
+	"github.com/watchmud/watchmud/ordered"
 	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
 )
@@ -20,7 +22,7 @@ type Room struct {
 	Zone        *Zone
 	playerList  *player.List
 	Inventory   *RoomInventory
-	mobs        *RoomMobs
+	mobs        *ordered.List[uuid.UUID, *mobile.Instance]
 	directions  map[rules.Direction]*Room
 	flags       map[string]bool
 }
@@ -35,7 +37,7 @@ func NewRoom(zone *Zone, id string, name string, description string) *Room {
 		Zone:        zone,
 		playerList:  player.NewList(),
 		Inventory:   NewRoomInventory(),
-		mobs:        NewRoomMobs(),
+		mobs:        ordered.NewList[uuid.UUID, *mobile.Instance]((*mobile.Instance).Id),
 		directions:  make(map[rules.Direction]*Room),
 		flags:       make(map[string]bool),
 	}
@@ -187,7 +189,7 @@ func (r *Room) DescriptionExcept(exclude *player.Player) event.RoomDescription {
 }
 
 func (r *Room) FindMobile(target string) (mob *mobile.Instance, exists bool) {
-	return r.mobs.Find(target)
+	return ordered.Find(r.mobs, target)
 }
 
 func (r *Room) FindPlayer(target string) (*player.Player, bool) {
