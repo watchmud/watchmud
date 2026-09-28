@@ -43,10 +43,12 @@ func (w *World) handleKill(msg *gameserver.HandlerParameter, cmd command.Kill) {
 	// begin a fight with that target (or join an existing fight if there's
 	// already one going on with that target)
 
-	if err := w.fightLedger.Fight(msg.Player, mobileInstance); err != nil {
+	// "Ok." first, so a scripted mob's opener answers it rather than coming
+	// before it. The ledger can't refuse here -- IsFighting was checked above
+	// -- so "Ok." followed by a failure doesn't happen in practice.
+	msg.Player.Send(event.Attacking{Target: mobileInstance.Name()})
+	if err := w.startFight(msg.Player, mobileInstance); err != nil {
 		log.Error().Str("playerName", msg.Player.Name()).Str("target", mobileInstance.Name()).Err(err).Msg("kill: couldn't start the fight")
 		msg.Fail(event.InternalError)
-		return
 	}
-	msg.Player.Send(event.Attacking{Target: mobileInstance.Name()})
 }

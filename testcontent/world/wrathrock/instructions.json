@@ -28,5 +28,11 @@
   "object_id": "iron_helmet",
   "room_id": "temple_square",
   "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "heckler",
+    "room_id": "general_store",
+    "instance_max": 1
   }
 ]

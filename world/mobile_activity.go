@@ -39,7 +39,7 @@ func (w *World) doMobAggro(mob *mobile.Instance) {
 	room := w.mobileRoom(mob)
 	players := room.Players()
 	if len(players) > 0 {
-		if err := w.fightLedger.Fight(mob, players[0]); err != nil {
+		if err := w.startFight(mob, players[0]); err != nil {
 			log.Warn().Msgf("World.doMobAggro: %s error starting fight: %s", mob.Definition.Id, err)
 		}
 	}

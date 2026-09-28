@@ -36,5 +36,17 @@
     "max_health": 25,
     "wandering_definition": { "can_wander": false },
     "aggressive": false
+  },
+  {
+    "id": "heckler",
+    "name": "Heckler",
+    "short_description": "A heckler.",
+    "description_in_room": "A heckler leans on the counter, smirking.",
+    "aliases": [ "heckler" ],
+    "max_health": 25,
+    "wandering_definition": { "can_wander": false },
+    "ac": 10,
+    "aggressive": false,
+    "script": "heckler"
   }
 ]

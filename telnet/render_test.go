@@ -301,7 +301,7 @@ var commandCases = []commandCase{
 }
 
 func TestCommandRendering(t *testing.T) {
-	for _, tc := range slices.Concat(commandCases, lootCases) {
+	for _, tc := range slices.Concat(commandCases, lootCases, scriptCases) {
 		t.Run(tc.name, func(t *testing.T) {
 			w, err := world.NewTestWorld()
 			require.NoError(t, err)

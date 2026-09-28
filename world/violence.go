@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/combat"
 	"github.com/watchmud/watchmud/event"
+	"github.com/watchmud/watchmud/mobile"
 	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
 	"github.com/watchmud/watchmud/spaces"
@@ -55,6 +56,12 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 				// so "your tunic gives out" follows the hit that finished it
 				// instead of preceding it.
 				w.wearFromBlow(fight.Fighter, fight.Fightee, room)
+			}
+
+			// A scripted mob gets its say after the room has seen the blow,
+			// and not over a body: a killing blow gets no taunt.
+			if mob, ok := fight.Fighter.(*mobile.Instance); ok && !isDead && !fight.Fighter.Dead() {
+				w.scripts.FightPulse(mob, foeOf(fight.Fightee))
 			}
 
 			if isDead {

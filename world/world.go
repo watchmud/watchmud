@@ -15,6 +15,7 @@ import (
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
+	"github.com/watchmud/watchmud/script"
 	"github.com/watchmud/watchmud/spaces"
 )
 
@@ -32,6 +33,8 @@ type World struct {
 	occupancy  *spaces.Occupancy
 
 	fightLedger *combat.FightLedger
+	// scripts runs the Lua mobs name; see world/scripts.go.
+	scripts *script.Runtime
 
 	reservedNames map[string]bool // by player.NameKey; see IsReservedName
 }
@@ -45,6 +48,9 @@ func New(c *loader.Content, s player.Store, roller rules.Roller) (w *World, err 
 		fightLedger: combat.NewFightLedger(),
 		roller:      roller,
 		store:       s,
+	}
+	if w.scripts, err = script.NewRuntime(c.Scripts, liveRoller{w}, w.mobSays); err != nil {
+		return nil, fmt.Errorf("building world: %w", err)
 	}
 	w.reservedNames = reservedNames(c)
 	if err := w.initialLoad(); err != nil {
@@ -152,6 +158,7 @@ func (w *World) PlaceMobile(mob *mobile.Instance, targetRoom *spaces.Room) {
 // RemoveMobile removes a mobile instance from the world.
 func (w *World) RemoveMobile(mob *mobile.Instance) {
 	w.occupancy.RemoveMobile(mob)
+	w.scripts.Forget(mob)
 }
 
 func (w *World) Mobiles() []*mobile.Instance {
