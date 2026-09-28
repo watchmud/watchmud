@@ -107,6 +107,15 @@ func (w *World) Arrive(p *player.Player) {
 	p.Send(r.DescriptionExcept(p))
 }
 
+// Welcome tells a brand-new character where to go first. After Arrive, so it
+// follows the description of the room it's talking about; creation only, so a
+// returning player isn't told every time.
+func (w *World) Welcome(p *player.Player) {
+	if text := w.content.Settings.Welcome; text != "" {
+		p.Send(event.Welcome{Text: text})
+	}
+}
+
 func (w *World) PlacePlayer(p *player.Player, r *spaces.Room) {
 	p.Log().Debug().Str("room", r.Location().String()).Msg("Adding player to world")
 	w.playerList.Add(p)

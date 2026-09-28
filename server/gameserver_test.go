@@ -91,10 +91,12 @@ func TestCreatePlayer_startingGear(t *testing.T) {
 	p := c.Player()
 	require.NotNil(t, p)
 	// created, then shown where they are -- in that order, so the telnet login
-	// conversation is over before the description arrives
-	require.Len(t, c.sent, 2)
+	// conversation is over before the description arrives -- then told where
+	// to go from there
+	require.Len(t, c.sent, 3)
 	assert.IsType(t, event.PlayerCreated{}, c.sent[0])
 	assert.IsType(t, event.RoomDescription{}, c.sent[1])
+	assert.Equal(t, event.Welcome{Text: "Welcome! The fighting is south."}, c.sent[2])
 
 	// testcontent's kit: a knife, a helmet, and a rope that is only carried.
 	assert.Equal(t, 3, p.Inventory().Len())
@@ -160,7 +162,7 @@ func TestLogin_returnsToTheLastRoom(t *testing.T) {
 	login(t, gs, back, "wanderer", "sekrit")
 
 	require.NotNil(t, back.Player())
-	require.Len(t, back.sent, 2)
+	require.Len(t, back.sent, 2, "no welcome for a returning player")
 	assert.IsType(t, event.LoggedIn{}, back.sent[0])
 	assert.Equal(t, "Market Square", back.sent[1].(event.RoomDescription).Name, "shown where they came back to")
 

@@ -139,7 +139,8 @@ works), `certbot renew --dry-run` passing, a backup written, and a wizard made.
 
 **First week, once people are in:**
 
-- A welcome line after login pointing new characters south to the Hollowfields.
+- ~~A welcome line after login pointing new characters south to the Hollowfields.~~ Done
+  2026-09-28: `"welcome"` in settings.json, said once, at creation.
 - ~~Bare `corpse` should mean the newest corpse, not the oldest (found in play).~~ Done
   2026-09-28: a room's floor lists newest first (`object.NewFloor`).
 - The Barrow-King's AC call (LEVELS.md).

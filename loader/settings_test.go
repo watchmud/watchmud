@@ -13,7 +13,8 @@ func TestLoadSettings(t *testing.T) {
 		"void": { "zone_id": "void", "room_id": "void" },
 		"start": { "zone_id": "wrathrock", "room_id": "temple_square" },
 		"donation": { "zone_id": "wrathrock", "room_id": "donation_room" },
-		"player-death": { "zone_id": "wrathrock", "room_id": "chapel" }
+		"player-death": { "zone_id": "wrathrock", "room_id": "chapel" },
+		"welcome": "Head south."
 	}`)}}
 
 	s, err := LoadSettings(fsys)
@@ -23,4 +24,5 @@ func TestLoadSettings(t *testing.T) {
 	assert.Equal(t, RoomRef{ZoneId: "wrathrock", RoomId: "temple_square"}, s.Start)
 	assert.Equal(t, RoomRef{ZoneId: "wrathrock", RoomId: "donation_room"}, s.Donation)
 	assert.Equal(t, RoomRef{ZoneId: "wrathrock", RoomId: "chapel"}, s.PlayerDeath)
+	assert.Equal(t, "Head south.", s.Welcome)
 }

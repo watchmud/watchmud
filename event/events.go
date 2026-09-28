@@ -43,6 +43,12 @@ type Prompt struct {
 	MaxHealth     int
 }
 
+// Welcome is said once to a brand-new character, after they've been shown the
+// start room. The text is content (settings.json "welcome").
+type Welcome struct {
+	Text string
+}
+
 // EnteredGame tells a room that a player just logged in there. Not LoggedIn,
 // which the arriving player's own connection consumes to end its login
 // conversation -- a bystander's connection would do the same with it.

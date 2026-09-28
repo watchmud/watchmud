@@ -230,7 +230,9 @@ and who-is-where.
 
 Layout under `content/`: `world/settings.json` (the start, void, donation and
 player-death rooms, each a `{ "zone_id", "room_id" }` pair -- `loader.RoomRef`; every one
-but donation is resolved when the world is built, so a bad reference fails startup),
+but donation is resolved when the world is built, so a bad reference fails startup --
+and `welcome`, the line a new character is told after being shown the start room:
+`World.Welcome`, called from creation only),
 `world/zone_manifest.json` (which zones load, reset mode, lifetime), then per-zone
 `world/<zone>/{rooms,objects,mobs,instructions}.json` -- only rooms.json is required.
 `rules/{species,roles,armor,starting_gear}.json` feed `rules.Catalog`.

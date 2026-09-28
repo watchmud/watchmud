@@ -2,5 +2,6 @@
   "void": { "zone_id": "void", "room_id": "void" },
   "start": { "zone_id": "wrathrock", "room_id": "temple_square" },
   "donation": { "zone_id": "wrathrock", "room_id": "donation_room" },
-  "player-death": { "zone_id": "wrathrock", "room_id": "temple_square" }
+  "player-death": { "zone_id": "wrathrock", "room_id": "temple_square" },
+  "welcome": "Welcome! The fighting is south."
 }

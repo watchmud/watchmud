@@ -369,6 +369,7 @@ func (gs *GameServer) handleCreateHashed(msg *gameserver.HandlerParameter, cmd c
 
 	p.Send(event.PlayerCreated{Name: p.Name()})
 	gs.world.Arrive(p)
+	gs.world.Welcome(p)
 	return nil
 }
 

@@ -14,6 +14,10 @@ type Settings struct {
 	Donation RoomRef `json:"donation"`
 	// PlayerDeath is where a player who dies wakes up.
 	PlayerDeath RoomRef `json:"player-death"`
+	// Welcome is said once to a new character, after they are shown the start
+	// room: where to go first. Content, not code, because it names places.
+	// Empty says nothing.
+	Welcome string `json:"welcome"`
 }
 
 func LoadSettings(worldFS fs.FS) (*Settings, error) {

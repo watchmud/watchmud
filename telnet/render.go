@@ -44,6 +44,9 @@ func render(msg any, self string) string {
 	case event.EnteredGame:
 		return m.Actor + " has entered the game.\n"
 
+	case event.Welcome:
+		return m.Text + "\n"
+
 	case event.Pong:
 		return "Pong " + m.Target + ".\n"
 
