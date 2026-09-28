@@ -18,7 +18,8 @@ func NewFightLedger() *FightLedger {
 
 func (f *FightLedger) Fight(fighter, fightee Combatant) error {
 	if f.IsFighting(fighter) {
-		// TODO fixme
+		// Callers check first -- kill answers AlreadyFighting, aggro skips a
+		// mob that's busy -- so reaching this is a bug, not a player's mistake.
 		return fmt.Errorf("fighter is already fighting someone")
 	}
 	f.fightMap[fighter.Id()] = f.newFight(fighter, fightee)
