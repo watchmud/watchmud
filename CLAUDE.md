@@ -422,6 +422,36 @@ Two consequences worth knowing before you touch equipment code:
 Adding a role is a content edit (`roles.json` plus `"roles"` on some objects), not a code
 change. An object naming a role the catalog doesn't define is a hard load failure.
 
+### Scripts (Lua)
+
+**Go is the engine; a script decides *when*.** A script composes actions the engine
+already has -- today, one: `me:say` -- and never does the math. An action a script needs
+that the engine lacks is a Go feature first.
+
+A mob names a script in mobs.json, `"script": "barrow_king"` (bare is its zone,
+`"zone/name"` any other), and the file is `world/<zone>/scripts/<name>.lua`. The loader
+compiles every named script (`script.Compile`) into `loader.Content.Scripts`; a missing
+file, a syntax error, a top level that errors or runs too long, or an unknown `on_` hook
+fails startup. `world.New` loads them into one `script.Runtime`: one gopher-lua state, on
+the world goroutine, no locks.
+
+Hooks, both optional: `on_fight_start(me, foe)` (fired by `World.startFight` -- which
+`kill` and aggro both use -- for each mob that wasn't already fighting) and
+`on_fight_pulse(me, foe)` (from `DoViolence`, after the blow, never over a body). `me` is
+copies (`name`, `health`, `max_health`), `me.memory` (a table per mob instance, dropped
+with the mob in `World.RemoveMobile`), and `me:say`, bound to that one call. `foe` is
+`name` and `is_player`. `chance(pct)` and `pick(list)` roll through `w.roller`, only
+inside a hook; `math.random` is gone so tests can load the dice.
+
+**A bad script can't hurt the server.** Every call runs under `script.CallTimeout`
+(10ms), a capped call stack and registry, gopher-lua's protected call and a `recover`.
+A failure is logged and the mob carries on; after `script.MaxFailures` (3) the program is
+switched off until restart. Only base, string, table and math are open, minus anything
+that loads code, reaches another program's globals, or prints.
+
+Adding a hook: a `Runtime` method that calls `fire` with its name, the name in `hooks`
+(script/program.go), the Go call site, and a test in `world/scripts_test.go`.
+
 ### Definition vs Instance
 
 The core modeling split, mirrored in `object` and `mobile`: a `Definition` is the loaded

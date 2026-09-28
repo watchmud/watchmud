@@ -144,7 +144,8 @@ works), `certbot renew --dry-run` passing, a backup written, and a wizard made.
 - ~~Bare `corpse` should mean the newest corpse, not the oldest (found in play).~~ Done
   2026-09-28: a room's floor lists newest first (`object.NewFloor`).
 - The Barrow-King's AC call (LEVELS.md).
-- Mob taunts, the first Lua (below, "No scripting language").
+- ~~Mob taunts, the first Lua (below, "No scripting language").~~ Done 2026-09-28:
+  `script/`, two fight hooks and `me:say`; the Barrow-King has a script.
 
 **Then: content and bots.** Bots are players with a telnet socket: a small Go client
 that logs in and walks, kills, loots and talks. The same harness is a load test, a smoke
@@ -765,6 +766,9 @@ Named so they don't get rediscovered as surprises:
   speaker name and renders to the room. So taunts are the first case -- a fight-started
   and a fight-pulse hook, and one action, `say` -- and the King's half-health script is
   the second.
+  **Taunts are done** (2026-09-28; spec in `docs/superpowers/specs/`, and CLAUDE.md
+  "Scripts (Lua)"). Next is the King's half-health script, which brings `wait()` over
+  coroutines and a "health crossed a line" hook.
 - ~~**`Fight` snapshots `ZoneId`/`RoomId`** at the moment it starts, so a fight that somehow
   outlives its room notifies the wrong one.~~ Fixed 2026-09-26: a fight has no location;
   `DoViolence` asks `Occupancy` where the fighter is standing.

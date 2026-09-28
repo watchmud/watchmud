@@ -96,6 +96,7 @@
     "damage": "2d8",
     "power": 15,
     "aggressive": true,
+    "script": "barrow_king",
     "loot": [
       {
         "object": "barrow_blade",
