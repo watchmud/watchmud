@@ -443,11 +443,25 @@ with the mob in `World.RemoveMobile`), and `me:say`, bound to that one call. `fo
 `name` and `is_player`. `chance(pct)` and `pick(list)` roll through `w.roller`, only
 inside a hook; `math.random` is gone so tests can load the dice.
 
-**A bad script can't hurt the server.** Every call runs under `script.CallTimeout`
+**A bad script mustn't hurt the server.** Every call runs under `script.CallTimeout`
 (10ms), a capped call stack and registry, gopher-lua's protected call and a `recover`.
 A failure is logged and the mob carries on; after `script.MaxFailures` (3) the program is
 switched off until restart. Only base, string, table and math are open, minus anything
-that loads code, reaches another program's globals, or prints.
+that loads code or prints. Three limits exist because of what the deadline can't see:
+
+- **The deadline is checked between Lua instructions, not inside Go.** A builtin that
+  does unbounded work in one call runs to the end with the world waiting. So the string
+  library has no pattern functions (`find`, `match`, `gmatch`, `gsub` -- a bad pattern
+  backtracks for minutes), `rep` refuses a result over 4KB, and `format` refuses a width
+  or precision over 99. Opening another library, or another string function, means asking
+  this question of it first.
+- **`me:say` is capped** at `script.MaxSaysPerCall` (2) per call and
+  `script.MaxSayLength` (300) bytes. Each say is a `Send` to everyone in the room, and a
+  connection whose queue fills is hung up on, so a say in a loop would disconnect the
+  room inside the deadline.
+- **Each program has its own globals**: a copy of the base functions and of the
+  `string`/`table`/`math` tables, with `_G` pointing at itself, and strings' shared
+  metatable is locked. A script can break itself, not another script.
 
 Adding a hook: a `Runtime` method that calls `fire` with its name, the name in `hooks`
 (script/program.go), the Go call site, and a test in `world/scripts_test.go`.

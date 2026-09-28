@@ -6,6 +6,8 @@ package script
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	lua "github.com/yuin/gopher-lua"
@@ -23,7 +25,23 @@ const (
 	// registrySize and registryMaxSize cap the value stack the same way.
 	registrySize    = 4 * 1024
 	registryMaxSize = 64 * 1024
+
+	// maxBuiltString bounds what string.rep may build. It runs in Go, where
+	// the deadline can't interrupt it, so the bound is checked before the
+	// work rather than noticed after it.
+	maxBuiltString = 4 * 1024
 )
+
+// patternFunctions are removed from the string library: gopher-lua's pattern
+// matcher runs in Go, where the deadline can't reach, and a pathological
+// pattern backtracks for minutes. A taunt needs format, sub, upper and "..";
+// a script that needs matching is a Go feature first.
+var patternFunctions = []string{"find", "match", "gmatch", "gfind", "gsub", "dump"}
+
+// bigFormatField is a format directive with a width or precision of three
+// digits or more. Go's fmt pads each one out in full, in Go, so "%999999d"
+// is a megabyte the deadline never sees.
+var bigFormatField = regexp.MustCompile(`%[-+ #0]*(\d{3,}|\d*\.\d{3,})`)
 
 // unsafeGlobals are removed once the base library is open: everything that
 // loads code from a string or a file (and so gets round Compile's checks),
@@ -45,6 +63,8 @@ type Roller interface {
 type hookCall struct {
 	roller Roller
 	say    func(text string)
+	// says counts this call's says against MaxSaysPerCall.
+	says int
 }
 
 // sandbox is one Lua state with only the safe libraries open, plus chance and
@@ -83,8 +103,24 @@ func newSandbox() *sandbox {
 	mathLib := g.RawGetString("math").(*lua.LTable)
 	mathLib.RawSetString("random", lua.LNil)
 	mathLib.RawSetString("randomseed", lua.LNil)
-	// The string table is also strings' metatable, so this covers ("x"):dump.
-	g.RawGetString("string").(*lua.LTable).RawSetString("dump", lua.LNil)
+
+	// The string table is also strings' metatable, so these cover method
+	// calls too: ("x"):find is gone and ("x"):rep is capped.
+	strLib := g.RawGetString("string").(*lua.LTable)
+	for _, name := range patternFunctions {
+		strLib.RawSetString(name, lua.LNil)
+	}
+	strLib.RawSetString("rep", s.L.NewFunction(cappedRep))
+	format := strLib.RawGetString("format").(*lua.LFunction).GFunction
+	strLib.RawSetString("format", s.L.NewFunction(func(L *lua.LState) int {
+		if bigFormatField.MatchString(L.CheckString(1)) {
+			L.RaiseError("format: widths and precisions stop at 99")
+		}
+		return format(L)
+	}))
+	// getmetatable("") would otherwise hand a script the one string table
+	// every program's method calls go through.
+	strLib.RawSetString("__metatable", lua.LString("locked"))
 
 	g.RawSetString("chance", s.L.NewFunction(s.chance))
 	g.RawSetString("pick", s.L.NewFunction(s.pick))
@@ -129,6 +165,21 @@ func (s *sandbox) pick(L *lua.LState) int {
 	return 1
 }
 
+// cappedRep is string.rep, refusing a result longer than maxBuiltString.
+func cappedRep(L *lua.LState) int {
+	str := L.CheckString(1)
+	n := L.CheckInt(2)
+	if n <= 0 || str == "" {
+		L.Push(lua.LString(""))
+		return 1
+	}
+	if n > maxBuiltString/len(str) {
+		L.RaiseError("rep: the result would be longer than %d bytes", maxBuiltString)
+	}
+	L.Push(lua.LString(strings.Repeat(str, n)))
+	return 1
+}
+
 // call runs fn protected, under CallTimeout, with h as the hook in progress
 // (nil for a top level). An error, a timeout, a stack overflow or a panic
 // inside gopher-lua all come back as an error; none of them escape.
@@ -148,14 +199,19 @@ func (s *sandbox) call(fn *lua.LFunction, h *hookCall, args ...lua.LValue) (err 
 }
 
 // load runs p's top level in a fresh environment table and returns that
-// table: the program's own globals, which is where its hooks end up. Reads
-// of anything it didn't define fall through to the shared libraries; writes
-// stay in the table, so two programs' globals never meet.
+// table: the program's own globals, which is where its hooks end up. The
+// table starts as a copy of the globals, with its own copies of the library
+// tables and _G pointing at itself, so whatever a program does to string,
+// pick or _G -- at load or in a hook -- it does only to itself.
 func (s *sandbox) load(p *Program) (*lua.LTable, error) {
 	env := s.L.NewTable()
-	meta := s.L.NewTable()
-	meta.RawSetString("__index", s.L.G.Global)
-	s.L.SetMetatable(env, meta)
+	s.L.G.Global.ForEach(func(k, v lua.LValue) {
+		if lib, ok := v.(*lua.LTable); ok {
+			v = copyTable(s.L, lib)
+		}
+		env.RawSet(k, v)
+	})
+	env.RawSetString("_G", env)
 
 	fn := s.L.NewFunctionFromProto(p.proto)
 	fn.Env = env // functions the script defines inherit it
@@ -163,4 +219,12 @@ func (s *sandbox) load(p *Program) (*lua.LTable, error) {
 		return nil, fmt.Errorf("script %s: %w", p.name, err)
 	}
 	return env, nil
+}
+
+// copyTable is a shallow copy: a library's functions are shared, the table
+// holding them is not.
+func copyTable(L *lua.LState, t *lua.LTable) *lua.LTable {
+	c := L.NewTable()
+	t.ForEach(func(k, v lua.LValue) { c.RawSet(k, v) })
+	return c
 }

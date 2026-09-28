@@ -3,6 +3,7 @@ package script
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -231,4 +232,103 @@ func TestPickEmptyFails(t *testing.T) {
 	assert.Empty(t, h.said)
 	require.Len(t, logged, 1)
 	assert.Contains(t, logged[0], "empty")
+}
+
+// Review finding 1: a runaway say is a failure, not a flood. Every say is a
+// Send to everyone in the room, and a full send queue hangs a player up.
+func TestSayFloodIsCappedAndFails(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/flood": `
+		function on_fight_start(me, foe) while true do me:say("hah") end end`})
+	var logged []string
+	h.rt.logFailure = func(err error) { logged = append(logged, err.Error()) }
+
+	h.rt.FightStart(mob("M", "z/flood"), bob)
+
+	assert.Len(t, h.said, MaxSaysPerCall)
+	require.Len(t, logged, 1)
+	assert.Contains(t, logged[0], "says")
+}
+
+func TestSayTooLongFails(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/long": `
+		function on_fight_start(me, foe) me:say(string.rep("a", 301)) end`})
+	var logged []string
+	h.rt.logFailure = func(err error) { logged = append(logged, err.Error()) }
+
+	h.rt.FightStart(mob("M", "z/long"), bob)
+
+	assert.Empty(t, h.said)
+	require.Len(t, logged, 1)
+	assert.Contains(t, logged[0], "longer than")
+}
+
+// Review finding 2: Go builtins aren't interrupted by the deadline, so the
+// ones whose work a script controls are gone or capped before they start.
+func TestPatternFunctionsAreGone(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/probe": `
+		function on_fight_start(me, foe)
+			me:say(tostring(string.find) .. tostring(string.gsub) .. tostring(string.match) ..
+				tostring(string.gmatch) .. tostring(string.gfind) .. tostring(("x").find))
+		end`})
+	h.rt.FightStart(mob("M", "z/probe"), bob)
+	assert.Equal(t, []string{strings.Repeat("nil", 6)}, h.texts())
+}
+
+// Refused before the work, not noticed by the deadline afterwards: an
+// uncapped rep of 2^30 allocates a gigabyte and takes a quarter of a second,
+// with the whole world waiting on it.
+func TestRepIsCapped(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/big": `
+		function on_fight_start(me, foe) me:say(string.rep("ab", 3)) end
+		function on_fight_pulse(me, foe) local s = string.rep("x", 2^30) end`})
+	var logged []string
+	h.rt.logFailure = func(err error) { logged = append(logged, err.Error()) }
+	m := mob("M", "z/big")
+
+	h.rt.FightStart(m, bob)
+	start := time.Now()
+	h.rt.FightPulse(m, bob)
+
+	assert.Less(t, time.Since(start), 50*time.Millisecond)
+	assert.Equal(t, []string{"ababab"}, h.texts(), "a small rep still works")
+	require.Len(t, logged, 1)
+	assert.Contains(t, logged[0], "longer than")
+}
+
+func TestFormatWidthIsCapped(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/fmt": `
+		function on_fight_start(me, foe) me:say(string.format("[%5s]", "hi")) end
+		function on_fight_pulse(me, foe) local s = string.format("%999999d", 1) end`})
+	var logged []string
+	h.rt.logFailure = func(err error) { logged = append(logged, err.Error()) }
+	m := mob("M", "z/fmt")
+
+	h.rt.FightStart(m, bob)
+	h.rt.FightPulse(m, bob)
+
+	assert.Equal(t, []string{"[   hi]"}, h.texts())
+	require.Len(t, logged, 1)
+	assert.Contains(t, logged[0], "format")
+}
+
+// Review finding 3: each program has its own copies of the libraries, so
+// one poisoning them leaves the others alone -- at load or in a hook.
+func TestProgramsCantPoisonEachOther(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		"z/a": `
+			string.upper = function() return "pwned" end
+			function on_fight_start(me, foe)
+				pcall(function() string.format = function() return "pwned" end end)
+				pcall(function() _G.pick = nil end)
+				pcall(function() getmetatable("").__index = {} end)
+				me:say("done")
+			end`,
+		"z/b": `function on_fight_start(me, foe)
+				me:say(string.format("%s", pick({"ok"})) .. string.upper("x") .. ("y"):upper())
+			end`,
+	})
+	h.dice.Load([]int{0}) // B's pick
+	h.rt.FightStart(mob("A", "z/a"), bob)
+	h.rt.FightStart(mob("B", "z/b"), bob)
+	assert.Equal(t, []string{"done", "okXY"}, h.texts())
 }

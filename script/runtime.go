@@ -16,6 +16,15 @@ import (
 // the log every combat round.
 const MaxFailures = 3
 
+// MaxSaysPerCall and MaxSayLength bound what one hook call can put in front
+// of a room. Each say is a Send to every player there, and a connection whose
+// queue fills is hung up on: a script saying in a loop would otherwise
+// disconnect the room before the deadline stopped it.
+const (
+	MaxSaysPerCall = 2
+	MaxSayLength   = 300
+)
+
 // Foe is who a scripted mob is fighting, as its script sees them.
 type Foe struct {
 	Name     string
@@ -128,6 +137,13 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		if r.sb.current != call {
 			L.RaiseError("say: this me belongs to an earlier call")
 		}
+		if len(text) > MaxSayLength {
+			L.RaiseError("say: %d bytes is longer than %d", len(text), MaxSayLength)
+		}
+		if call.says == MaxSaysPerCall {
+			L.RaiseError("say: more than %d says in one call", MaxSaysPerCall)
+		}
+		call.says++
 		call.say(text)
 		return 0
 	}))
