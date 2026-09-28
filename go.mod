@@ -6,6 +6,7 @@ require (
 	github.com/justinian/dice v1.0.0
 	github.com/rs/zerolog v1.19.0
 	github.com/stretchr/testify v1.11.1
+	github.com/yuin/gopher-lua v1.1.2
 	go.mongodb.org/mongo-driver/v2 v2.9.1
 	golang.org/x/crypto v0.53.0
 	gopkg.in/yaml.v2 v2.3.0
