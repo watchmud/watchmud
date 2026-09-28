@@ -438,7 +438,11 @@ reshuffled the room and `kill lizard` picked a different lizard each round. `thi
   **moving an object between places is `object.Move(inst, from, to)`** -- `get`, `get
   from` and `drop` all use it, and a bag or `give` should too. It removes before it adds,
   and puts the object back if the add fails, so a failed move loses nothing. Don't write
-  a remove-then-add by hand.
+  a remove-then-add by hand. **A floor lists newest first** (`object.NewFloor`, which
+  `spaces.Room` uses): the order is the place's, not the caller's, so whatever lands on
+  the floor -- a drop, a corpse, a zone reset, a wizard `load` -- goes on top. Bare
+  `corpse` is the one that just fell and `2.corpse` the one before, the same order `look`
+  shows. Inventories and container contents stay oldest first.
 - **`player.List`** keys on `player.NameKey`, so a name typed in any case finds the player.
 - **A room's mobs** are a bare `ordered.List` inside `spaces.Room`: a room is the only
   place mobs are listed, and `Occupancy` is the only writer.

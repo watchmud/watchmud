@@ -37,7 +37,7 @@ func NewRoom(zone *Zone, id string, name string, description string) *Room {
 		Description: description,
 		Zone:        zone,
 		playerList:  player.NewList(),
-		Inventory:   object.NewList(),
+		Inventory:   object.NewFloor(),
 		mobs:        ordered.NewList[uuid.UUID, *mobile.Instance]((*mobile.Instance).Id),
 		directions:  make(map[rules.Direction]*Room),
 		flags:       make(map[string]bool),

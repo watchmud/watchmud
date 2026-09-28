@@ -59,7 +59,7 @@ var commandCases = []commandCase{
 		name:      "get all",
 		input:     "get all",
 		want:      "Taken.\nTaken.\n",
-		wantOther: "testdood gets knife.\ntestdood gets iron helmet.\n",
+		wantOther: "testdood gets iron helmet.\ntestdood gets knife.\n",
 	},
 	{
 		name:      "get all of one name",
@@ -345,14 +345,15 @@ func TestCommandRendering(t *testing.T) {
 	}
 }
 
-// what NewTestWorld's start room looks like. Objects and mobs are listed in
-// the order they were added to the room, which for a freshly reset zone is the
-// order instructions.json creates them in.
+// what NewTestWorld's start room looks like. The floor lists newest first
+// (object.NewFloor), so a freshly reset zone shows its objects in the reverse
+// of the order instructions.json creates them in; mobs and players are in the
+// order they arrived.
 const startRoomBlock = `Temple Square
  The main square of the town. People come and go. East is a donation room, south is the marketplace.
 [ Exits: East, South ]
-A knife is on the ground.
 A plain iron helmet lies here.
+A knife is on the ground.
 Target Drone buzzes around.
 Little Drone buzzes around.
 otherdood is here.

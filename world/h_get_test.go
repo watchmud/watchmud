@@ -158,15 +158,30 @@ func (s *HandleGetSuite) TestGetAllOfOneName() {
 	s.Assert().Equal(1, s.w.StartRoom.Inventory.Len())
 }
 
-// "2.knife" is the second one that landed there, not whichever comes to hand
+// The floor lists newest first, so "2.knife" is the one that was there before
+// the latest arrival -- counted the way "look" shows them, not whichever comes
+// to hand.
 func (s *HandleGetSuite) TestGetNth() {
-	second := s.addKnife()
+	older := s.w.StartRoom.Inventory.FindAll("knife")
+	s.Require().Len(older, 1)
+	s.addKnife()
 
 	s.get("2.knife")
 
 	s.Assert().Equal(1, s.p.Inventory().Len())
-	_, held := s.p.Inventory().Get(second.Id)
-	s.Assert().True(held, "should have taken the second knife")
+	_, held := s.p.Inventory().Get(older[0].Id)
+	s.Assert().True(held, "should have taken the knife that was already there")
+}
+
+// A bare name is the newest one: the corpse that just fell, not the one about
+// to decay.
+func (s *HandleGetSuite) TestGetBareNameTakesTheNewest() {
+	newest := s.addKnife()
+
+	s.get("knife")
+
+	_, held := s.p.Inventory().Get(newest.Id)
+	s.Assert().True(held, "should have taken the knife that landed last")
 }
 
 func (s *HandleGetSuite) TestGetNthPastTheEnd() {

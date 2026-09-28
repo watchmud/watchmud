@@ -110,3 +110,18 @@ func (s *lootSuite) TestCorpsesDecay() {
 
 	s.Assert().NotEmpty(s.w.StartRoom.Inventory.FindAll("knife"), "the room's own knife doesn't decay")
 }
+
+// Two corpses on the floor: bare "corpse" is the one that just fell, not the
+// one about to decay. Found in play -- you kill the second mob, "get all from
+// corpse", and loot the first one again.
+func (s *lootSuite) TestBareCorpseIsTheNewest() {
+	s.killDrone()
+	little, exists := s.w.StartRoom.FindMobile("little")
+	s.Require().True(exists)
+	s.w.combatantDied(little, s.w.StartRoom)
+	s.r.Sent = nil
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Look{Target: "corpse", In: true})))
+
+	s.Assert().Equal("the corpse of Little Drone", sent[event.ContainerContents](s.T(), s.r, 0).Container)
+}

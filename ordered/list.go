@@ -52,6 +52,18 @@ func (l *List[K, T]) Add(v T) error {
 	return nil
 }
 
+// Push v onto the front of the list. Like Add, pushing a key that is already
+// present is an error wrapping ErrDuplicate, and leaves the list unchanged.
+func (l *List[K, T]) Push(v T) error {
+	k := l.key(v)
+	if _, exists := l.byKey[k]; exists {
+		return fmt.Errorf("push %v: %w", k, ErrDuplicate)
+	}
+	l.byKey[k] = v
+	l.order = slices.Insert(l.order, 0, v)
+	return nil
+}
+
 // Remove v from the list, leaving the order of everything else intact.
 // Removing a key that is not present is an error wrapping ErrNotFound.
 func (l *List[K, T]) Remove(v T) error {

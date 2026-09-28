@@ -140,7 +140,8 @@ works), `certbot renew --dry-run` passing, a backup written, and a wizard made.
 **First week, once people are in:**
 
 - A welcome line after login pointing new characters south to the Hollowfields.
-- Bare `corpse` should mean the newest corpse, not the oldest (found in play).
+- ~~Bare `corpse` should mean the newest corpse, not the oldest (found in play).~~ Done
+  2026-09-28: a room's floor lists newest first (`object.NewFloor`).
 - The Barrow-King's AC call (LEVELS.md).
 - Mob taunts, the first Lua (below, "No scripting language").
 

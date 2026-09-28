@@ -214,3 +214,29 @@ func TestStringKey(t *testing.T) {
 	assert.True(t, errors.Is(l.Add(&thing{2, "lizard"}), ErrDuplicate))
 	assert.True(t, l.Contains("lizard"))
 }
+
+// one added, two added, three pushed -> [three, one, two]
+func TestPushGoesToTheFront(t *testing.T) {
+	l := newTestList()
+	one, two, three := &thing{1, "lizard"}, &thing{2, "lizard"}, &thing{3, "rat"}
+
+	require.NoError(t, l.Add(one))
+	require.NoError(t, l.Add(two))
+	require.NoError(t, l.Push(three))
+
+	assert.Equal(t, []*thing{three, one, two}, collect(l))
+	got, found := Find(l, "rat")
+	assert.True(t, found)
+	assert.Same(t, three, got)
+}
+
+func TestPushDuplicateKeyIsErrDuplicate(t *testing.T) {
+	l := newTestList()
+	one := &thing{1, "lizard"}
+	require.NoError(t, l.Add(one))
+
+	err := l.Push(&thing{1, "rat"})
+
+	assert.ErrorIs(t, err, ErrDuplicate)
+	assert.Equal(t, []*thing{one}, collect(l), "a refused push leaves the list alone")
+}

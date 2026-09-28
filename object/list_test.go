@@ -106,3 +106,19 @@ func (s *ListSuite) TestMoveRefusedPutsItBack() {
 	_, stillThere := from.Get(knife.Id)
 	s.Assert().True(stillThere)
 }
+
+// A floor holds its newest arrival first, however it got there: added
+// directly or moved in. "look" lists it in that order, and bare "knife" (or
+// "corpse") is the one that landed last.
+func (s *ListSuite) TestFloorIsNewestFirst() {
+	floor, carried := NewFloor(), NewList()
+	first, second, dropped := s.instance("knife"), s.instance("knife"), s.instance("knife")
+	s.Require().NoError(floor.Add(first))
+	s.Require().NoError(floor.Add(second))
+	s.Require().NoError(carried.Add(dropped))
+
+	s.Require().NoError(Move(dropped, carried, floor))
+
+	s.Assert().Equal([]*Instance{dropped, second, first}, slices.Collect(floor.All()))
+	s.Assert().Same(dropped, floor.FindAll("knife")[0])
+}
