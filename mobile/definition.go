@@ -29,6 +29,10 @@ type Definition struct {
 	Power int
 	// Loot is what might drop into the corpse; see LootEntry.
 	Loot []LootEntry
+	// Script is the canonical "zone/name" of the Lua this mob runs, empty for
+	// none. A name only: the compiled program lives in loader.Content.Scripts,
+	// and mobile knows nothing about Lua.
+	Script string
 }
 
 func NewDefinition(definitionId string,

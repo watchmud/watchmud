@@ -1,0 +1,234 @@
+package script
+
+import (
+	"strings"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/watchmud/watchmud/mobile"
+	"github.com/watchmud/watchmud/rules"
+	"github.com/watchmud/watchmud/testdice"
+)
+
+type line struct{ mob, text string }
+
+type harness struct {
+	t    *testing.T
+	rt   *Runtime
+	dice *testdice.LoadedDice
+	said []line
+}
+
+// newHarness compiles each script (keyed "zone/name") into one runtime.
+func newHarness(t *testing.T, scripts map[string]string) *harness {
+	t.Helper()
+	h := &harness{t: t, dice: testdice.New()}
+	programs := map[string]*Program{}
+	for name, src := range scripts {
+		p, err := Compile(name, src)
+		require.NoError(t, err)
+		programs[name] = p
+	}
+	rt, err := NewRuntime(programs, h.dice, func(mob *mobile.Instance, text string) {
+		h.said = append(h.said, line{mob.Name(), text})
+	})
+	require.NoError(t, err)
+	h.rt = rt
+	return h
+}
+
+func (h *harness) texts() []string {
+	var out []string
+	for _, l := range h.said {
+		out = append(out, l.text)
+	}
+	return out
+}
+
+func mob(name, script string) *mobile.Instance {
+	d := mobile.NewDefinition(name, name, "wrathrock", nil, name, name+" is here.",
+		30, rules.WanderDefinition{}, 10, false)
+	d.Script = script
+	return mobile.NewInstance(d)
+}
+
+var bob = Foe{Name: "Bob", IsPlayer: true}
+
+func TestFightStart_says(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/king": `
+		function on_fight_start(me, foe)
+			me:say("You dare, " .. foe.name .. "?")
+		end`})
+	king := mob("King", "z/king")
+
+	h.rt.FightStart(king, bob)
+
+	assert.Equal(t, []line{{"King", "You dare, Bob?"}}, h.said)
+}
+
+func TestNoScriptIsANoOp(t *testing.T) {
+	h := newHarness(t, nil)
+	h.rt.FightStart(mob("Rat", ""), bob)
+	h.rt.FightPulse(mob("Rat", ""), bob)
+	h.rt.Forget(mob("Rat", ""))
+	assert.Empty(t, h.said)
+}
+
+func TestAHookNotDefinedIsANoOp(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/opener": `
+		function on_fight_start(me, foe) me:say("hi") end`})
+	h.rt.FightPulse(mob("M", "z/opener"), bob)
+	assert.Empty(t, h.said)
+}
+
+func TestMeAndFoe(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/look": `
+		function on_fight_pulse(me, foe)
+			me:say(me.name .. " " .. me.health .. "/" .. me.max_health .. " vs " .. foe.name .. " " .. tostring(foe.is_player))
+			me.health = 1 -- a copy: changes nothing
+		end`})
+	m := mob("Ghoul", "z/look")
+	m.TakeMeleeDamage(5)
+
+	h.rt.FightPulse(m, bob)
+
+	assert.Equal(t, []string{"Ghoul 25/30 vs Bob true"}, h.texts())
+	assert.Equal(t, 25, m.CurHealth)
+}
+
+func TestChanceAndPickRollTheDice(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/dice": `
+		function on_fight_pulse(me, foe)
+			if chance(50) then me:say(pick({"a", "b", "c"})) end
+		end`})
+	m := mob("M", "z/dice")
+
+	h.dice.Load([]int{49, 2}) // 49 < 50: yes; index 2 is "c"
+	h.rt.FightPulse(m, bob)
+	h.dice.Load([]int{50}) // 50 is not < 50
+	h.rt.FightPulse(m, bob)
+
+	assert.Equal(t, []string{"c"}, h.texts())
+}
+
+func TestMemoryPersistsPerInstance(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/count": `
+		function on_fight_pulse(me, foe)
+			me.memory.n = (me.memory.n or 0) + 1
+			me:say(tostring(me.memory.n))
+		end`})
+	one, two := mob("M", "z/count"), mob("M", "z/count")
+
+	h.rt.FightPulse(one, bob)
+	h.rt.FightPulse(one, bob)
+	h.rt.FightPulse(two, bob)
+	h.rt.Forget(one)
+	h.rt.FightPulse(one, bob)
+
+	assert.Equal(t, []string{"1", "2", "1", "1"}, h.texts(),
+		"one counts up, two has its own, and Forget empties one's")
+}
+
+func TestProgramsDontShareGlobals(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		"z/a": `secret = "a"
+			function on_fight_start(me, foe) me:say(tostring(secret)) end`,
+		"z/b": `function on_fight_start(me, foe) me:say(tostring(secret)) end`,
+	})
+	h.rt.FightStart(mob("A", "z/a"), bob)
+	h.rt.FightStart(mob("B", "z/b"), bob)
+	assert.Equal(t, []string{"a", "nil"}, h.texts())
+}
+
+func TestUnsafeLibrariesAreGone(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/probe": `
+		function on_fight_start(me, foe)
+			me:say(table.concat({
+				tostring(os), tostring(io), tostring(require), tostring(load),
+				tostring(loadstring), tostring(dofile), tostring(print),
+				tostring(math.random), tostring(string.dump), tostring(coroutine),
+				tostring(getfenv), tostring(debug), tostring(package),
+			}, ","))
+		end`})
+	h.rt.FightStart(mob("M", "z/probe"), bob)
+	require.Len(t, h.said, 1)
+	assert.Equal(t, strings.Repeat("nil,", 12)+"nil", h.said[0].text)
+}
+
+// An error, a runaway loop and runaway recursion each come back, counted; the
+// fourth call is never made.
+func TestFailuresAreCountedAndDisable(t *testing.T) {
+	for name, body := range map[string]string{
+		"error":     `error("boom")`,
+		"loop":      `while true do end`,
+		"recursion": `local function f(n) return f(n + 1) + 1 end f(1)`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := newHarness(t, map[string]string{"z/bad": `
+				function on_fight_pulse(me, foe)
+					me:say("tick")
+					` + body + `
+				end`})
+			m := mob("M", "z/bad")
+			for range MaxFailures + 2 {
+				h.rt.FightPulse(m, bob)
+			}
+			assert.Len(t, h.said, MaxFailures, "called until the budget ran out, then never")
+		})
+	}
+}
+
+// One bad script doesn't switch off another.
+func TestDisablingIsPerProgram(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		"z/bad":  `function on_fight_pulse(me, foe) error("boom") end`,
+		"z/good": `function on_fight_pulse(me, foe) me:say("fine") end`,
+	})
+	for range MaxFailures {
+		h.rt.FightPulse(mob("B", "z/bad"), bob)
+	}
+	h.rt.FightPulse(mob("G", "z/good"), bob)
+	assert.Equal(t, []string{"fine"}, h.texts())
+}
+
+// Review focus 1: a dot instead of a colon is an error that says so.
+func TestSayWithADotFails(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/dot": `
+		function on_fight_start(me, foe) me.say("hi") end`})
+	var logged []string
+	h.rt.logFailure = func(err error) { logged = append(logged, err.Error()) }
+
+	h.rt.FightStart(mob("M", "z/dot"), bob)
+
+	assert.Empty(t, h.said)
+	require.Len(t, logged, 1)
+	assert.Contains(t, logged[0], "colon")
+}
+
+// Review focus 2: a me kept from an earlier call can't be spoken through.
+func TestStashedMeCantSpeakLater(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/stash": `
+		function on_fight_start(me, foe) me.memory.old = me end
+		function on_fight_pulse(me, foe) me.memory.old:say("ghost") end`})
+	m := mob("M", "z/stash")
+
+	h.rt.FightStart(m, bob)
+	h.rt.FightPulse(m, bob)
+
+	assert.Empty(t, h.said)
+}
+
+// Review focus 3: an empty pick is an error, not a panic or a nil said.
+func TestPickEmptyFails(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/empty": `
+		function on_fight_start(me, foe) me:say(pick({})) end`})
+	var logged []string
+	h.rt.logFailure = func(err error) { logged = append(logged, err.Error()) }
+
+	h.rt.FightStart(mob("M", "z/empty"), bob)
+
+	assert.Empty(t, h.said)
+	require.Len(t, logged, 1)
+	assert.Contains(t, logged[0], "empty")
+}
