@@ -83,3 +83,25 @@ func (s *occupancySuite) TestMoveMobile() {
 	s.Assert().Equal(1, len(s.roomTwo.Mobiles()))
 	s.Assert().Equal(s.mob, s.roomTwo.Mobiles()[0])
 }
+
+func (s *occupancySuite) newMob(name string) *mobile.Instance {
+	return mobile.NewInstance(mobile.NewDefinition(name, name, "zone", nil,
+		"shortdesc", "roomdesc", 25, rules.WanderDefinition{}, 10, false))
+}
+
+// The mobile pulse walks Mobiles(), so its order is the order mobs wander,
+// aggro and regen in. It has to be the same every time: the order placed,
+// untouched by moving, and closed up by a removal.
+func (s *occupancySuite) TestMobilesInTheOrderPlaced() {
+	rat, lizard, wolf := s.newMob("rat"), s.newMob("lizard"), s.newMob("wolf")
+	s.occupancy.PlaceMobile(rat, s.roomOne)
+	s.occupancy.PlaceMobile(lizard, s.roomTwo)
+	s.occupancy.PlaceMobile(wolf, s.roomOne)
+
+	s.occupancy.MoveMobile(rat, rules.DirectionEast, s.roomTwo)
+	s.Assert().Equal([]*mobile.Instance{rat, lizard, wolf}, s.occupancy.Mobiles())
+
+	s.occupancy.RemoveMobile(lizard)
+	s.Assert().Equal([]*mobile.Instance{rat, wolf}, s.occupancy.Mobiles())
+	s.Assert().Equal(1, s.occupancy.MobileCount("wolf"))
+}

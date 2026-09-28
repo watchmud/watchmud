@@ -473,7 +473,9 @@ stable order); `Occupancy` keeps the reverse index, player -> room and mob -> ro
 the only code that writes either side. The room's writers (`addPlayer`, `playerEnters`,
 `mobileLeaves`, ...) are unexported, so from `world/` a half-done move fails to compile
 instead of leaving a ghost. `World.movePlayer` / `moveMobile` / `RemovePlayer` are one
-`Occupancy` call each. Objects are not in it: where an object is forms a tree (floor,
+`Occupancy` call each. It also lists every mob in the order it was placed
+(`Mobiles()`), which is the order the mobile pulse wanders, aggroes and regenerates them
+in -- a map range made that different every pulse. Objects are not in it: where an object is forms a tree (floor,
 inventory, equipment, container) and nothing asks the reverse question yet.
 
 A fight has no location of its own. Nobody can leave a fight without ending it (`move`

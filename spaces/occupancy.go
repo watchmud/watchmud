@@ -1,8 +1,11 @@
 package spaces
 
 import (
+	"uuid"
+
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/mobile"
+	"github.com/watchmud/watchmud/ordered"
 	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
 )
@@ -15,12 +18,17 @@ import (
 type Occupancy struct {
 	playerRoom map[*player.Player]*Room
 	mobileRoom map[*mobile.Instance]*Room
+	// mobiles is every mob in the world, in the order it was placed, because
+	// mobileRoom is a map: ranging it for the mobile pulse had the mobs
+	// wander, aggro and regen in a different order every time.
+	mobiles *ordered.List[uuid.UUID, *mobile.Instance]
 }
 
 func NewOccupancy() *Occupancy {
 	return &Occupancy{
 		playerRoom: make(map[*player.Player]*Room),
 		mobileRoom: make(map[*mobile.Instance]*Room),
+		mobiles:    ordered.NewList[uuid.UUID]((*mobile.Instance).Id),
 	}
 }
 
@@ -73,6 +81,9 @@ func (o *Occupancy) PlaceMobile(mob *mobile.Instance, r *Room) {
 		log.Error().Err(err).Str("room", r.Location().String()).Msg("PlaceMobile")
 		return
 	}
+	if err := o.mobiles.Add(mob); err != nil {
+		log.Error().Err(err).Str("mob", mob.Name()).Msg("PlaceMobile")
+	}
 	o.mobileRoom[mob] = r
 }
 
@@ -89,21 +100,23 @@ func (o *Occupancy) RemoveMobile(mob *mobile.Instance) {
 		if err := r.removeMobile(mob); err != nil {
 			log.Error().Err(err).Str("room", r.Location().String()).Msg("RemoveMobile")
 		}
+		if err := o.mobiles.Remove(mob); err != nil {
+			log.Error().Err(err).Str("mob", mob.Name()).Msg("RemoveMobile")
+		}
 	}
 	delete(o.mobileRoom, mob)
 }
 
+// Mobiles is every mob in the world, in the order they were placed; moving
+// doesn't change it. A copy, since the mobile pulse moves and kills mobs
+// while it walks the list.
 func (o *Occupancy) Mobiles() []*mobile.Instance {
-	mobs := make([]*mobile.Instance, 0, len(o.mobileRoom))
-	for m := range o.mobileRoom {
-		mobs = append(mobs, m)
-	}
-	return mobs
+	return o.mobiles.Slice()
 }
 
 func (o *Occupancy) MobileCount(defId string) int {
 	count := 0
-	for mob := range o.mobileRoom {
+	for mob := range o.mobiles.All() {
 		if mob.Definition.Id == defId {
 			count++
 		}
