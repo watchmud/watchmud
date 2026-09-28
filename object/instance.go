@@ -3,8 +3,6 @@ package object
 import (
 	"time"
 	"uuid"
-
-	"github.com/watchmud/watchmud/ordered"
 )
 
 // Instance of the Definitions in the world around you.
@@ -28,17 +26,11 @@ type Instance struct {
 
 	// Contents is what's inside, for a container; nil for anything that
 	// isn't one. Only corpses are containers so far.
-	Contents *ordered.List[uuid.UUID, *Instance]
+	Contents *List
 
 	// DecaysAt is when this crumbles away, whatever it's holding; the zero
 	// time means never. Only corpses decay so far.
 	DecaysAt time.Time
-}
-
-// NewContents is an empty container's worth of contents, in the order things
-// were put in.
-func NewContents() *ordered.List[uuid.UUID, *Instance] {
-	return ordered.NewList(func(i *Instance) uuid.UUID { return i.Id })
 }
 
 // IdStr from the Thing interface

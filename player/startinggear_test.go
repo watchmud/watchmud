@@ -55,7 +55,7 @@ func TestGiveStartingGear(t *testing.T) {
 	require.NotNil(t, tunic)
 	assert.Equal(t, "tunic", tunic.Definition.Name)
 
-	carried, found := p.Inventory().ByInstanceId(knife.Id)
+	carried, found := p.Inventory().Get(knife.Id)
 	assert.True(t, found)
 	assert.Same(t, knife, carried)
 

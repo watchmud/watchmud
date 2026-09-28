@@ -125,7 +125,7 @@ func (s *HandleDropSuite) TestDropAllKeepsWhatIsWorn() {
 	s.drop("all")
 
 	s.Assert().Equal(1, s.p.Inventory().Len(), "still holding the knife")
-	found := s.p.Inventory().GetByNameOrAlias("knife")
+	found := s.p.Inventory().FindAll("knife")
 	s.Require().Len(found, 1)
 	s.Assert().True(s.p.Equipment().ItemEquipped(found[0]))
 	s.Assert().Equal(1, s.w.StartRoom.Inventory.Len())
@@ -149,15 +149,15 @@ func (s *HandleDropSuite) TestDropAllWhenEverythingIsWorn() {
 // the inventory is in pickup order, so "2.knife" means the second one you took
 func (s *HandleDropSuite) TestDropNth() {
 	s.get("knife")
-	first := s.p.Inventory().GetByNameOrAlias("knife")[0]
+	first := s.p.Inventory().FindAll("knife")[0]
 	second := object.NewInstance(uuid.New(), first.Definition)
 	s.p.Inventory().Add(second)
 
 	s.drop("2.knife")
 
-	_, stillHeld := s.p.Inventory().ByInstanceId(second.Id)
+	_, stillHeld := s.p.Inventory().Get(second.Id)
 	s.Assert().False(stillHeld, "should have dropped the second knife")
-	_, firstHeld := s.p.Inventory().ByInstanceId(first.Id)
+	_, firstHeld := s.p.Inventory().Get(first.Id)
 	s.Assert().True(firstHeld, "the first one stays")
 }
 

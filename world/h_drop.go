@@ -5,6 +5,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
+	"github.com/watchmud/watchmud/object"
 )
 
 func (w *World) handleDrop(msg *gameserver.HandlerParameter, cmd command.Drop) {
@@ -46,17 +47,11 @@ func (w *World) handleDrop(msg *gameserver.HandlerParameter, cmd command.Drop) {
 			continue
 		}
 
-		// add to room
-		if err := room.Inventory.Add(objectToDrop); err != nil {
-			// failed to add to room..
-			log.Error().Err(err).Str("player", msg.Player.Name()).Stringer("id", objectToDrop.Id).Msg("drop: error while adding to room")
+		if err := object.Move(objectToDrop, msg.Player.Inventory(), room.Inventory); err != nil {
+			log.Error().Err(err).Str("player", msg.Player.Name()).Str("room", room.Location().String()).Msg("drop")
 			msg.Fail(event.AddToRoomError)
 			return
 		}
-
-		// remove from player
-		msg.Player.Inventory().Remove(objectToDrop)
-
 		// one event, both audiences: the renderer says "Dropped." to the actor
 		// and "bob drops a knife." to everyone else.
 		room.Send(event.Dropped{

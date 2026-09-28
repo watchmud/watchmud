@@ -28,7 +28,7 @@ func (w *World) handleEquip(msg *gameserver.HandlerParameter, cmd command.Equip)
 	// TODO need to sort this by priority of how we count "2.x"
 	// and make sense of other info in the target data structure
 	// TODO other soring things
-	objectsToEquip := msg.Player.Inventory().GetByNameOrAlias(target.Name)
+	objectsToEquip := msg.Player.Inventory().FindAll(target.Name)
 	if len(objectsToEquip) == 0 {
 		// you don't have one
 		msg.Fail(event.TargetNotFound)

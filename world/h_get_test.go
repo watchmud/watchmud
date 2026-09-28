@@ -39,7 +39,7 @@ func (s *HandleGetSuite) TestSuccess() {
 
 	// player has one item
 	s.Assert().Equal(1, s.p.Inventory().Len())
-	found := s.p.Inventory().GetByNameOrAlias("knife")
+	found := s.p.Inventory().FindAll("knife")
 	s.Assert().True(len(found) > 0)
 	s.Assert().Equal("knife", found[0].Definition.Name)
 
@@ -55,7 +55,7 @@ func (s *HandleGetSuite) TestAliasTarget() {
 	sent[event.Got](s.T(), s.r, 0)
 	s.Assert().Equal(1, s.p.Inventory().Len())
 
-	found := s.p.Inventory().GetByNameOrAlias("helmet")
+	found := s.p.Inventory().FindAll("helmet")
 	s.Assert().True(len(found) > 0)
 	s.Assert().Equal("iron helmet", found[0].Definition.Name)
 	s.Assert().Equal(1, s.w.StartRoom.Inventory.Len())
@@ -165,7 +165,7 @@ func (s *HandleGetSuite) TestGetNth() {
 	s.get("2.knife")
 
 	s.Assert().Equal(1, s.p.Inventory().Len())
-	_, held := s.p.Inventory().ByInstanceId(second.Id)
+	_, held := s.p.Inventory().Get(second.Id)
 	s.Assert().True(held, "should have taken the second knife")
 }
 
@@ -198,7 +198,7 @@ func (s *HandleGetSuite) TestGetAllLeavesWhatIsBoltedDown() {
 	s.Assert().Equal(2, len(s.r.Sent))
 	s.Assert().Equal(2, s.p.Inventory().Len())
 	s.Assert().Equal(1, s.w.StartRoom.Inventory.Len())
-	_, stillThere := s.w.StartRoom.Inventory.InstanceId(fountain.Id)
+	_, stillThere := s.w.StartRoom.Inventory.Get(fountain.Id)
 	s.Assert().True(stillThere)
 }
 

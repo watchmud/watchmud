@@ -1,0 +1,108 @@
+package object
+
+import (
+	"slices"
+	"testing"
+	"uuid"
+
+	"github.com/stretchr/testify/suite"
+	"github.com/watchmud/watchmud/ordered"
+	"github.com/watchmud/watchmud/rules"
+)
+
+type ListSuite struct {
+	suite.Suite
+	list    *List
+	defn    *Definition
+	inst    *Instance
+	instTwo *Instance
+}
+
+func TestListSuite(t *testing.T) {
+	suite.Run(t, new(ListSuite))
+}
+
+func (s *ListSuite) SetupTest() {
+	s.list = NewList()
+	s.defn = NewDefinition(
+		"id",
+		"name",
+		"zoneid",
+		rules.ObjectCategoryOther,
+		[]string{},
+		"short desc",
+		"on ground",
+		rules.SlotNone,
+		"plate", // TODO!
+	)
+	s.inst = NewInstance(uuid.New(), s.defn)
+	s.instTwo = NewInstance(uuid.New(), s.defn)
+
+	s.Require().NoError(s.list.Add(s.inst))
+	s.Require().NoError(s.list.Add(s.instTwo))
+}
+
+func (s *ListSuite) instance(id string) *Instance {
+	defn := NewDefinition(
+		id,
+		id,
+		"zoneid",
+		rules.ObjectCategoryOther,
+		[]string{},
+		"short desc",
+		"on ground",
+		rules.SlotNone,
+		"plate",
+	)
+	return NewInstance(uuid.New(), defn)
+}
+
+func (s *ListSuite) TestRoomInventory_Remove() {
+
+	s.Assert().NoError(s.list.Remove(s.inst))
+
+	s.Assert().Equal(1, s.list.Len())
+}
+
+// The same guarantee RoomMobs makes: taking something off the floor doesn't
+// disturb the order of what's left, or of what lands there afterwards.
+func (s *ListSuite) TestRoomInventory_RemoveKeepsOrder() {
+	instThree := NewInstance(uuid.New(), s.defn)
+
+	s.Require().NoError(s.list.Remove(s.inst))
+	s.Require().NoError(s.list.Add(instThree))
+
+	s.Assert().Equal([]*Instance{s.instTwo, instThree}, slices.Collect(s.list.All()))
+}
+
+func (s *ListSuite) TestMove() {
+	from, to := NewList(), NewList()
+	knife := s.instance("knife")
+	s.Require().NoError(from.Add(knife))
+
+	s.Require().NoError(Move(knife, from, to))
+
+	s.Assert().Equal(0, from.Len())
+	_, there := to.Get(knife.Id)
+	s.Assert().True(there)
+}
+
+// Moving something that isn't there touches nothing.
+func (s *ListSuite) TestMoveMissing() {
+	from, to := NewList(), NewList()
+	err := Move(s.instance("knife"), from, to)
+	s.Assert().ErrorIs(err, ordered.ErrNotFound)
+	s.Assert().Equal(0, to.Len())
+}
+
+// If it can't go in, it stays where it was: nothing is lost.
+func (s *ListSuite) TestMoveRefusedPutsItBack() {
+	from, to := NewList(), NewList()
+	knife := s.instance("knife")
+	s.Require().NoError(from.Add(knife))
+	s.Require().NoError(to.Add(knife)) // a bug: it's in both
+
+	s.Assert().ErrorIs(Move(knife, from, to), ordered.ErrDuplicate)
+	_, stillThere := from.Get(knife.Id)
+	s.Assert().True(stillThere)
+}

@@ -5,6 +5,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
+	"github.com/watchmud/watchmud/object"
 )
 
 func (w *World) handleGet(msg *gameserver.HandlerParameter, cmd command.Get) {
@@ -48,15 +49,11 @@ func (w *World) handleGet(msg *gameserver.HandlerParameter, cmd command.Get) {
 		}
 
 		// remove from room
-		if err := room.Inventory.Remove(item); err != nil {
-			// uh oh failed to remove from room
-			log.Error().Err(err).Str("zone", room.Zone.Name).Str("playerName", msg.Player.Name()).Str("room", room.Name).Msgf("handle_get: error removing item %s (%s) from room", item.Id, item.Definition.ObjectId.String())
+		if err := object.Move(item, room.Inventory, msg.Player.Inventory()); err != nil {
+			log.Error().Err(err).Str("player", msg.Player.Name()).Str("room", room.Location().String()).Msg("get")
 			msg.Fail(event.RemoveFromRoomError)
 			return
 		}
-		// add to player
-		msg.Player.Inventory().Add(item)
-
 		room.Send(event.Got{
 			Actor: msg.Player.Name(),
 			Item:  item.Definition.ShortDescription,

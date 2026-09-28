@@ -54,12 +54,11 @@ func (w *World) getFrom(msg *gameserver.HandlerParameter, cmd command.Get) {
 
 	room := w.playerRoom(msg.Player)
 	for _, item := range items {
-		if err := container.Contents.Remove(item); err != nil {
-			log.Error().Err(err).Str("player", msg.Player.Name()).Msgf("get from: removing %s from %s", item.Id, container.Definition.Name)
+		if err := object.Move(item, container.Contents, msg.Player.Inventory()); err != nil {
+			log.Error().Err(err).Str("player", msg.Player.Name()).Str("room", room.Location().String()).Msg("get")
 			msg.Fail(event.RemoveFromRoomError)
 			return
 		}
-		msg.Player.Inventory().Add(item)
 		room.Send(event.Got{
 			Actor: msg.Player.Name(),
 			Item:  item.Definition.ShortDescription,

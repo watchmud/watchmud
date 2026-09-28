@@ -85,11 +85,13 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 			// and shouldn't drag the average of what the player wears down.
 			i.Power = max(*ir.Power, 0)
 		}
-		p.inventory.Add(i)
+		if err := p.inventory.Add(i); err != nil {
+			p.Log().Error().Err(err).Msg("loading inventory")
+		}
 	}
 
 	for _, s := range rec.Equipment {
-		item, exists := p.inventory.ByInstanceId(s.InstanceId)
+		item, exists := p.inventory.Get(s.InstanceId)
 		if !exists {
 			// the item didn't survive a content edit; leave the slot empty
 			// rather than filling it with a nil that reads as occupied.
@@ -117,13 +119,13 @@ func (p *Player) Record() *Record {
 		MaxHealth:    p.maxHealth,
 		LineageId:    p.Lineage.Id,
 		Equipment:    EquipmentToRecord(p.equipment),
-		Inventory:    p.inventory.Record(),
+		Inventory:    inventoryRecord(p.inventory),
 	}
 }
 
-func (i *Inventory) Record() []InventoryRecord {
+func inventoryRecord(l *object.List) []InventoryRecord {
 	var records []InventoryRecord
-	for item := range i.All() {
+	for item := range l.All() {
 		r := InventoryRecord{
 			InstanceId:   item.Id,
 			ZoneId:       item.Definition.ObjectId.ZoneId,

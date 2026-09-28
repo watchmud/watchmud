@@ -7,7 +7,7 @@ import (
 )
 
 func (w *World) handleWear(msg *gameserver.HandlerParameter, cmd command.Wear) {
-	objectsToWear := msg.Player.Inventory().GetByNameOrAlias(cmd.Target)
+	objectsToWear := msg.Player.Inventory().FindAll(cmd.Target)
 
 	if len(objectsToWear) == 0 {
 		// nothing in inventory with that name

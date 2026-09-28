@@ -53,7 +53,7 @@ func (w *World) becomeMobileCorpse(m *mobile.Instance) {
 	d.Behaviors.Add(behavior.NoTake)
 
 	corpse := object.NewInstance(uuid.New(), d)
-	corpse.Contents = object.NewContents()
+	corpse.Contents = object.NewList()
 	corpse.DecaysAt = time.Now().Add(rules.CorpseDecay)
 	for _, drop := range w.rollLoot(m) {
 		if err := corpse.Contents.Add(drop); err != nil {

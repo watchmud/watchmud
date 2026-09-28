@@ -16,7 +16,7 @@ func corpseHolding(items ...*object.Instance) func(*world.World, *player.Player,
 			[]string{"corpse", "rat"}, "the corpse of a rat", "The corpse of a rat is lying here.",
 			rules.SlotNone, rules.ArmorTypeNone)
 		corpse := object.NewInstance(uuid.New(), d)
-		corpse.Contents = object.NewContents()
+		corpse.Contents = object.NewList()
 		for _, item := range items {
 			_ = corpse.Contents.Add(item)
 		}

@@ -23,7 +23,7 @@ type Player struct {
 	// Class beside it and no Role in its place: a role is read off
 	// the equipped slots every time it is asked for, never stored.
 	Lineage   *rules.Lineage
-	inventory *Inventory
+	inventory *object.List
 	equipment *object.Equipment
 	curHealth int
 	maxHealth int
@@ -45,7 +45,7 @@ func New(id uuid.UUID,
 		passwordHash: passwordHash,
 		out:          out,
 		Lineage:      lineage,
-		inventory:    NewInventory(),
+		inventory:    object.NewList(),
 		equipment:    object.NewEquipment(cat),
 		curHealth:    100, // TODO need a default here,
 		maxHealth:    100,
@@ -61,7 +61,7 @@ func (p *Player) Name() string {
 }
 
 // Inventory returns the inventory
-func (p *Player) Inventory() *Inventory {
+func (p *Player) Inventory() *object.List {
 	return p.inventory
 }
 

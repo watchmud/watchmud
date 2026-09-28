@@ -385,7 +385,7 @@ from a second d100. Never the killer's power: out-levelling a boss makes his dro
 worth having, on purpose.
 
 The drops go into the corpse, which is the only container so far. A container is an
-`object.Instance` with non-nil `Contents` (an `ordered.List`, like every other container);
+`object.Instance` with non-nil `Contents` (an `object.List`, like the floor and inventory);
 nil means "not a container", so check that rather than the category. Corpses are
 `NoTake`, answer to `corpse`, and have a `DecaysAt`: `World.DecayCorpses` runs on the
 mobile pulse and removes them, contents and all, after `rules.CorpseDecay`. The zero
@@ -430,9 +430,18 @@ rooms.
 **`ordered.List` is the one container.** A room's mobs, a room's floor, the players in a
 room and a player's inventory are all the same thing: a map for lookup by id plus a slice
 for the order to show the player. Ranging a map gives neither, which is how `look`
-reshuffled the room and `kill lizard` picked a different lizard each round. `RoomMobs`,
-`RoomInventory`, `player.List` and `player.Inventory` are now thin wrappers over it, and
-`thing.Map` (the pre-generics version, keyed on `IdStr`) is gone.
+reshuffled the room and `kill lizard` picked a different lizard each round. `thing.Map`
+(the pre-generics version, keyed on `IdStr`) is gone. What wraps it now:
+
+- **`object.List`** is every container of objects: a room's floor (`Room.Inventory`), a
+  player's inventory (`Player.Inventory()`) and a container's `Contents`. One type, so
+  **moving an object between places is `object.Move(inst, from, to)`** -- `get`, `get
+  from` and `drop` all use it, and a bag or `give` should too. It removes before it adds,
+  and puts the object back if the add fails, so a failed move loses nothing. Don't write
+  a remove-then-add by hand.
+- **`player.List`** keys on `player.NameKey`, so a name typed in any case finds the player.
+- **A room's mobs** are a bare `ordered.List` inside `spaces.Room`: a room is the only
+  place mobs are listed, and `Occupancy` is the only writer.
 
 The key is a `func(T) K` passed to `NewList`, not a constraint on `T`: `mobile.Instance`
 has an `Id()` method and `object.Instance` has an `Id` field, and a field cannot satisfy a
@@ -443,9 +452,10 @@ which has no `Matches`. `Add`/`Remove` return `ErrDuplicate`/`ErrNotFound` to wr
 generic container cannot name what it is holding -- wrap with `%w` and the instance's name.
 
 Prefer `All()` (an `iter.Seq`) over `Slice()`; the latter copies, and exists for callers
-that index or hold the result. The wrappers keep whatever error contract they had before:
-`RoomMobs`/`RoomInventory` return errors, `player.List`/`player.Inventory` log them,
-because their callers are void methods deep inside a move with nothing to do about it.
+that index or hold the result. `object.List` returns its errors, wrapped with the object's
+name: with one list per place and `Move` between them, a duplicate or a miss is a bug.
+`player.List` logs them instead, because its callers are void methods deep inside a move
+with nothing to do about it.
 
 **`spaces.Room` is the one place this pattern was not applied** -- it holds static topology
 and live contents in one struct, which is why `Room.Connect` has to be exported for the

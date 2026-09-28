@@ -99,14 +99,14 @@ func (s *lootSuite) TestCorpsesDecay() {
 	s.r.Sent = nil
 
 	s.w.decayCorpses(time.Now())
-	_, stillThere := s.w.StartRoom.Inventory.InstanceId(corpse.Id)
+	_, stillThere := s.w.StartRoom.Inventory.Get(corpse.Id)
 	s.Assert().True(stillThere, "not yet")
 	s.Assert().Empty(s.r.Sent)
 
 	s.w.decayCorpses(time.Now().Add(rules.CorpseDecay + time.Second))
-	_, stillThere = s.w.StartRoom.Inventory.InstanceId(corpse.Id)
+	_, stillThere = s.w.StartRoom.Inventory.Get(corpse.Id)
 	s.Assert().False(stillThere, "gone")
 	s.Assert().Equal("the corpse of Target Drone", sent[event.Decayed](s.T(), s.r, 0).Item)
 
-	s.Assert().NotEmpty(s.w.StartRoom.Inventory.NameOrAlias("knife"), "the room's own knife doesn't decay")
+	s.Assert().NotEmpty(s.w.StartRoom.Inventory.FindAll("knife"), "the room's own knife doesn't decay")
 }
