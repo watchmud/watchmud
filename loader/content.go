@@ -12,6 +12,7 @@ import (
 	"github.com/watchmud/watchmud/mobile"
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/rules"
+	"github.com/watchmud/watchmud/script"
 	"github.com/watchmud/watchmud/spaces"
 	"github.com/watchmud/watchmud/zonereset"
 )
@@ -22,6 +23,8 @@ type Content struct {
 	Zones    map[string]*spaces.Zone
 	Settings *Settings
 	Catalog  *rules.Catalog
+	// Scripts is every script some mob names, compiled, by "zone/name".
+	Scripts map[string]*script.Program
 }
 
 func NewContent(settings *Settings, catalog *rules.Catalog, zones []*spaces.Zone) *Content {
@@ -29,6 +32,7 @@ func NewContent(settings *Settings, catalog *rules.Catalog, zones []*spaces.Zone
 		Zones:    make(map[string]*spaces.Zone),
 		Settings: settings,
 		Catalog:  catalog,
+		Scripts:  make(map[string]*script.Program),
 	}
 
 	for _, zone := range zones {
@@ -292,6 +296,10 @@ func (c *Content) loadMobileDefinitions(fsys fs.FS) error {
 			if err != nil {
 				return err
 			}
+			scriptRef, err := c.mobScript(fsys, zonename, mob)
+			if err != nil {
+				return err
+			}
 			defn := mobile.NewDefinition(
 				mob.Id,
 				mob.Name,
@@ -315,6 +323,7 @@ func (c *Content) loadMobileDefinitions(fsys fs.FS) error {
 			defn.Damage = damage
 			defn.Power = power
 			defn.Loot = loot
+			defn.Script = scriptRef
 			c.Zones[zonename].AddMobileDefinition(defn)
 		}
 	}

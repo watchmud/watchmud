@@ -32,6 +32,9 @@ type mobEntry struct {
 	Power *int `json:"power"`
 	// Loot is what might be in the corpse. See loot.go.
 	Loot []lootEntry `json:"loot"`
+	// Script names the Lua this mob runs: a bare name is this zone's
+	// scripts/<name>.lua, "zone/name" any other zone's. See script.go.
+	Script string `json:"script"`
 }
 
 type WanderingEntry struct {
