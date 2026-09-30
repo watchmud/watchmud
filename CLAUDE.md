@@ -23,7 +23,7 @@ anything.
 ## Commands
 
 ```
-make build            # -> bin/watchmud, bin/watchmud-bot
+make build            # -> bin/watchmud, bin/watchmud-bot, bin/watchmud-bots
 make test             # go test ./...
 make run              # build + run with the default ./app.local.yaml
 make fmt-check        # gofmt -l .  (really does fail now)
@@ -241,6 +241,16 @@ names are permanent.
 check`. If you move the geese or rename a room on the route, update `route` in
 `bot/smoke.go`.
 
+`bot.Adventurer` is the inhabitant: a state machine (goHome, town, travel, hunt,
+donate; fight and rest are procedures) driven by `Client.ReadChunk`, one prompt's
+worth of output at a time. Its manners are constants, not config: it never fights
+in a room with a real player (siblings are known by name) and leaves that ground for
+10 minutes; `consider` gates every kill; it answers each person's tell once per 10
+minutes with the same honest line. Hunting grounds (`bot/grounds.go`) are hand-written
+tables walked against the real content by `TestGrounds_walk`; never add the
+hedge-witch as prey. `cmd/watchmud-bots` runs up to 5 (one address, the server's
+cap), reconnecting forever.
+
 ### Content loading (loader -> world)
 
 `loader.LoadContent(os.DirFS(contentPath))` reads `content/` into an immutable
@@ -409,9 +419,11 @@ worth having, on purpose.
 The drops go into the corpse, which is the only container so far. A container is an
 `object.Instance` with non-nil `Contents` (an `object.List`, like the floor and inventory);
 nil means "not a container", so check that rather than the category. Corpses are
-`NoTake`, answer to `corpse`, and have a `DecaysAt`: `World.DecayCorpses` runs on the
+`NoTake`, answer to `corpse`, and have a `DecaysAt`: `World.DecayFloors` runs on the
 mobile pulse and removes them, contents and all, after `rules.CorpseDecay`. The zero
-`DecaysAt` means never. `get <item> from <container>` and `look in <container>` live in
+`DecaysAt` means never. Anything a character drops gets a `DecaysAt` too
+(`rules.DroppedDecay`, 30 minutes), and `get` clears it -- so the donation room the
+bots fill turns over. Zone resets and wizard `load`s never go through `drop`. `get <item> from <container>` and `look in <container>` live in
 `world/containers.go`, and only search the room's floor.
 
 ### Player death
@@ -592,6 +604,8 @@ is no threat yet -- nothing lets a tank take a mob back.
   the only gate: `HandleIncomingMessage` refuses a marked command from anyone whose
   record lacks `Wizard`, before any handler runs. Forget it and the command is open to
   every player. Grant it with `make wizard NAME=...`, while they're logged out.
+  `Bot` on the record is the same kind of hand-set flag (`make bot NAME=...`); it only
+  labels the character in `who`, and nothing may branch on it.
 - **`Send` returns nothing.** `player.Sender` is `Send(msg any)`. The only error any
   implementation could produce meant "this connection is already dead and I already tore it
   down," which no caller can act on. Don't reintroduce an error return.

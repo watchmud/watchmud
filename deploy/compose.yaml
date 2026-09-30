@@ -36,6 +36,24 @@ services:
         max-size: 20m
         max-file: "5"
 
+  # The bots: always-on characters a program plays, labelled [bot] in who.
+  # Each is made by hand and flagged on its record first -- README, "Bots".
+  # With WATCHMUD_BOTS empty this idles.
+  bots:
+    image: ghcr.io/watchmud/watchmud:${WATCHMUD_VERSION:?run deploy/deploy.sh <version> -- see deploy/README.md}
+    restart: unless-stopped
+    depends_on:
+      - watchmud
+    entrypoint: ["/app/watchmud-bots", "-addr", "watchmud:4000"]
+    environment:
+      WATCHMUD_BOTS: ${WATCHMUD_BOTS:-}
+      WATCHMUD_BOTS_PASSWORD: ${WATCHMUD_BOTS_PASSWORD:-}
+    logging:
+      driver: json-file
+      options:
+        max-size: 20m
+        max-file: "5"
+
   mongo:
     image: mongo:8
     restart: unless-stopped

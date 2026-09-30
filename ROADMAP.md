@@ -154,8 +154,16 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
 
 - ~~**The smoke test.**~~ Done 2026-09-30: `bot/` (a telnet client and one scenario) and
   `cmd/watchmud-bot`, run by `deploy.sh` after every restart and by `go test` against
-  the real content in-process. Load testing and inhabitants are still open; both build
-  on `bot.Client`.
+  the real content in-process. Load testing is still open; it builds on `bot.Client`.
+- ~~**Inhabitants.**~~ Done 2026-09-30: `bot.Adventurer` and `cmd/watchmud-bots`, the
+  `bots` compose service -- always-on, labelled `[bot]` in `who` from a flag on the
+  record, hunting the Hollowfields, donating what they find, and honest when told
+  to. Dropped items decay after 30 minutes, so the donation room turns over.
+  Future: a **Wanderer** (roams, fights only when attacked, never loots), a
+  **Socialite** (greets new characters in town, answers newbie questions), bots that
+  **explore and map** the world instead of following hand-written hunting grounds
+  (needs room names to stay unique -- true today, not enforced), and bots that **wear
+  the upgrades they find** and grow into the Barrow.
 
 The Context section below describes the tree as it was in September 2026, before any of
 this landed. It is kept for its reasoning, not as a description of the present.

@@ -160,6 +160,34 @@ permanent:
 Without `WATCHMUD_BOT_PASSWORD` the deploy skips the smoke test and says so. From a
 laptop, against any server: `WATCHMUD_BOT_PASSWORD=... bin/watchmud-bot -addr host:4000`.
 
+## Bots
+
+The `bots` service plays a few characters around the clock: they walk out to the
+Hollowfields, fight what's a fair fight, loot, rest, and leave what they find in the
+donation room. They're labelled `[bot]` in `who`, `help bots` explains them, and a
+tell to one gets an automatic honest answer. They leave a hunting ground to any player
+they meet there.
+
+Each bot is a character made once by hand -- the bots never create one:
+
+1. `telnet watchmud.com 4000`, create it (`Wren`, say), `quit`. Same password for all.
+2. Flag it, while it's logged out, so `who` says what it is:
+
+   ```sh
+   docker compose -f deploy/compose.yaml exec mongo mongosh -u root -p \
+     --authenticationDatabase admin watchmud \
+     --eval 'db.players.updateOne({name: "Wren"}, {$set: {bot: true}})'
+   ```
+
+   Do the same for the smoke test's character (Tester): it's a bot too.
+3. In `deploy/.env`: `WATCHMUD_BOTS=Wren,Pim,Odo` and `WATCHMUD_BOTS_PASSWORD=...`,
+   then `docker compose -f deploy/compose.yaml up -d bots`.
+
+At most 5: they all connect from the one container, and the game allows 5
+connections per address. `docker compose -f deploy/compose.yaml logs -f bots` shows
+what they're up to, a line per change of plan. Every deploy restarts them onto the
+new version; they log back in within a couple of minutes.
+
 ## Logs
 
 ```sh
