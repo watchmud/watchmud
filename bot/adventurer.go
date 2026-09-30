@@ -1,0 +1,625 @@
+package bot
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"math/rand/v2"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+)
+
+// An adventurer's rules of thumb. Constants rather than config: they are what
+// makes a bot polite, and a bot shouldn't be one flag away from rude.
+const (
+	// MaxBots: the server allows 5 connections per address, and every bot run
+	// by one watchmud-bots shares its address.
+	MaxBots = 5
+
+	donateAfter = 5                // things looted before a trip to the donation room
+	avoidFor    = 10 * time.Minute // a ground a player is using is theirs this long
+	tellEvery   = 10 * time.Minute // one honest answer per person this often
+	talkEvery   = 10 * time.Minute // at most one remark this often
+	talkOneIn   = 5                // and on only one moment in this many
+	restBelow   = 50               // percent health: stop and rest
+	restUntil   = 90               // percent health: rested
+	fleeBelow   = 25               // percent health, mid-fight: run
+	patrolLaps  = 3                // laps of a ground before heading back to town
+
+	botReply = "I'm a bot (see 'help bots') - I can't chat, sorry!"
+)
+
+// Pace is how fast a bot plays. HumanPace is the real one; tests go faster.
+type Pace struct {
+	Think  [2]time.Duration // before each decision, uniformly in [min, max)
+	Walk   [2]time.Duration // before each step
+	Quiet  time.Duration    // a fight is over after this long with no blows
+	Poll   time.Duration    // how often a resting bot looks at its health
+	Answer time.Duration    // how long the server has to reply
+	Idle   time.Duration    // how long a bot with nowhere to hunt waits in town
+}
+
+// HumanPace is a person at a keyboard.
+var HumanPace = Pace{
+	Think:  [2]time.Duration{2 * time.Second, 6 * time.Second},
+	Walk:   [2]time.Duration{time.Second, 3 * time.Second},
+	Quiet:  4 * time.Second,
+	Poll:   5 * time.Second,
+	Answer: 10 * time.Second,
+	Idle:   3 * time.Minute,
+}
+
+// AdventurerConfig is one bot. Siblings are the other bots run beside it:
+// never players to make way for, never answered.
+type AdventurerConfig struct {
+	Name, Password string
+	Siblings       []string
+	Seed           uint64
+	Pace           Pace
+	Log            func(format string, args ...any) // nil is silent
+}
+
+// Stats is what an adventurer has done since it started.
+type Stats struct {
+	Kills, Looted, Donations, TellsAnswered, Avoided, Deaths int
+}
+
+// Adventurer is a bot that plays like a player: out to a hunting ground, fights
+// what it can, loots its own kills, rests when hurt, gives what it finds to the
+// donation room. Everything but Stats belongs to the goroutine running Run.
+type Adventurer struct {
+	cfg AdventurerConfig
+	rng *rand.Rand
+	now func() time.Time // for what it remembers: tells, avoided grounds, remarks
+	c   *Client
+
+	health, maxHealth int
+	attacked, died    bool
+	carrying          int // looted since the last donation
+	ground            *ground
+	avoiding          map[string]time.Time // ground name -> until
+	toldAt            map[string]time.Time
+	pendingTells      []string
+	saidAt            time.Time
+
+	mu    sync.Mutex
+	stats Stats
+}
+
+func NewAdventurer(cfg AdventurerConfig) *Adventurer {
+	return &Adventurer{
+		cfg:      cfg,
+		rng:      rand.New(rand.NewPCG(cfg.Seed, cfg.Seed^0x9e3779b97f4a7c15)),
+		now:      time.Now,
+		avoiding: map[string]time.Time{},
+		toldAt:   map[string]time.Time{},
+	}
+}
+
+// Stats is safe to call while Run runs.
+func (a *Adventurer) Stats() Stats {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	return a.stats
+}
+
+func (a *Adventurer) count(f func(*Stats)) {
+	a.mu.Lock()
+	f(&a.stats)
+	a.mu.Unlock()
+}
+
+func (a *Adventurer) log(format string, args ...any) {
+	if a.cfg.Log != nil {
+		a.cfg.Log(a.cfg.Name+": "+format, args...)
+	}
+}
+
+// Not the connection's fault, so not Run's to return: each sends the
+// adventurer somewhere to start over.
+var (
+	errLost = errors.New("lost")                       // an answer it didn't expect: recall
+	errDied = errors.New("died")                       // wakes in Temple Square
+	errBusy = errors.New("in a fight it didn't start") // fight, then recall
+)
+
+var (
+	okRe             = regexp.MustCompile(`(?m)^Ok\.$`)
+	tellAnswerRe     = regexp.MustCompile(`(?m)^Ok\.$|No one by that name is playing\.`)
+	anyRe            = regexp.MustCompile(``)
+	busyText         = "You're too busy fighting!"
+	killRe           = regexp.MustCompile(`(?m)^Ok\.$|You don't see that here\.|You're already fighting!`)
+	considerOrGoneRe = regexp.MustCompile(`\(power (\d+); you are (\d+)\)|You don't see that here\.`)
+	lootRe           = regexp.MustCompile(`You get |There's nothing in there\.|You don't see that here\.`)
+	dropRe           = regexp.MustCompile(`Dropped\.|You aren't carrying that\.`)
+	saidRe           = regexp.MustCompile(`You say, "`)
+)
+
+// roomRe matches a room description by its name, at the start of a line.
+func roomRe(name string) *regexp.Regexp {
+	return regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(name) + `$`)
+}
+
+type stateFn func(ctx context.Context) (stateFn, error)
+
+// Run connects, logs in and adventures until ctx is done -- then it quits
+// cleanly and returns nil -- or the connection fails, and it returns why, for
+// whoever runs it to log it and try again later.
+func (a *Adventurer) Run(ctx context.Context, addr string) error {
+	dctx, cancel := context.WithTimeout(ctx, time.Minute)
+	c, err := Dial(dctx, addr)
+	cancel()
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	a.c = c
+	if _, err := c.Expect(`Welcome to WatchMUD`, a.cfg.Pace.Answer); err != nil {
+		return err
+	}
+	if err := login(c, Config{Name: a.cfg.Name, Password: a.cfg.Password}); err != nil {
+		return err
+	}
+	a.log("logged in")
+
+	state := stateFn(a.goHome)
+	for {
+		next, err := state(ctx)
+		switch {
+		case ctx.Err() != nil:
+			return a.quit()
+		case errors.Is(err, errDied):
+			next = a.dead
+		case errors.Is(err, errBusy):
+			next = a.fightThen(a.goHome)
+		case errors.Is(err, errLost):
+			a.log("%v; recalling", err)
+			next = a.goHome
+		case err != nil:
+			return err
+		}
+		state = next
+	}
+}
+
+func (a *Adventurer) quit() error {
+	if err := a.c.Send("quit"); err != nil {
+		return nil // already gone
+	}
+	_ = a.c.ExpectClosed(a.cfg.Pace.Answer)
+	a.log("quit")
+	return nil
+}
+
+// ---- states -----------------------------------------------------------------
+
+// goHome recalls to Temple Square.
+func (a *Adventurer) goHome(ctx context.Context) (stateFn, error) {
+	if a.attacked {
+		return a.fightThen(a.goHome), nil
+	}
+	if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
+		return nil, err
+	}
+	if _, _, err := a.ask("recall", roomRe("Temple Square")); err != nil {
+		return nil, err
+	}
+	a.say(momentTown)
+	return a.town, nil
+}
+
+// town rests if it must, then picks a ground its power suits.
+func (a *Adventurer) town(ctx context.Context) (stateFn, error) {
+	_, m, err := a.ask("equipment", powerRe)
+	if err != nil {
+		return nil, err
+	}
+	if a.needsRest() {
+		if err := a.rest(ctx); err != nil {
+			return nil, err
+		}
+		if a.died {
+			return a.dead, nil
+		}
+	}
+	power, _ := strconv.Atoi(m[1])
+	a.ground = a.pickGround(power)
+	if a.ground == nil {
+		a.log("nowhere to hunt at power %d; waiting in town", power)
+		return a.waitThen(a.cfg.Pace.Idle, a.town), nil
+	}
+	a.log("off to %s at power %d", a.ground.name, power)
+	return a.travel, nil
+}
+
+func (a *Adventurer) travel(ctx context.Context) (stateFn, error) {
+	for _, s := range a.ground.route {
+		if _, err := a.walk(ctx, s); err != nil {
+			return nil, err
+		}
+	}
+	a.log("hunting %s", a.ground.name)
+	return a.hunt, nil
+}
+
+// hunt walks the patrol, fighting what's fair, leaving if a player turns up.
+func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
+	g := a.ground
+	for range patrolLaps {
+		for _, s := range g.patrol {
+			room, err := a.walk(ctx, s)
+			if err != nil {
+				return nil, err
+			}
+			if who := playersHere(room, a.cfg.Name, a.cfg.Siblings); len(who) > 0 {
+				a.avoiding[g.name] = a.now().Add(avoidFor)
+				a.count(func(st *Stats) { st.Avoided++ })
+				a.log("%s is in %s; leaving %s to them", who[0], s.room, g.name)
+				return a.goHome, nil
+			}
+			for _, p := range g.preyIn(room) {
+				if err := a.engage(ctx, p); err != nil {
+					return nil, err
+				}
+				if a.died {
+					return a.dead, nil
+				}
+			}
+			if a.attacked {
+				if err := a.fight(ctx); err != nil {
+					return nil, err
+				}
+				if a.died {
+					return a.dead, nil
+				}
+			}
+			if a.needsRest() {
+				if err := a.rest(ctx); err != nil {
+					return nil, err
+				}
+				if a.died {
+					return a.dead, nil
+				}
+			}
+			if a.carrying >= donateAfter {
+				return a.donate, nil
+			}
+		}
+	}
+	return a.goHome, nil
+}
+
+// donate takes what it found to the donation room, east of Temple Square.
+func (a *Adventurer) donate(ctx context.Context) (stateFn, error) {
+	if a.attacked {
+		return a.fightThen(a.donate), nil
+	}
+	if _, _, err := a.ask("recall", roomRe("Temple Square")); err != nil {
+		return nil, err
+	}
+	if _, err := a.walk(ctx, step{"east", "Donation Room"}); err != nil {
+		return nil, err
+	}
+	for _, kw := range a.ground.loot {
+		if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
+			return nil, err
+		}
+		if _, _, err := a.ask("drop all."+kw, dropRe); err != nil {
+			return nil, err
+		}
+	}
+	a.carrying = 0
+	a.count(func(st *Stats) { st.Donations++ })
+	a.log("left what it found in the donation room")
+	a.say(momentDonate)
+	if _, err := a.walk(ctx, step{"west", "Temple Square"}); err != nil {
+		return nil, err
+	}
+	return a.town, nil
+}
+
+// dead: it woke in the player-death room at 1hp; recall makes sure where.
+func (a *Adventurer) dead(ctx context.Context) (stateFn, error) {
+	a.died, a.attacked = false, false
+	a.count(func(st *Stats) { st.Deaths++ })
+	a.log("died")
+	return a.goHome, nil
+}
+
+// fightThen fights, then carries on to next.
+func (a *Adventurer) fightThen(next stateFn) stateFn {
+	return func(ctx context.Context) (stateFn, error) {
+		if err := a.fight(ctx); err != nil {
+			return nil, err
+		}
+		if a.died {
+			return a.dead, nil
+		}
+		return next, nil
+	}
+}
+
+// waitThen reads the world for d, answering tells and fighting back, then
+// carries on to next.
+func (a *Adventurer) waitThen(d time.Duration, next stateFn) stateFn {
+	return func(ctx context.Context) (stateFn, error) {
+		end := time.Now().Add(d)
+		for time.Now().Before(end) {
+			if ctx.Err() != nil {
+				return nil, ctx.Err()
+			}
+			ch, err := a.c.ReadChunk(min(time.Until(end), a.cfg.Pace.Poll))
+			if err != nil {
+				return nil, err
+			}
+			a.notice(ch)
+			if a.died {
+				return a.dead, nil
+			}
+			if a.attacked {
+				return a.fightThen(next), nil
+			}
+			if err := a.flushTells(); err != nil {
+				return nil, err
+			}
+		}
+		return next, nil
+	}
+}
+
+// ---- procedures -------------------------------------------------------------
+
+// walk takes one step and returns the description of the room it reached.
+func (a *Adventurer) walk(ctx context.Context, s step) (string, error) {
+	if err := a.pause(ctx, a.cfg.Pace.Walk); err != nil {
+		return "", err
+	}
+	text, _, err := a.ask(s.dir, roomRe(s.room))
+	return text, err
+}
+
+// engage considers one kind of prey and fights it if it's a fair fight or
+// easier: "a real challenge" is for a group, and a bot hasn't got one.
+func (a *Adventurer) engage(ctx context.Context, p prey) error {
+	if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
+		return err
+	}
+	_, m, err := a.ask("consider "+p.keyword, considerOrGoneRe)
+	if err != nil {
+		return err
+	}
+	if m[1] == "" {
+		return nil // gone: it wandered, or somebody got it
+	}
+	target, _ := strconv.Atoi(m[1])
+	you, _ := strconv.Atoi(m[2])
+	if target > you+1 {
+		return nil
+	}
+	if !a.attacked {
+		if _, _, err := a.ask("kill "+p.keyword, killRe); err != nil {
+			return err
+		}
+	}
+	return a.fight(ctx)
+}
+
+// fight lasts until Pace.Quiet goes by without a blow. It flees below
+// fleeBelow -- ending up somewhere it didn't choose, which is errLost -- and
+// afterwards loots the newest corpse if anything it hunts died.
+func (a *Adventurer) fight(ctx context.Context) error {
+	killed := 0
+	last := time.Now()
+	for time.Since(last) < a.cfg.Pace.Quiet {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		ch, err := a.c.ReadChunk(a.cfg.Pace.Quiet - time.Since(last))
+		if err != nil {
+			return err
+		}
+		a.notice(ch)
+		if a.died {
+			a.attacked = false
+			return nil
+		}
+		if blows(ch.Text) {
+			last = time.Now()
+		}
+		for _, name := range deaths(ch.Text) {
+			if a.ground != nil && a.ground.isPrey(name) {
+				killed++
+			}
+		}
+		if strings.Contains(ch.Text, youFled) {
+			a.attacked = false
+			return fmt.Errorf("%w: fled", errLost)
+		}
+		if ch.MaxHealth > 0 && a.below(fleeBelow) {
+			if err := a.c.Send("flee"); err != nil {
+				return err
+			}
+		}
+	}
+	a.attacked = false
+	if killed == 0 {
+		return nil
+	}
+	a.count(func(st *Stats) { st.Kills += killed })
+	a.say(momentKill)
+	text, _, err := a.ask("get all from corpse", lootRe)
+	if err != nil {
+		return err
+	}
+	n := looted(text)
+	a.carrying += n
+	a.count(func(st *Stats) { st.Looted += n })
+	return nil
+}
+
+// rest waits for regen. Regen prints nothing, so it asks for its prompt with a
+// bare Enter, which repeats the newest one the server sent.
+func (a *Adventurer) rest(ctx context.Context) error {
+	a.log("resting at %d/%d", a.health, a.maxHealth)
+	a.say(momentRest)
+	for a.maxHealth > 0 && a.health*100 < restUntil*a.maxHealth {
+		if err := a.pause(ctx, [2]time.Duration{a.cfg.Pace.Poll, a.cfg.Pace.Poll}); err != nil {
+			return err
+		}
+		if _, _, err := a.ask("", anyRe); err != nil {
+			return err
+		}
+		if a.died {
+			return nil
+		}
+		if a.attacked {
+			if err := a.fight(ctx); err != nil {
+				return err
+			}
+			if a.died {
+				return nil
+			}
+		}
+	}
+	return nil
+}
+
+// say makes a remark now and then: on one moment in talkOneIn, never twice in
+// talkEvery, and only if this bot has phrases.
+func (a *Adventurer) say(m moment) {
+	lines := phrases[strings.ToLower(a.cfg.Name)][m]
+	if len(lines) == 0 || a.rng.IntN(talkOneIn) != 0 {
+		return
+	}
+	if !a.saidAt.IsZero() && a.now().Sub(a.saidAt) < talkEvery {
+		return
+	}
+	a.saidAt = a.now()
+	// a failure here shows up in whatever it does next
+	_, _, _ = a.ask("say "+lines[a.rng.IntN(len(lines))], saidRe)
+}
+
+// ---- talking to the server ---------------------------------------------------
+
+// ask answers any tells first, then exchanges line.
+func (a *Adventurer) ask(line string, re *regexp.Regexp) (string, []string, error) {
+	if err := a.flushTells(); err != nil {
+		return "", nil, err
+	}
+	return a.exchange(line, re)
+}
+
+func (a *Adventurer) flushTells() error {
+	for len(a.pendingTells) > 0 {
+		who := a.pendingTells[0]
+		a.pendingTells = a.pendingTells[1:]
+		if _, _, err := a.exchange("tell "+who+" "+botReply, tellAnswerRe); err != nil {
+			return err
+		}
+		a.count(func(st *Stats) { st.TellsAnswered++ })
+	}
+	return nil
+}
+
+// exchange sends line and reads chunks, noticing every one, until one matches
+// re; it returns that chunk's text and re's submatches. Dying on the way is
+// errDied; being told it's too busy fighting is errBusy; no match within
+// Pace.Answer is errLost.
+func (a *Adventurer) exchange(line string, re *regexp.Regexp) (string, []string, error) {
+	if err := a.c.Send(line); err != nil {
+		return "", nil, err
+	}
+	deadline := time.Now().Add(a.cfg.Pace.Answer)
+	for {
+		left := time.Until(deadline)
+		if left <= 0 {
+			return "", nil, fmt.Errorf("%w: no answer to %q", errLost, line)
+		}
+		ch, err := a.c.ReadChunk(left)
+		if err != nil {
+			return "", nil, err
+		}
+		if ch.MaxHealth == 0 {
+			continue // timed out; the loop's deadline decides
+		}
+		a.notice(ch)
+		if m := re.FindStringSubmatch(ch.Text); m != nil {
+			return ch.Text, m, nil
+		}
+		if a.died {
+			return ch.Text, nil, errDied
+		}
+		if strings.Contains(ch.Text, busyText) {
+			return ch.Text, nil, errBusy
+		}
+	}
+}
+
+// notice takes in a chunk: health, tells to answer, being attacked, dying.
+func (a *Adventurer) notice(ch Chunk) {
+	if ch.MaxHealth > 0 {
+		a.health, a.maxHealth = ch.Health, ch.MaxHealth
+	}
+	for _, who := range tellers(ch.Text) {
+		a.told(who)
+	}
+	if attacked(ch.Text) {
+		a.attacked = true
+	}
+	if strings.Contains(ch.Text, youDied) {
+		a.died = true
+	}
+}
+
+// told queues an honest answer: once per person per tellEvery, never to itself
+// or a sibling.
+func (a *Adventurer) told(who string) {
+	if strings.EqualFold(who, a.cfg.Name) || isSibling(who, a.cfg.Siblings) {
+		return
+	}
+	if last, ok := a.toldAt[who]; ok && a.now().Sub(last) < tellEvery {
+		return
+	}
+	a.toldAt[who] = a.now()
+	a.pendingTells = append(a.pendingTells, who)
+}
+
+// ---- small things -------------------------------------------------------------
+
+func (a *Adventurer) pickGround(power int) *ground {
+	for i := range grounds {
+		g := &grounds[i]
+		if power < g.minPower || power > g.maxPower {
+			continue
+		}
+		if until, ok := a.avoiding[g.name]; ok && a.now().Before(until) {
+			continue
+		}
+		return g
+	}
+	return nil
+}
+
+func (a *Adventurer) needsRest() bool { return a.below(restBelow) }
+
+// below: health under pct percent of max.
+func (a *Adventurer) below(pct int) bool {
+	return a.maxHealth > 0 && a.health*100 < pct*a.maxHealth
+}
+
+// pause waits a random while in span, or until ctx is done.
+func (a *Adventurer) pause(ctx context.Context, span [2]time.Duration) error {
+	d := span[0]
+	if span[1] > span[0] {
+		d += time.Duration(a.rng.Int64N(int64(span[1] - span[0])))
+	}
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-time.After(d):
+		return nil
+	}
+}
