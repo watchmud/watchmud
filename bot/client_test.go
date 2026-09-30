@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// server accepts one connection and hands it to the test.
-func server(t *testing.T) (string, <-chan net.Conn) {
+// listenOnce accepts one connection and hands it to the test.
+func listenOnce(t *testing.T) (string, <-chan net.Conn) {
 	t.Helper()
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)
@@ -32,7 +32,7 @@ func server(t *testing.T) (string, <-chan net.Conn) {
 
 func connect(t *testing.T) (*Client, net.Conn) {
 	t.Helper()
-	addr, conns := server(t)
+	addr, conns := listenOnce(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 	c, err := Dial(ctx, addr)
