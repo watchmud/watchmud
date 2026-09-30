@@ -98,3 +98,20 @@ func TestAdventurer_leavesAGroundToAPlayer(t *testing.T) {
 	time.Sleep(500 * time.Millisecond) // a few idle rounds in town
 	assert.Zero(t, a.Stats().Kills, "it never fought on a ground a player was using")
 }
+
+// Resting depends on this: regen prints nothing, so a bot reads its health
+// from the prompt a bare Enter repeats. Against the real server, not a fake.
+func TestBareEnterRepeatsThePrompt(t *testing.T) {
+	addr := startGame(t, 10*time.Millisecond)
+	createCharacter(t, addr, "Wren", "correcthorse")
+	c := loginAs(t, addr, "Wren", "correcthorse")
+	_, err := c.ReadChunk(time.Second) // the rest of the room, and its prompt
+	require.NoError(t, err)
+
+	for range 3 {
+		require.NoError(t, c.Send(""))
+		ch, err := c.ReadChunk(time.Second)
+		require.NoError(t, err)
+		assert.Equal(t, 100, ch.MaxHealth, "a prompt came back: %q", c.Transcript())
+	}
+}

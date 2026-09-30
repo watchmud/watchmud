@@ -23,6 +23,11 @@ const dialRetry = 250 * time.Millisecond
 // tailSize is how much of what arrived a failed Expect quotes.
 const tailSize = 2048
 
+// transcriptLimit is how much of the past a transcript keeps -- a smoke test
+// fits many times over -- and it is trimmed back to it on reaching twice
+// that. A bot is connected for days, and all a failure ever quotes is the end.
+const transcriptLimit = 64 << 10
+
 // Client is one connection to the game.
 type Client struct {
 	nc net.Conn
@@ -70,7 +75,7 @@ func (c *Client) read() {
 		text := bytes.ReplaceAll(strip.strip(buf[:n]), []byte("\r"), nil)
 		c.mu.Lock()
 		c.unread = append(c.unread, text...)
-		c.transcript.Write(text)
+		c.record(string(text))
 		if err != nil {
 			c.closed = true
 		}
@@ -93,9 +98,9 @@ func (c *Client) send(line, shown string) error {
 	c.mu.Lock()
 	// what was typed on a line of its own, even after a prompt
 	if s := c.transcript.String(); s != "" && !strings.HasSuffix(s, "\n") {
-		c.transcript.WriteString("\n")
+		c.record("\n")
 	}
-	c.transcript.WriteString("> " + shown + "\n")
+	c.record("> " + shown + "\n")
 	c.mu.Unlock()
 	if _, err := io.WriteString(c.nc, line+"\r\n"); err != nil {
 		return fmt.Errorf("sending %q: %w", shown, err)
@@ -196,7 +201,21 @@ func (c *Client) ReadChunk(timeout time.Duration) (Chunk, error) {
 	}
 }
 
-// Transcript is everything received, and every line sent marked "> ".
+// record adds to the transcript, trimming it to the newest transcriptLimit
+// bytes once it reaches twice that. Called with mu held.
+func (c *Client) record(s string) {
+	c.transcript.WriteString(s)
+	if c.transcript.Len() < 2*transcriptLimit {
+		return
+	}
+	kept := c.transcript.String()
+	kept = kept[len(kept)-transcriptLimit:]
+	c.transcript.Reset()
+	c.transcript.WriteString("...\n" + kept)
+}
+
+// Transcript is what was received, and every line sent marked "> ": all of
+// it for a short session, the newest transcriptLimit or so for a long one.
 func (c *Client) Transcript() string {
 	c.mu.Lock()
 	defer c.mu.Unlock()

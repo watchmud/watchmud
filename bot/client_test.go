@@ -193,3 +193,24 @@ func TestReadChunk_closedIsAnError(t *testing.T) {
 	_, err := c.ReadChunk(time.Second)
 	assert.Error(t, err)
 }
+
+// A bot is connected for days: its transcript keeps the recent past, which is
+// all a failure ever quotes, not everything since it logged in.
+func TestTranscript_keepsOnlyTheRecentPast(t *testing.T) {
+	c, nc := connect(t)
+	line := strings.Repeat("x", 99) + "\r\n"
+	go func() {
+		for range 5000 { // about 500KB
+			if _, err := io.WriteString(nc, line); err != nil {
+				return
+			}
+		}
+		_, _ = io.WriteString(nc, "the end\r\n")
+	}()
+	_, err := c.Expect(`the end`, 5*time.Second)
+	require.NoError(t, err)
+
+	tr := c.Transcript()
+	assert.LessOrEqual(t, len(tr), 2*transcriptLimit)
+	assert.True(t, strings.HasSuffix(tr, "the end\n"), "the newest is kept")
+}
