@@ -160,6 +160,14 @@ func Listen(ctx context.Context, opts Options, gs gameserver.Instance, cat *rule
 	return err
 }
 
+// Serve is plain telnet on a listener the caller opened, for a caller that
+// picks its own port -- bot's test listens on 127.0.0.1:0 and needs to know
+// where. It closes ln when ctx is done. The server itself starts with Listen.
+func Serve(ctx context.Context, ln net.Listener, gs gameserver.Instance, cat *rules.Catalog) error {
+	limit := &addressLimit{max: maxConnsPerAddress, open: make(map[string]int)}
+	return serve(ctx, listener{ln: ln, banner: plainBanner(0)}, gs, cat, limit)
+}
+
 // plainBanner greets a telnet connection, and points it at the TLS port when
 // there is one.
 func plainBanner(tlsPort int) string {

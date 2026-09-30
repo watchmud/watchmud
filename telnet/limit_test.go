@@ -65,3 +65,16 @@ func TestBanner(t *testing.T) {
 	assert.Equal(t, "Welcome to WatchMUD.\r\n", plainBanner(0))
 	assert.Equal(t, "Welcome to WatchMUD.\r\nFor an encrypted connection, use port 4443 with TLS.\r\n", plainBanner(4443))
 }
+
+// Serve is the plain port on a listener the caller opened -- a test's
+// 127.0.0.1:0 -- greeting the way Listen's does.
+func TestServe_onACallersListener(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+	go func() { _ = Serve(ctx, ln, &fakeServer{passwords: map[string]string{}}, nil) }()
+
+	_, greeting := dial(t, ln.Addr().String())
+	assert.Equal(t, "Welcome to WatchMUD.", greeting)
+}

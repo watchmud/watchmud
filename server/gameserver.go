@@ -39,11 +39,23 @@ func New(w *world.World, c *rules.Catalog, s player.Store) *GameServer {
 	}
 }
 
+// SetTickInterval is how often Run ticks; zero is rules.PulseInterval. Every
+// pulse job counts pulses rather than reading a clock, so a faster tick runs
+// the whole world faster and in the same order -- for tests that want a
+// fight to finish while they wait.
+func (gs *GameServer) SetTickInterval(d time.Duration) {
+	gs.tickInterval = d
+}
+
 // Run the game server, obviously.
 func (gs *GameServer) Run(ctx context.Context) error {
 	log.Info().Msg("starting game server Run loop")
 
-	ticker := time.NewTicker(rules.PulseInterval)
+	interval := gs.tickInterval
+	if interval == 0 {
+		interval = rules.PulseInterval
+	}
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	last := time.Now()

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"os"
 	"testing"
 	"time"
@@ -323,4 +324,21 @@ func TestName_reserved(t *testing.T) {
 		require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.CreatePlayer{Name: name, Password: "sekrit"})))
 		assert.Equal(t, []any{event.CreateFailed{Reason: event.NameReserved}}, c.sent, "create %q", name)
 	}
+}
+
+// Pulse work is counted in pulses, not seconds, so a faster ticker speeds the
+// whole world up together -- which is how bot's test fights a goose in well
+// under a second. Regen is every 5 pulses; at 1ms a tick, 200ms is 200 pulses.
+func TestRun_tickIntervalSetsThePace(t *testing.T) {
+	gs, _ := newTestGameServer(t)
+	c := &testConn{}
+	create(t, gs, c, "newbie", "sekrit")
+	c.Player().TakeMeleeDamage(30)
+
+	gs.SetTickInterval(time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	_ = gs.Run(ctx) // returns when ctx expires; the world is ours again after
+
+	assert.Greater(t, c.Player().CurrentHealth(), 70)
 }
