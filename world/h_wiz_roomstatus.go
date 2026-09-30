@@ -68,7 +68,7 @@ func createMobInfo(room *spaces.Room) (result []event.RoomStatusMob) {
 				ZoneId:            m.Definition.ZoneId,
 				CurrentHealth:     m.CurHealth,
 				MaxHealth:         m.Definition.MaxHealth,
-				Flags:             m.Definition.GetFlags(),
+				Flags:             m.Definition.Flags(),
 			})
 	}
 	return

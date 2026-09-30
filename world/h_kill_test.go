@@ -7,7 +7,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
-	"github.com/watchmud/watchmud/mobile"
+	"github.com/watchmud/watchmud/rules"
 	"github.com/watchmud/watchmud/spaces"
 )
 
@@ -66,7 +66,7 @@ func (s *handleKillSuite) TestNoTarget() {
 
 func (s *handleKillSuite) TestNoFight() {
 	mob, _ := s.w.StartRoom.FindMobile("target")
-	mob.Definition.SetFlag(mobile.PlayerCantFight)
+	mob.Definition.SetFlag(rules.MobileFlagPlayerCantFight)
 
 	s.kill("target")
 

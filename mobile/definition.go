@@ -1,6 +1,7 @@
 package mobile
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/watchmud/watchmud/combat"
@@ -18,7 +19,7 @@ type Definition struct {
 	ZoneId            string
 	Wandering         rules.WanderDefinition
 	MaxHealth         int
-	flags             map[Flag]bool
+	flags             map[rules.MobileFlag]bool
 	AC                int
 	// Damage is what this mob hits with. The loader always sets it, bare
 	// hands when the file says nothing.
@@ -53,12 +54,12 @@ func NewDefinition(definitionId string,
 		DescriptionInRoom: descriptionInRoom,
 		Wandering:         wandering,
 		ZoneId:            zoneId,
-		flags:             make(map[Flag]bool),
+		flags:             make(map[rules.MobileFlag]bool),
 		MaxHealth:         maxHealth,
 		AC:                AC,
 	}
 	if aggressive {
-		d.SetFlag(Aggressive)
+		d.SetFlag(rules.MobileFlagAggressive)
 	}
 	return d
 }
@@ -72,30 +73,18 @@ func (d *Definition) HasAlias(target string) bool {
 	return false
 }
 
-func (d *Definition) SetFlags(flags []Flag) {
-	if flags != nil {
-		for _, s := range flags {
-			d.SetFlag(s)
-		}
+func (d *Definition) SetFlags(flags []rules.MobileFlag) {
+	for _, s := range flags {
+		d.SetFlag(s)
 	}
 }
 
-func (d *Definition) SetFlag(flag Flag) {
+func (d *Definition) SetFlag(flag rules.MobileFlag) {
 	d.flags[flag] = true
 }
 
-func (d *Definition) HasFlag(flag Flag) bool {
+func (d *Definition) HasFlag(flag rules.MobileFlag) bool {
 	return d.flags[flag]
-}
-
-func (d *Definition) GetFlags() []string {
-	var result []string
-	for k, v := range d.flags {
-		if v {
-			result = append(result, string(k))
-		}
-	}
-	return result
 }
 
 func (d *Definition) ArmorClass() int {
@@ -119,4 +108,15 @@ func (d *Definition) Matches(target string) bool {
 		return true
 	}
 	return false
+}
+
+func (d *Definition) Flags() []rules.MobileFlag {
+	var flags []rules.MobileFlag
+	for name, f := range d.flags {
+		if f {
+			flags = append(flags, name)
+		}
+	}
+	slices.Sort(flags)
+	return flags
 }

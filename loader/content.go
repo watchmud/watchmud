@@ -310,8 +310,8 @@ func (c *Content) loadMobileDefinitions(fsys fs.FS) error {
 				ac,
 				mob.Aggressive,
 			)
-			flags := mobile.ConvertFlags(mob.Flags)
-			defn.SetFlags(flags)
+
+			defn.SetFlags(mob.Flags)
 			defn.Damage = damage
 			defn.Power = power
 			defn.Loot = loot

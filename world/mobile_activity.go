@@ -26,7 +26,8 @@ func (w *World) DoMobileActivity() {
 			// actions where the mob is in a fight somewhere
 		} else {
 			// actions where the mob is NOT in a fight.
-			if mob.Flag(mobile.Aggressive) {
+
+			if mob.Definition.HasFlag(rules.MobileFlagAggressive) {
 				w.doMobAggro(mob)
 			} else if mob.CanWander() {
 				w.doMobWander(mob)

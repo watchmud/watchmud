@@ -44,10 +44,6 @@ func (mob *Instance) Name() string {
 	return mob.Definition.Name
 }
 
-func (mob *Instance) Flag(f Flag) bool {
-	return mob.Definition.HasFlag(f)
-}
-
 func (mob *Instance) CanWander() bool {
 	return mob.canWander(time.Now())
 }
@@ -70,7 +66,7 @@ func (mob *Instance) checkWanderChance(r *rand.Rand) bool {
 	return chance < mob.Definition.Wandering.CheckPercentage
 }
 
-// Determine where we are on the wandering path given the current room id.
+// GetIndexOnPath determines where we are on the wandering path given the current room id.
 // returns error if we're not wandering on a path
 func (mob *Instance) GetIndexOnPath(currentRoom string) (int, error) {
 	if len(mob.Definition.Wandering.Path) == 0 {

@@ -36,10 +36,9 @@ func (suite *DefinitionSuite) TestFlags() {
 }
 
 func (suite *DefinitionSuite) TestSetFlags() {
-	suite.definition.SetFlags([]Flag{"Aggressive", "PlayerCantFight"})
+	suite.definition.SetFlags([]rules.MobileFlag{rules.MobileFlagPlayerCantFight, rules.MobileFlagAggressive})
 	suite.definition.SetFlags(nil)
-	suite.definition.SetFlags([]Flag{})
+	suite.definition.SetFlags([]rules.MobileFlag{})
 
-	suite.Assert().True(suite.definition.HasFlag("Aggressive"))
-
+	suite.Assert().True(suite.definition.HasFlag(rules.MobileFlagAggressive))
 }

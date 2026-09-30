@@ -70,7 +70,7 @@ func (s *scriptsSuite) TestKillFiresTheOpener() {
 
 // Aggro starts a fight too, and gets the same opener.
 func (s *scriptsSuite) TestAggroFiresTheOpener() {
-	s.heckler.Definition.SetFlag(mobile.Aggressive)
+	s.heckler.Definition.SetFlag(rules.MobileFlagAggressive)
 
 	s.w.DoMobileActivity()
 

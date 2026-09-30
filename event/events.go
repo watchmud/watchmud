@@ -348,7 +348,7 @@ type RoomStatusMob struct {
 	ShortDescription  string
 	DescriptionInRoom string
 	Aliases           []string
-	Flags             []string
+	Flags             []rules.MobileFlag
 	CurrentHealth     int
 	MaxHealth         int
 }

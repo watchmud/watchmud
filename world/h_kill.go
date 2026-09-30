@@ -5,7 +5,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
-	"github.com/watchmud/watchmud/mobile"
+	"github.com/watchmud/watchmud/rules"
 	"github.com/watchmud/watchmud/spaces"
 )
 
@@ -35,7 +35,7 @@ func (w *World) handleKill(msg *gameserver.HandlerParameter, cmd command.Kill) {
 	}
 
 	//	are they something you are allowed to fight (no_fight, other flags... objects...)
-	if mobileInstance.Definition.HasFlag(mobile.PlayerCantFight) {
+	if mobileInstance.Definition.HasFlag(rules.MobileFlagPlayerCantFight) {
 		msg.Fail(event.NoFight)
 		return
 	}

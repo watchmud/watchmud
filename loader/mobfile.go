@@ -4,14 +4,14 @@ import "github.com/watchmud/watchmud/rules"
 
 // mob file might not exist, they are optional
 type mobEntry struct {
-	Id                  string         `json:"id"`
-	Name                string         `json:"name"`
-	Aliases             []string       `json:"aliases"`
-	ShortDescription    string         `json:"short_description"`
-	DescriptionInRoom   string         `json:"description_in_room"`
-	WanderingDefinition WanderingEntry `json:"wandering_definition"`
-	Flags               []string       `json:"flags"`
-	MaxHealth           int            `json:"max_health"`
+	Id                  string             `json:"id"`
+	Name                string             `json:"name"`
+	Aliases             []string           `json:"aliases"`
+	ShortDescription    string             `json:"short_description"`
+	DescriptionInRoom   string             `json:"description_in_room"`
+	WanderingDefinition WanderingEntry     `json:"wandering_definition"`
+	Flags               []rules.MobileFlag `json:"flags"`
+	MaxHealth           int                `json:"max_health"`
 
 	// AC is the mob's armor class on the same absolute scale a player's is
 	// on: rules.BaseArmorClass is unarmored, higher is harder to hit, and
