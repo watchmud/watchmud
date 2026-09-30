@@ -82,3 +82,23 @@ rm -f "$previous_env"
 $compose up -d --remove-orphans
 $compose ps
 echo "deploy: $version is running"
+
+# The smoke test: the bot, from this version's image, logs in as a character
+# made by hand once (README, "Smoke test") and walks, fights and loots. A
+# failure leaves the new version running -- rolling back disconnects everyone
+# again, and that is a person's call.
+bot_password=$(sed -n 's/^WATCHMUD_BOT_PASSWORD=//p' "$env_file")
+bot_name=$(sed -n 's/^WATCHMUD_BOT_NAME=//p' "$env_file")
+if [ -z "$bot_password" ]; then
+  echo "deploy: no WATCHMUD_BOT_PASSWORD in $env_file; not smoke testing (deploy/README.md, Smoke test)" >&2
+  exit 0
+fi
+# the password reaches docker through the environment, not the command line
+if ! WATCHMUD_BOT_PASSWORD="$bot_password" $compose run --rm --no-deps \
+    -e WATCHMUD_BOT_PASSWORD --entrypoint /app/watchmud-bot \
+    watchmud -addr watchmud:4000 -name "${bot_name:-Tester}"; then
+  echo "deploy: $version is running but the smoke test FAILED (above)." >&2
+  echo "deploy: to roll back: deploy/deploy.sh ${running:-<the previous version>}" >&2
+  exit 1
+fi
+echo "deploy: smoke test passed"

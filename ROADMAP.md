@@ -152,6 +152,11 @@ that logs in and walks, kills, loots and talks. The same harness is a load test,
 test for every deploy (the one used by hand on 2026-09-24 walked Wrathrock to the
 throne room and looted a goose), and a way to make an empty world feel inhabited.
 
+- ~~**The smoke test.**~~ Done 2026-09-30: `bot/` (a telnet client and one scenario) and
+  `cmd/watchmud-bot`, run by `deploy.sh` after every restart and by `go test` against
+  the real content in-process. Load testing and inhabitants are still open; both build
+  on `bot.Client`.
+
 The Context section below describes the tree as it was in September 2026, before any of
 this landed. It is kept for its reasoning, not as a description of the present.
 

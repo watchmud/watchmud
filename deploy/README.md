@@ -120,7 +120,7 @@ It fetches the tag, checks the checkout has no local edits, moves the checkout t
 tag (so compose.yaml and the scripts are that release's), records the version in
 `.env`, and pulls the image -- all before anything stops. If any of that fails, it puts
 the checkout and `.env` back and the running version carries on. Then it asks, and
-restarts.
+restarts. It ends with the smoke test (below, "Smoke test").
 
 **Restarting disconnects everyone.** The game gets SIGTERM, saves everyone who is
 logged in, and exits; compose waits up to 30s (`stop_grace_period`) before it would
@@ -133,6 +133,31 @@ Old images pile up on a small disk: `docker image prune` now and then.
 
 **Never `--build` on the droplet.** `deploy/compose.build.yaml` is for trying the stack
 on your own machine.
+
+## Smoke test
+
+After every restart `deploy.sh` runs `watchmud-bot` from the image it just deployed.
+The bot logs in, recalls to Temple Square, walks south to the millpond, fights the
+geese, loots a corpse, drops the feather and quits. It prints a line per step. A
+failure prints everything it saw and exits non-zero, **and leaves the new version
+running**: rolling back is `deploy/deploy.sh <previous version>`, by hand, because it
+disconnects everyone a second time.
+
+"no goose at the millpond" is a pass: a player got there first.
+
+It needs a character, made once by hand -- the bot never creates one, since names are
+permanent:
+
+1. `telnet watchmud.com 4000`, make a character (`Tester`, or anything else), `quit`.
+2. In `deploy/.env`:
+
+   ```
+   WATCHMUD_BOT_PASSWORD=<its password>
+   WATCHMUD_BOT_NAME=Tester        # only if it isn't Tester
+   ```
+
+Without `WATCHMUD_BOT_PASSWORD` the deploy skips the smoke test and says so. From a
+laptop, against any server: `WATCHMUD_BOT_PASSWORD=... bin/watchmud-bot -addr host:4000`.
 
 ## Logs
 

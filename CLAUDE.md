@@ -23,7 +23,7 @@ anything.
 ## Commands
 
 ```
-make build            # -> bin/watchmud
+make build            # -> bin/watchmud, bin/watchmud-bot
 make test             # go test ./...
 make run              # build + run with the default ./app.local.yaml
 make fmt-check        # gofmt -l .  (really does fail now)
@@ -31,6 +31,7 @@ make vet              # green since Phase 5
 make generate         # regenerate *_string.go after editing a stringer enum
 make db-up            # start the local mongo (docker compose, host port 27018)
 make test-db          # the mongostore tests that need a real mongo
+go test ./bot         # the smoke bot, including the real world in-process
 make docker-build     # build the deploy image (deploy/README.md for the rest)
 go test ./world -run TestLook_successful          # single test
 go test ./player -run TestPlayerTestSuite/TestX   # testify suite: Suite/Method
@@ -220,6 +221,23 @@ means "you don't see that here" to `get` and "you aren't carrying that" to `drop
 
 Renderers emit plain `\n`; `conn.write` does the single CRLF translation. Keep it that way --
 expected strings in tests stay readable, and it is impossible to forget.
+
+### bot/
+
+**The bot is a player, not a peer.** `bot.Client` is plain TCP: `Send` a line,
+`Expect` a regexp against what arrived since the last match. It imports nothing of the
+server -- no `event/`, no `telnet/` -- so it reads the text a player reads, and a
+rendering change that breaks it is one a player would have noticed too. Fix the bot's
+pattern, never the renderer to suit the bot.
+
+`bot.Smoke` is the one scenario: recall, the walk to the millpond, the geese, `get all
+from corpse`, `drop all.feather` (never `drop all` -- the character keeps its starting
+kit), `quit`. It never answers the creation question, because names are permanent.
+`cmd/watchmud-bot` runs it, and `deploy.sh` runs that after every restart (deploy/README.md,
+"Smoke test"). `bot/smoke_test.go` runs it against the real `content/` in-process, at
+`GameServer.SetTickInterval(10ms)`, so a content change that breaks the walk fails `make
+check`. If you move the geese or rename a room on the route, update `route` in
+`bot/smoke.go`.
 
 ### Content loading (loader -> world)
 
