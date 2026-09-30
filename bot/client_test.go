@@ -158,3 +158,38 @@ func TestDial_givesUpWhenTheContextDoes(t *testing.T) {
 	require.Error(t, err)
 	assert.True(t, strings.Contains(err.Error(), addr))
 }
+
+// A chunk is everything up to a prompt, and the prompt is where the health is.
+func TestReadChunk_splitsOnPrompts(t *testing.T) {
+	c, nc := connect(t)
+	_, _ = io.WriteString(nc, "The Millpond\r\n A pond.\r\n<97/100hp> angry goose hits you for 2 damage.\r\n<95/100hp> ")
+
+	ch, err := c.ReadChunk(time.Second)
+	require.NoError(t, err)
+	assert.Equal(t, Chunk{Text: "The Millpond\n A pond.\n", Health: 97, MaxHealth: 100}, ch)
+
+	ch, err = c.ReadChunk(time.Second)
+	require.NoError(t, err)
+	assert.Equal(t, Chunk{Text: "angry goose hits you for 2 damage.\n", Health: 95, MaxHealth: 100}, ch)
+}
+
+// Nothing happening is not a failure: a resting bot waits on a quiet world.
+func TestReadChunk_quietIsNotAnError(t *testing.T) {
+	c, nc := connect(t)
+	_, _ = io.WriteString(nc, "half a line with no prompt")
+	ch, err := c.ReadChunk(50 * time.Millisecond)
+	require.NoError(t, err)
+	assert.Equal(t, Chunk{}, ch)
+
+	_, _ = io.WriteString(nc, "\r\n<100/100hp> ")
+	ch, err = c.ReadChunk(time.Second)
+	require.NoError(t, err)
+	assert.Equal(t, "half a line with no prompt\n", ch.Text, "the partial text waited for its prompt")
+}
+
+func TestReadChunk_closedIsAnError(t *testing.T) {
+	c, nc := connect(t)
+	require.NoError(t, nc.Close())
+	_, err := c.ReadChunk(time.Second)
+	assert.Error(t, err)
+}

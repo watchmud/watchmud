@@ -11,6 +11,7 @@ import (
 	"io"
 	"net"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -41,9 +42,7 @@ func Dial(ctx context.Context, addr string) (*Client, error) {
 	for {
 		nc, err := d.DialContext(ctx, "tcp", addr)
 		if err == nil {
-			c := &Client{nc: nc, changed: make(chan struct{})}
-			go c.read()
-			return c, nil
+			return newClient(nc), nil
 		}
 		select {
 		case <-ctx.Done():
@@ -51,6 +50,14 @@ func Dial(ctx context.Context, addr string) (*Client, error) {
 		case <-time.After(dialRetry):
 		}
 	}
+}
+
+// newClient starts reading nc. Dial is the usual way in; tests hand it one
+// end of a net.Pipe.
+func newClient(nc net.Conn) *Client {
+	c := &Client{nc: nc, changed: make(chan struct{})}
+	go c.read()
+	return c
 }
 
 // read is the only reader of the socket. Telnet commands are dropped, and so
@@ -144,6 +151,47 @@ func (c *Client) ExpectClosed(timeout time.Duration) error {
 		case <-changed:
 		case <-deadline.C:
 			return fmt.Errorf("still connected after %s; last received:\n%s", timeout, c.tail())
+		}
+	}
+}
+
+// Chunk is what the server said up to a prompt: a room, a round of a fight, a
+// tell. Every burst of output ends in a prompt, so a chunk is the bot's unit
+// of perception, and the prompt is where it reads its health.
+type Chunk struct {
+	Text      string
+	Health    int
+	MaxHealth int // zero: no prompt arrived before the timeout
+}
+
+var promptRe = regexp.MustCompile(`<(\d+)/(\d+)hp> `)
+
+// ReadChunk consumes through the next prompt and returns what came before it.
+// With no prompt within timeout it returns an empty Chunk and leaves anything
+// partial for the next call: a quiet world isn't an error. A closed
+// connection is.
+func (c *Client) ReadChunk(timeout time.Duration) (Chunk, error) {
+	deadline := time.NewTimer(timeout)
+	defer deadline.Stop()
+	for {
+		c.mu.Lock()
+		if loc := promptRe.FindSubmatchIndex(c.unread); loc != nil {
+			ch := Chunk{Text: string(c.unread[:loc[0]])}
+			ch.Health, _ = strconv.Atoi(string(c.unread[loc[2]:loc[3]]))
+			ch.MaxHealth, _ = strconv.Atoi(string(c.unread[loc[4]:loc[5]]))
+			c.unread = c.unread[loc[1]:]
+			c.mu.Unlock()
+			return ch, nil
+		}
+		closed, changed := c.closed, c.changed
+		c.mu.Unlock()
+		if closed {
+			return Chunk{}, fmt.Errorf("connection closed; last received:\n%s", c.tail())
+		}
+		select {
+		case <-changed:
+		case <-deadline.C:
+			return Chunk{}, nil
 		}
 	}
 }
