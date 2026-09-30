@@ -18,6 +18,7 @@ build:
 test:
 	$(GO) test  ./...
 	$(GO) test -race ./writebehind
+	$(GO) test -race ./bot
 
 ## vet: run static analysis
 .PHONY: vet
