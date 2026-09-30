@@ -7,11 +7,12 @@ TEST_MONGO_URI ?= mongodb://localhost:27018
 
 .DEFAULT_GOAL := build
 
-## build: compile server into bin/watchmud
+## build: compile the server into bin/watchmud, and the smoke bot into bin/watchmud-bot
 .PHONY: build
 build:
 	@mkdir -p $(BIN_DIR)
 	$(GO) build -o $(BIN_DIR)/$(BINARY) ./cmd/watchmud
+	$(GO) build -o $(BIN_DIR)/watchmud-bot ./cmd/watchmud-bot
 
 ## test: run all tests
 .PHONY: test
