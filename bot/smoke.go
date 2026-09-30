@@ -54,7 +54,7 @@ var route = []struct{ dir, room string }{
 
 // Smoke is the deploy check: log in as cfg.Name, recall to Temple Square,
 // walk to the millpond, fight whatever geese are there, loot the newest
-// corpse, drop what it looted, and quit. Every pattern is text the game
+// corpse, drop what it looted, and recall again before it quits. Every pattern is text the game
 // prints, so a change to the rendering or to the route is what it catches.
 // It writes one line per step to log, with how long the step took.
 func Smoke(c *Client, cfg Config, log io.Writer) (Result, error) {
@@ -69,13 +69,7 @@ func Smoke(c *Client, cfg Config, log io.Writer) (Result, error) {
 			return err
 		}},
 		{"login", func() error { return login(c, cfg) }},
-		{"recall", func() error {
-			if err := c.Send("recall"); err != nil {
-				return err
-			}
-			_, err := room(c, "Temple Square")
-			return err
-		}},
+		{"recall", func() error { return recall(c) }},
 		{"walk", func() (err error) {
 			geese, err = walk(c)
 			return err
@@ -93,7 +87,14 @@ func Smoke(c *Client, cfg Config, log io.Writer) (Result, error) {
 			}
 			return loot(c)
 		}},
+		// quit from Temple Square, not the millpond: the character logs back in
+		// where it quit, and next deploy the geese will have respawned and be
+		// waiting -- a fight started before its first recall, which a fight
+		// refuses, is a good deploy failing at random
 		{"quit", func() error {
+			if err := recall(c); err != nil {
+				return err
+			}
 			if err := c.Send("quit"); err != nil {
 				return err
 			}
@@ -146,6 +147,15 @@ func login(c *Client, cfg Config) error {
 	default:
 		return fmt.Errorf("%s is already playing", cfg.Name)
 	}
+}
+
+// recall goes back to Temple Square.
+func recall(c *Client) error {
+	if err := c.Send("recall"); err != nil {
+		return err
+	}
+	_, err := room(c, "Temple Square")
+	return err
 }
 
 // room waits for the description of the named room and returns what follows

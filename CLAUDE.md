@@ -232,7 +232,9 @@ pattern, never the renderer to suit the bot.
 
 `bot.Smoke` is the one scenario: recall, the walk to the millpond, the geese, `get all
 from corpse`, `drop all.feather` (never `drop all` -- the character keeps its starting
-kit), `quit`. It never answers the creation question, because names are permanent.
+kit), then `recall` again before `quit` -- it logs back in where it quit, and the geese
+will have respawned by the next deploy. It never answers the creation question, because
+names are permanent.
 `cmd/watchmud-bot` runs it, and `deploy.sh` runs that after every restart (deploy/README.md,
 "Smoke test"). `bot/smoke_test.go` runs it against the real `content/` in-process, at
 `GameServer.SetTickInterval(10ms)`, so a content change that breaks the walk fails `make

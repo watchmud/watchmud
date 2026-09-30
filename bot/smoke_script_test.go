@@ -104,6 +104,7 @@ func TestSmoke_passes(t *testing.T) {
 			"\r\nAn angry goose bites you.\r\nangry goose is dead!\r\n<97/100hp> "},
 		exchange{"get all from corpse", "You get a long goose feather from the corpse of angry goose.\r\n<97/100hp> "},
 		exchange{"drop all.feather", "Dropped.\r\n<97/100hp> "},
+		exchange{"recall", fakeRoom("Temple Square")},
 		exchange{"quit", ""},
 	)...)
 
@@ -119,6 +120,7 @@ func TestSmoke_passes(t *testing.T) {
 func TestSmoke_noGooseIsANote(t *testing.T) {
 	c := fakeGame(t, greeting, script(
 		exchange{"west", fakeRoom("The Millpond", "The corpse of angry goose is lying here.")},
+		exchange{"recall", fakeRoom("Temple Square")},
 		exchange{"quit", ""},
 	)...)
 
