@@ -140,9 +140,8 @@ After every restart `deploy.sh` runs `watchmud-bot` from the image it just deplo
 The bot logs in, recalls to Temple Square, walks south to the millpond, fights the
 geese, loots a corpse, drops the feather, and recalls before it quits -- so next time
 it logs in to Temple Square, not beside geese that have respawned. It prints a line
-per step. A
-failure prints everything it saw and exits non-zero, **and leaves the new version
-running**: rolling back is `deploy/deploy.sh <previous version>`, by hand, because it
+per step. A failure prints everything it saw and exits non-zero, **and leaves the new
+version running**: rolling back is `deploy/deploy.sh <previous version>`, by hand, because it
 disconnects everyone a second time.
 
 "no goose at the millpond" is a pass: a player got there first.
