@@ -12,10 +12,9 @@ import (
 
 type ListSuite struct {
 	suite.Suite
-	list    *List
-	defn    *Definition
-	inst    *Instance
-	instTwo *Instance
+	list   *List
+	first  *Instance
+	second *Instance
 }
 
 func TestListSuite(t *testing.T) {
@@ -24,42 +23,26 @@ func TestListSuite(t *testing.T) {
 
 func (s *ListSuite) SetupTest() {
 	s.list = NewList()
-	s.defn = NewDefinition(
-		"id",
-		"name",
-		"zoneid",
-		rules.ObjectCategoryOther,
-		[]string{},
-		"short desc",
-		"on ground",
-		rules.SlotNone,
-		"plate", // TODO!
-	)
-	s.inst = NewInstance(uuid.New(), s.defn)
-	s.instTwo = NewInstance(uuid.New(), s.defn)
 
-	s.Require().NoError(s.list.Add(s.inst))
-	s.Require().NoError(s.list.Add(s.instTwo))
+	s.first = s.instance("knife")
+	s.second = s.instance("knife")
+
+	s.Require().NoError(s.list.Add(s.first))
+	s.Require().NoError(s.list.Add(s.second))
 }
 
 func (s *ListSuite) instance(id string) *Instance {
-	defn := NewDefinition(
+	d := NewTestDefinition(s.T(),
 		id,
-		id,
-		"zoneid",
-		rules.ObjectCategoryOther,
-		[]string{},
-		"short desc",
-		"on ground",
 		rules.SlotNone,
-		"plate",
+		rules.ObjectCategoryOther,
+		rules.ArmorTypeNone,
 	)
-	return NewInstance(uuid.New(), defn)
+	return NewInstance(uuid.New(), d)
 }
 
 func (s *ListSuite) TestRoomInventory_Remove() {
-
-	s.Assert().NoError(s.list.Remove(s.inst))
+	s.Assert().NoError(s.list.Remove(s.first))
 
 	s.Assert().Equal(1, s.list.Len())
 }
@@ -67,12 +50,12 @@ func (s *ListSuite) TestRoomInventory_Remove() {
 // The same guarantee RoomMobs makes: taking something off the floor doesn't
 // disturb the order of what's left, or of what lands there afterwards.
 func (s *ListSuite) TestRoomInventory_RemoveKeepsOrder() {
-	instThree := NewInstance(uuid.New(), s.defn)
+	third := s.instance("knife")
 
-	s.Require().NoError(s.list.Remove(s.inst))
-	s.Require().NoError(s.list.Add(instThree))
+	s.Require().NoError(s.list.Remove(s.first))
+	s.Require().NoError(s.list.Add(third))
 
-	s.Assert().Equal([]*Instance{s.instTwo, instThree}, slices.Collect(s.list.All()))
+	s.Assert().Equal([]*Instance{s.second, third}, slices.Collect(s.list.All()))
 }
 
 func (s *ListSuite) TestMove() {

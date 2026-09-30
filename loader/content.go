@@ -8,7 +8,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/watchmud/watchmud/behavior"
 	"github.com/watchmud/watchmud/mobile"
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/rules"
@@ -238,17 +237,10 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 				obj.DescriptionOnGround,
 				obj.EquipmentSlot,
 				obj.ArmorType,
+				obj.Behaviors,
 			)
 
-			for _, bstr := range obj.Behaviors {
-				b, err := behavior.StringToBehavior(bstr)
-				if err != nil {
-					return fmt.Errorf("object %s/%s: bad behavior %q: %w", zonename, obj.Id, bstr, err)
-				}
-				d.Behaviors.Add(b)
-			}
-
-			// A role id that isn't in the catalog is a typo in content, and
+			// A role id not in the catalog is a typo in content, and
 			// silently ignoring it would leave a builder wondering why their
 			// tank gear doesn't make anyone a tank.
 			for roleId := range obj.Roles {

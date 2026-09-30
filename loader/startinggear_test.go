@@ -32,14 +32,13 @@ func contentWithGear(t *testing.T, gear rules.StartingGear) *Content {
 	cat, err := rules.NewTestCatalog()
 	require.NoError(t, err)
 	cat.StartingGear = gear
-
 	zone := spaces.NewZone("wrathrock", "Wrathrock", zonereset.NEVER, 0)
 	zone.AddObjectDefinition(object.NewDefinition("knife", "knife", "wrathrock",
-		rules.ObjectCategoryWeapon, nil, "knife", "A knife is here.", rules.SlotWield, rules.ArmorTypeNone))
+		rules.ObjectCategoryWeapon, nil, "knife", "A knife is here.", rules.SlotWield, rules.ArmorTypeNone, rules.EmptyObjectBehaviors))
 	zone.AddObjectDefinition(object.NewDefinition("dagger", "dagger", "wrathrock",
-		rules.ObjectCategoryWeapon, nil, "dagger", "A dagger is here.", rules.SlotWield, rules.ArmorTypeNone))
+		rules.ObjectCategoryWeapon, nil, "dagger", "A dagger is here.", rules.SlotWield, rules.ArmorTypeNone, rules.EmptyObjectBehaviors))
 	zone.AddObjectDefinition(object.NewDefinition("fountain", "fountain", "wrathrock",
-		rules.ObjectCategoryOther, nil, "fountain", "A fountain bubbles.", rules.SlotNone, rules.ArmorTypeNone))
+		rules.ObjectCategoryOther, nil, "fountain", "A fountain bubbles.", rules.SlotNone, rules.ArmorTypeNone, rules.EmptyObjectBehaviors))
 
 	return NewContent(&Settings{}, cat, []*spaces.Zone{zone})
 }

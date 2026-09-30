@@ -337,7 +337,7 @@ type RoomStatusItem struct {
 	DescriptionOnGround string
 	Aliases             []string
 	Category            rules.ObjectCategory
-	Behaviors           []string
+	Behaviors           []rules.ObjectBehavior
 }
 
 type RoomStatusMob struct {

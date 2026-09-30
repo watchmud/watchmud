@@ -2,9 +2,6 @@ package rules
 
 import (
 	"errors"
-	"fmt"
-	"slices"
-	"strings"
 )
 
 type ObjectCategory string
@@ -23,31 +20,26 @@ const (
 
 var ErrUnknownObjectCategory = errors.New("unknown object category")
 
-var objectCategories = []ObjectCategory{
-	ObjectCategoryNone,
-	ObjectCategoryWeapon,
-	ObjectCategoryWand,
-	ObjectCategoryStaff,
-	ObjectCategoryTreasure,
-	ObjectCategoryArmor,
-	ObjectCategoryFood,
-	ObjectCategoryOther,
-	ObjectCategoryCorpse,
+var objectCategories = enum[ObjectCategory]{
+	"object categories",
+	ErrUnknownObjectCategory,
+	[]ObjectCategory{
+		ObjectCategoryNone,
+		ObjectCategoryWeapon,
+		ObjectCategoryWand,
+		ObjectCategoryStaff,
+		ObjectCategoryTreasure,
+		ObjectCategoryArmor,
+		ObjectCategoryFood,
+		ObjectCategoryOther,
+		ObjectCategoryCorpse,
+	},
 }
 
 func (c *ObjectCategory) UnmarshalText(b []byte) error {
-	s, err := ParseObjectCategory(string(b))
-	if err != nil {
-		return err
-	}
-	*c = s
-	return nil
+	return objectCategories.unmarshal(c, b)
 }
 
 func ParseObjectCategory(s string) (ObjectCategory, error) {
-	c := ObjectCategory(strings.ToLower(s))
-	if !slices.Contains(objectCategories, c) {
-		return ObjectCategoryNone, fmt.Errorf("%w: %q", ErrUnknownObjectCategory, s)
-	}
-	return c, nil
+	return objectCategories.parse(s)
 }

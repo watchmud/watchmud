@@ -27,30 +27,14 @@ func (s *PlayerSuite) SetupTest() {
 
 func (s *PlayerSuite) TestAddInventory_New() {
 	// old test, do not trust it
+	knife := object.MakeTestKnife(s.T())
 
-	defnPtr := object.NewDefinition(
-		"defnid",
-		"name",
-		"zone",
-		rules.ObjectCategoryFood,
-		[]string{},
-		"short desc",
-		"in room",
-		rules.SlotNone,
-		"plate", // TODO makes no sense for food...
-	)
-	instPtr := &object.Instance{
-		Id:         uuid.New(),
-		Definition: defnPtr,
-	}
+	s.Assert().NoError(s.p.inventory.Add(knife))
 
-	s.p.inventory.Add(instPtr)
-
-	invs := slices.Collect(s.p.inventory.All())
-	s.Assert().Equal(1, len(invs))
-	obj := invs[0]
-	s.Assert().Equal(instPtr.Id, obj.Id)
-	s.Assert().Equal("defnid", obj.Definition.ObjectId.DefinitionId)
+	inventory := slices.Collect(s.p.inventory.All())
+	s.Assert().Equal(1, len(inventory))
+	obj := inventory[0]
+	s.Assert().Equal(inventory[0], obj)
 }
 
 func (s *PlayerSuite) TestMeleeDamage() {

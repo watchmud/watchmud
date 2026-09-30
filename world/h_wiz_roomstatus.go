@@ -49,7 +49,7 @@ func createInventoryInfo(room *spaces.Room) (result []event.RoomStatusItem) {
 				ShortDescription:    i.Definition.ShortDescription,
 				DescriptionOnGround: i.Definition.DescriptionOnGround,
 				ZoneId:              i.Definition.ObjectId.ZoneId,
-				Behaviors:           i.Definition.Behaviors.ToStringList(),
+				Behaviors:           i.Definition.Behaviors,
 			})
 	}
 	return

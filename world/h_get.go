@@ -38,7 +38,7 @@ func (w *World) handleGet(msg *gameserver.HandlerParameter, cmd command.Get) {
 
 	got := 0
 	for _, item := range items {
-		if !item.Definition.Gettable() {
+		if !item.Definition.Takeable() {
 			// naming one thing that can't be picked up is worth saying so;
 			// "get all" in a room with a fountain in it is not.
 			if !target.All {

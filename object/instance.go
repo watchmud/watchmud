@@ -37,10 +37,6 @@ type Instance struct {
 // TODO figure out if this can be removed
 func (i *Instance) IdStr() string { return i.Id.String() }
 
-func (i *Instance) IsGettable() bool {
-	return i.Definition.Gettable()
-}
-
 func (i *Instance) Matches(target string) bool {
 	return i.Definition.Matches(target)
 }

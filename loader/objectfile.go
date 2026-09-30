@@ -4,15 +4,15 @@ import "github.com/watchmud/watchmud/rules"
 
 // object file is optional
 type objectEntry struct {
-	Id                  string               `json:"id"`
-	Name                string               `json:"name"`
-	Category            rules.ObjectCategory `json:"category"`
-	Aliases             []string             `json:"aliases"`
-	ShortDescription    string               `json:"short_description"`
-	DescriptionOnGround string               `json:"description_on_ground"`
-	EquipmentSlot       rules.EquipmentSlot  `json:"equipment_slot"` // TODO bad name
-	Behaviors           []string             `json:"behaviors"`
-	ArmorType           rules.ArmorType      `json:"armor_type"`
+	Id                  string                 `json:"id"`
+	Name                string                 `json:"name"`
+	Category            rules.ObjectCategory   `json:"category"`
+	Aliases             []string               `json:"aliases"`
+	ShortDescription    string                 `json:"short_description"`
+	DescriptionOnGround string                 `json:"description_on_ground"`
+	EquipmentSlot       rules.EquipmentSlot    `json:"equipment_slot"` // TODO bad name
+	Behaviors           []rules.ObjectBehavior `json:"behaviors"`
+	ArmorType           rules.ArmorType        `json:"armor_type"`
 
 	// Durability overrides what the durability table would give this object,
 	// for the one blade in the game that deserves it. A pointer so that

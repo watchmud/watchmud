@@ -4,7 +4,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/watchmud/watchmud/behavior"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -22,7 +21,7 @@ type Definition struct {
 	ShortDescription    string // description of the object when being used: "a long, green stick" -> "The Beastly Fido picks up the long, green stick."
 	DescriptionOnGround string // description of the object when lying on the ground: "A shiny sword is lying here."
 	EquipmentSlot       rules.EquipmentSlot
-	Behaviors           behavior.BehaviorSet
+	Behaviors           []rules.ObjectBehavior
 	ArmorType           rules.ArmorType
 
 	// MaxDurability is what one of these starts out able to take, and what a
@@ -59,7 +58,8 @@ func NewDefinition(
 	shortDescription string,
 	descriptionOnGround string,
 	equipmentSlot rules.EquipmentSlot,
-	armorType rules.ArmorType) *Definition {
+	armorType rules.ArmorType,
+	behaviors []rules.ObjectBehavior) *Definition {
 	d := &Definition{
 		ObjectId:            NewObjectId(id, zoneId),
 		Name:                strings.ToLower(name),
@@ -68,8 +68,8 @@ func NewDefinition(
 		ObjectCategory:      category,
 		Aliases:             aliases,
 		EquipmentSlot:       equipmentSlot,
-		Behaviors:           behavior.NewBehaviorSet(),
 		ArmorType:           armorType,
+		Behaviors:           behaviors,
 	}
 	return d
 }
@@ -79,11 +79,11 @@ func (d *Definition) IsWeapon() bool {
 }
 
 func (d *Definition) NoTake() bool {
-	return d.Behaviors.Contains(behavior.NoTake)
+	return slices.Contains(d.Behaviors, rules.ObjectBehaviorNoTake)
 }
 
-func (d *Definition) Gettable() bool {
-	return !d.NoTake() // there might be other reasons why you can't get it in the future
+func (d *Definition) Takeable() bool {
+	return !d.NoTake()
 }
 
 func (d *Definition) Wearable() bool {

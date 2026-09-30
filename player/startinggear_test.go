@@ -21,8 +21,15 @@ func (f fakeDefs) ObjectDefinition(zoneId, definitionId string) (*object.Definit
 
 func (f fakeDefs) add(t *testing.T, id string, slot rules.EquipmentSlot) {
 	t.Helper()
-	f["wrathrock:"+id] = object.NewDefinition(id, id, "wrathrock",
-		rules.ObjectCategoryOther, nil, id, id+" is here.", slot, rules.ArmorTypeNone)
+	f["wrathrock:"+id] = object.NewDefinition(id, id,
+		"wrathrock",
+		rules.ObjectCategoryOther,
+		nil,
+		id,
+		id+" is here.",
+		slot,
+		rules.ArmorTypeNone,
+		[]rules.ObjectBehavior{})
 }
 
 func newTestDefs(t *testing.T) fakeDefs {

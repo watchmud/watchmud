@@ -6,7 +6,6 @@ import (
 	"uuid"
 
 	"github.com/rs/zerolog/log"
-	"github.com/watchmud/watchmud/behavior"
 	"github.com/watchmud/watchmud/combat"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/mobile"
@@ -47,10 +46,10 @@ func (w *World) becomeMobileCorpse(m *mobile.Instance) {
 		// worth nothing only because the armor table has no row for the slot
 		// it can't be worn in anyway -- two accidents holding hands. Saying
 		// none means it stays worth nothing if either of those changes.
-		rules.ArmorTypeNone)
-
-	// You loot a corpse, you don't carry it off.
-	d.Behaviors.Add(behavior.NoTake)
+		rules.ArmorTypeNone,
+		// you loot a corpse, you don't carry it off.
+		[]rules.ObjectBehavior{rules.ObjectBehaviorNoTake},
+	)
 
 	corpse := object.NewInstance(uuid.New(), d)
 	corpse.Contents = object.NewList()

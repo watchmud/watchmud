@@ -9,28 +9,19 @@ import (
 
 type DefinitionSuite struct {
 	suite.Suite
-	helmet *Definition
+	helmet *Instance
 }
 
 func TestDefinitionSuite(t *testing.T) {
 	suite.Run(t, new(DefinitionSuite))
 }
 
-func (suite *DefinitionSuite) SetupTest() {
-	suite.helmet = NewDefinition(
-		"definitionId",
-		"helmet",
-		"zoneId",
-		rules.ObjectCategoryArmor,
-		[]string{"iron", "helm"},
-		"desc",
-		"desc on ground",
-		rules.SlotHead,
-		"plate", // TODO
-	)
+func (s *DefinitionSuite) SetupTest() {
+	s.helmet = MakeTestArmor(s.T(), rules.SlotHead, "helmet", rules.ArmorTypePlate, 100)
+	s.helmet.Definition.Aliases = []string{"helm"}
 }
 
-func (suite *DefinitionSuite) TestHasAlias() {
-	suite.Assert().True(suite.helmet.HasAlias("helm"), "should have alias")
-	suite.Assert().False(suite.helmet.HasAlias("bronze"), "should not have alias")
+func (s *DefinitionSuite) TestHasAlias() {
+	s.Assert().True(s.helmet.Definition.HasAlias("helm"), "should have alias")
+	s.Assert().False(s.helmet.Definition.HasAlias("bronze"), "should not have alias")
 }

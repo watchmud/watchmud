@@ -14,7 +14,7 @@ func corpseHolding(items ...*object.Instance) func(*world.World, *player.Player,
 	return func(w *world.World, _ *player.Player, _ *player.Player) {
 		d := object.NewDefinition("", "the corpse of a rat", "", rules.ObjectCategoryCorpse,
 			[]string{"corpse", "rat"}, "the corpse of a rat", "The corpse of a rat is lying here.",
-			rules.SlotNone, rules.ArmorTypeNone)
+			rules.SlotNone, rules.ArmorTypeNone, rules.EmptyObjectBehaviors)
 		corpse := object.NewInstance(uuid.New(), d)
 		corpse.Contents = object.NewList()
 		for _, item := range items {

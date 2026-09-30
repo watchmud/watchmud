@@ -61,7 +61,7 @@ func (s *violenceArmorClassSuite) SetupTest() {
 // wear a real piece of armor, valued by the real table
 func (s *violenceArmorClassSuite) wear(slot rules.EquipmentSlot, name string, t rules.ArmorType) {
 	d := object.NewDefinition(name, name, "wrathrock", rules.ObjectCategoryArmor,
-		nil, name, name+" is here.", slot, t)
+		nil, name, name+" is here.", slot, t, rules.EmptyObjectBehaviors)
 	s.p.Equipment().Equip(slot, object.NewInstance(uuid.New(), d))
 }
 

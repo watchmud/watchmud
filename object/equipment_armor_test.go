@@ -2,7 +2,6 @@ package object
 
 import (
 	"testing"
-	"uuid"
 
 	"github.com/stretchr/testify/suite"
 	"github.com/watchmud/watchmud/rules"
@@ -32,8 +31,7 @@ func (s *EquipmentArmorSuite) SetupTest() {
 
 // wear an armor piece of this type in this slot
 func (s *EquipmentArmorSuite) wear(slot rules.EquipmentSlot, name string, t rules.ArmorType) *Instance {
-	d := NewDefinition(name, name, "zone", rules.ObjectCategoryArmor, nil, name, name+" is here.", slot, t)
-	inst := NewInstance(uuid.New(), d)
+	inst := MakeTestArmor(s.T(), slot, name, t, 100)
 	s.eq.Equip(slot, inst)
 	return inst
 }

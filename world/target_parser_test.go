@@ -101,7 +101,9 @@ func (suite *TargetParserSuite) TestTargetsIn() {
 		"knife",
 		"A knife is here.",
 		rules.SlotWield,
-		rules.ArmorTypeNone)
+		rules.ArmorTypeNone,
+		rules.EmptyObjectBehaviors)
+
 	helmDef := object.NewDefinition(
 		"helm",
 		"helmet",
@@ -112,6 +114,7 @@ func (suite *TargetParserSuite) TestTargetsIn() {
 		"A helmet is here.",
 		rules.SlotHead,
 		rules.ArmorTypePlate,
+		rules.EmptyObjectBehaviors,
 	)
 
 	first := object.NewInstance(uuid.New(), knifeDef)

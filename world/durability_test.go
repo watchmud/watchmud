@@ -54,10 +54,14 @@ func (s *durabilitySuite) SetupTest() {
 
 // equip a piece of gear with this much durability in it
 func (s *durabilitySuite) wear(slot rules.EquipmentSlot, name string, t rules.ArmorType, maxDurability int) *object.Instance {
-	d := object.NewDefinition(name, name, "wrathrock", rules.ObjectCategoryArmor,
-		nil, name, name+" is here.", slot, t)
-	d.MaxDurability = maxDurability
-	inst := object.NewInstance(uuid.New(), d)
+	armor := object.NewTestDefinition(s.T(),
+		name,
+		slot,
+		rules.ObjectCategoryArmor,
+		t,
+	)
+	armor.MaxDurability = maxDurability
+	inst := object.NewInstance(uuid.New(), armor)
 	s.p.Equipment().Equip(slot, inst)
 	return inst
 }

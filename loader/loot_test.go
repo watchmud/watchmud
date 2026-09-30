@@ -19,7 +19,8 @@ func lootContent(t *testing.T) *Content {
 	c := contentWithGear(t, nil)
 	caves := spaces.NewZone("caves", "Caves", zonereset.NEVER, 0)
 	caves.AddObjectDefinition(object.NewDefinition("bone", "bone", "caves",
-		rules.ObjectCategoryOther, nil, "a bone", "A bone is here.", rules.SlotNone, rules.ArmorTypeNone))
+		rules.ObjectCategoryOther, nil, "a bone",
+		"A bone is here.", rules.SlotNone, rules.ArmorTypeNone, []rules.ObjectBehavior{}))
 	c.addZone(caves)
 	return c
 }

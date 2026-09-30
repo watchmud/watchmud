@@ -2,7 +2,6 @@ package object
 
 import (
 	"testing"
-	"uuid"
 
 	"github.com/stretchr/testify/suite"
 	"github.com/watchmud/watchmud/rules"
@@ -33,19 +32,17 @@ func (s *DurabilitySuite) SetupTest() {
 
 // gear of this armor type, with this much durability in it
 func (s *DurabilitySuite) make(slot rules.EquipmentSlot, name string, t rules.ArmorType, maxDurability int) *Instance {
-	d := NewDefinition(name, name, "zone", rules.ObjectCategoryArmor, nil, name, name+" is here.", slot, t)
-	d.MaxDurability = maxDurability
-	return NewInstance(uuid.New(), d)
+	return MakeTestArmor(s.T(), slot, name, t, maxDurability)
 }
 
 func (s *DurabilitySuite) wear(slot rules.EquipmentSlot, name string, t rules.ArmorType, maxDurability int) *Instance {
-	inst := s.make(slot, name, t, maxDurability)
+	inst := MakeTestArmor(s.T(), slot, name, t, maxDurability)
 	s.eq.Equip(slot, inst)
 	return inst
 }
 
 func (s *DurabilitySuite) TestNewInstanceStartsAtFullDurability() {
-	inst := s.make(rules.SlotBody, "plate mail", rules.ArmorTypePlate, 80)
+	inst := MakeTestArmor(s.T(), rules.SlotBody, "plate mail", rules.ArmorTypePlate, 80)
 	s.Assert().Equal(80, inst.Durability)
 	s.Assert().True(inst.WearsOut())
 	s.Assert().False(inst.Broken())

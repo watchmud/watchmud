@@ -369,7 +369,8 @@ func testKnife() *object.Instance {
 		"knife",
 		"A knife is on the ground.",
 		rules.SlotWield,
-		"cloth", // TODO
+		rules.ArmorTypeCloth,
+		rules.EmptyObjectBehaviors,
 	)
 	d.RoleWeights = map[string]int{"striker": 2}
 	return object.NewInstance(uuid.New(), d)
@@ -383,10 +384,10 @@ func testHelmet() *object.Instance {
 		rules.ObjectCategoryArmor,
 		[]string{"helm"},
 		"iron helmet",
-
 		"an iron helmet is on the ground",
 		rules.SlotHead,
-		"cloth", // TODO
+		rules.ArmorTypeCloth,
+		rules.EmptyObjectBehaviors,
 	)
 	d.RoleWeights = map[string]int{"tank": 2}
 	return object.NewInstance(uuid.New(), d)

@@ -32,8 +32,8 @@ func (s *handleInventorySuite) TestInventory_Success() {
 		"short desc",
 		"in room",
 		rules.SlotNone,
-		"plate", // TODO!
-	)
+		rules.ArmorTypePlate,
+		rules.EmptyObjectBehaviors)
 	instPtr := &object.Instance{
 		Id:         uuid.New(),
 		Definition: defnPtr,

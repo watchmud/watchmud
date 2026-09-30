@@ -29,7 +29,8 @@ func (s *RemoveTestSuite) helmet() *object.Instance {
 		"iron helmet",
 		"an iron helmet is here.",
 		rules.SlotHead,
-		"plate") // TODO change to type
+		rules.ArmorTypePlate,
+		rules.EmptyObjectBehaviors)
 
 	d.RoleWeights = map[string]int{"tank": 2}
 	return object.NewInstance(uuid.New(), d)
@@ -49,7 +50,7 @@ func (s *RemoveTestSuite) TestRemoveSomethingNotEquipped() {
 
 // Carrying something is not using it: remove searches the slots.
 func (s *RemoveTestSuite) TestCarryingIsNotUsing() {
-	s.p.Inventory().Add(s.helmet())
+	s.Require().NoError(s.p.Inventory().Add(s.helmet()))
 	cmd := command.Remove{Target: "iron helmet"}
 	s.w.handleRemove(s.handlerParameter(cmd), cmd)
 	s.Assert().Equal(event.TargetNotFound, sent[event.Failed](s.T(), s.r, 0).Code)
@@ -73,7 +74,7 @@ func (s *RemoveTestSuite) TestTheSlotIsUsableAgain() {
 	s.Require().False(s.p.Equipment().Equipped(rules.SlotHead))
 
 	wear := command.Wear{Target: "helm"}
-	s.p.Inventory().Add(s.helmet())
+	s.Assert().NoError(s.p.Inventory().Add(s.helmet()))
 	s.w.handleWear(s.handlerParameter(wear), wear)
 	sent[event.Worn](s.T(), s.r, 1)
 	s.Assert().True(s.p.Equipment().Equipped(rules.SlotHead))

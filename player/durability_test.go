@@ -15,11 +15,12 @@ type durabilityDefs struct {
 	knife *object.Definition
 }
 
-func newDurabilityDefs(maxDurability int) durabilityDefs {
-	d := object.NewDefinition("knife", "knife", "wrathrock", rules.ObjectCategoryWeapon,
-		nil, "a knife", "A knife is here.", rules.SlotWield, rules.ArmorTypeNone)
-	d.MaxDurability = maxDurability
-	return durabilityDefs{knife: d}
+func newDurabilityDefs(t *testing.T, maxDurability int) durabilityDefs {
+	t.Helper()
+	knife := object.MakeTestKnife(t)
+	def := knife.Definition
+	def.MaxDurability = maxDurability
+	return durabilityDefs{knife: def}
 }
 
 func (d durabilityDefs) ObjectDefinition(zoneId, definitionId string) (*object.Definition, bool) {
@@ -41,7 +42,7 @@ func worn(t *testing.T, defs durabilityDefs, durability int) *Record {
 
 // What a character has been through comes back with them.
 func TestRecord_durabilityRoundTrips(t *testing.T) {
-	defs := newDurabilityDefs(40)
+	defs := newDurabilityDefs(t, 40)
 	cat, err := rules.NewTestCatalog()
 	require.NoError(t, err)
 
@@ -61,7 +62,7 @@ func TestRecord_durabilityRoundTrips(t *testing.T) {
 // Broken stays broken across a logout. This is the one that a nil-means-new
 // rule has to get right in the other direction.
 func TestRecord_brokenStaysBroken(t *testing.T) {
-	defs := newDurabilityDefs(40)
+	defs := newDurabilityDefs(t, 40)
 	cat, err := rules.NewTestCatalog()
 	require.NoError(t, err)
 
@@ -75,7 +76,7 @@ func TestRecord_brokenStaysBroken(t *testing.T) {
 // has to mean "as new". Reading it as zero would break every item everybody
 // owns the first time the server restarts.
 func TestRecord_missingDurabilityIsAsNew(t *testing.T) {
-	defs := newDurabilityDefs(40)
+	defs := newDurabilityDefs(t, 40)
 	cat, err := rules.NewTestCatalog()
 	require.NoError(t, err)
 
@@ -93,7 +94,7 @@ func TestRecord_missingDurabilityIsAsNew(t *testing.T) {
 // Gear that doesn't wear out doesn't write a number at all, so turning
 // durability on later starts everyone from full.
 func TestRecord_indestructibleGearRecordsNoDurability(t *testing.T) {
-	rec := worn(t, newDurabilityDefs(rules.Indestructible), 0)
+	rec := worn(t, newDurabilityDefs(t, rules.Indestructible), 0)
 	assert.Nil(t, rec.Inventory[0].Durability)
 }
 
@@ -103,8 +104,8 @@ func TestRecord_durabilityIsClampedToTheCurrentMax(t *testing.T) {
 	cat, err := rules.NewTestCatalog()
 	require.NoError(t, err)
 
-	rec := worn(t, newDurabilityDefs(80), 80)
-	back, err := FromRecord(rec, &Recorder{}, cat, newDurabilityDefs(30))
+	rec := worn(t, newDurabilityDefs(t, 80), 80)
+	back, err := FromRecord(rec, &Recorder{}, cat, newDurabilityDefs(t, 30))
 	require.NoError(t, err)
 
 	assert.Equal(t, 30, back.Equipment().At(rules.SlotWield).Durability)

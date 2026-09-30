@@ -31,8 +31,8 @@ func (s *RoleTestSuite) equip(loc rules.EquipmentSlot, name string, weights map[
 		name,
 		name+" is here.",
 		loc,
-		"cloth",
-	)
+		rules.ArmorTypeCloth,
+		rules.EmptyObjectBehaviors)
 	d.RoleWeights = weights
 	s.p.Equipment().Equip(loc, object.NewInstance(uuid.New(), d))
 }
