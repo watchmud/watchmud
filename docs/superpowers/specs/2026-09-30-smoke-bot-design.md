@@ -28,14 +28,11 @@ litter the world.
 - **Never roll back automatically.** A rollback disconnects everyone a second time; that
   is a person's decision.
 
-## Prerequisite: health regeneration
+## Health between runs
 
-Nothing restores health yet. The bot's character loses a few hp to geese every deploy
-and would never get them back: within a dozen deploys it fights at single digits, then
-dies, and from then on starts every run at 1hp. Regen is its own small design, done
-first; players need it anyway. The in-process test doesn't depend on it (a fresh world
-every run), so the bot can be built in either order -- it just can't be switched on in
-production until regen has shipped.
+The character loses a few hp to geese every deploy. The `regen` pulse (`world/regen.go`,
+5% of max every 5s out of a fight) has it back to full long before the next one, so the
+bot needs no healing of its own and no wizard powers.
 
 ## Scope
 
@@ -168,9 +165,8 @@ printed), 2 on bad usage (no password).
 
 ## Order of work
 
-1. Health regeneration (its own design).
-2. The bot, the test, the image and `deploy.sh`, as above -- released like anything else.
-3. By hand, on production: create the character, add the password to `deploy/.env`.
+1. The bot, the test, the image and `deploy.sh`, as above -- released like anything else.
+2. By hand, on production: create the character, add the password to `deploy/.env`.
    The next deploy is the first one checked.
 
 ## Docs

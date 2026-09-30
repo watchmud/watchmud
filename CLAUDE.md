@@ -400,8 +400,9 @@ A player leaves **no corpse**. `combatantDied` ends their fights (via `becomeCor
 tells the room (`event.Died` with `IsPlayer`, which renders as "You are dead!" to the one
 who died), takes the durability toll above, and then `playerRevives`: `Player.Revive()`
 sets health to 1 and they are moved to `World.DeathRoom` -- the `player-death` entry in
-`settings.json` -- and shown it. Getting health back is up to them, and nothing restores
-it over time yet. `playerRevives` saves the player itself rather than waiting for the timed save.
+`settings.json` -- and shown it. Health comes back from there on the `regen` pulse
+(`World.Regenerate`, `world/regen.go`: 5% of max every 5s to anyone not fighting --
+LEVELS.md). `playerRevives` saves the player itself rather than waiting for the timed save.
 
 **Slot order is `rules.CompareSlots`, not alphabetical.** `EquipmentSlot` is a string now,
 so sorting the slots themselves puts `about_body` first and `wield` second to last.
