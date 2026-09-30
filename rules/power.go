@@ -61,6 +61,13 @@ const (
 // doesn't fill the room. A placeholder; LEVELS.md.
 const CorpseDecay = 5 * time.Minute
 
+// DroppedDecay is how long something a character drops lasts on the floor
+// before it crumbles: long enough for someone to find a donation, short
+// enough that a room somebody -- or a bot -- keeps dropping things in turns
+// over. Zone resets and wizard loads never go through drop, so what they put
+// down stays. A placeholder; LEVELS.md.
+const DroppedDecay = 30 * time.Minute
+
 // LootPowerBump is what a d100 roll (0-99) adds to a drop's power.
 func LootPowerBump(roll int) int {
 	switch {

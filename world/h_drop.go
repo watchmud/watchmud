@@ -1,11 +1,14 @@
 package world
 
 import (
+	"time"
+
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
 	"github.com/watchmud/watchmud/object"
+	"github.com/watchmud/watchmud/rules"
 )
 
 func (w *World) handleDrop(msg *gameserver.HandlerParameter, cmd command.Drop) {
@@ -52,6 +55,8 @@ func (w *World) handleDrop(msg *gameserver.HandlerParameter, cmd command.Drop) {
 			msg.Fail(event.AddToRoomError)
 			return
 		}
+		// on the floor now, so on the clock: see rules.DroppedDecay
+		objectToDrop.DecaysAt = time.Now().Add(rules.DroppedDecay)
 		// one event, both audiences: the renderer says "Dropped." to the actor
 		// and "bob drops a knife." to everyone else.
 		room.Send(event.Dropped{

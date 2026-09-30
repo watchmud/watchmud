@@ -1,6 +1,8 @@
 package world
 
 import (
+	"time"
+
 	log "github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
@@ -54,6 +56,8 @@ func (w *World) handleGet(msg *gameserver.HandlerParameter, cmd command.Get) {
 			msg.Fail(event.RemoveFromRoomError)
 			return
 		}
+		// carrying something is never decay; dropping it again starts afresh
+		item.DecaysAt = time.Time{}
 		room.Send(event.Got{
 			Actor: msg.Player.Name(),
 			Item:  item.Definition.ShortDescription,

@@ -96,14 +96,15 @@ func (w *World) rollLoot(m *mobile.Instance) []*object.Instance {
 	return drops
 }
 
-// DecayCorpses clears away every corpse whose time is up, based on time.Now().
-func (w *World) DecayCorpses() {
-	w.decayCorpses(time.Now())
+// DecayFloors clears away everything on a floor whose time is up -- corpses
+// and anything dropped -- based on time.Now().
+func (w *World) DecayFloors() {
+	w.decayFloors(time.Now())
 }
 
-// decayCorpses removes whatever on a room's floor has a DecaysAt that has
+// decayFloors removes whatever on a room's floor has a DecaysAt that has
 // passed -- anything still inside goes with it -- and tells the room.
-func (w *World) decayCorpses(now time.Time) {
+func (w *World) decayFloors(now time.Time) {
 	for _, zone := range w.content.Zones {
 		for _, room := range zone.Rooms {
 			var gone []*object.Instance
@@ -114,7 +115,7 @@ func (w *World) decayCorpses(now time.Time) {
 			}
 			for _, item := range gone {
 				if err := room.Inventory.Remove(item); err != nil {
-					log.Error().Err(err).Msgf("decayCorpses: removing %s from %s", item.Definition.Name, room.Id)
+					log.Error().Err(err).Msgf("decayFloors: removing %s from %s", item.Definition.Name, room.Id)
 					continue
 				}
 				room.Send(event.Decayed{Item: item.Definition.ShortDescription})

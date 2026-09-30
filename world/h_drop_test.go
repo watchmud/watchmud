@@ -2,6 +2,7 @@ package world
 
 import (
 	"testing"
+	"time"
 	"uuid"
 
 	"github.com/stretchr/testify/suite"
@@ -167,4 +168,34 @@ func (s *HandleDropSuite) TestDropUnparseableTarget() {
 	failed := sent[event.Failed](s.T(), s.r, 0)
 	s.Assert().Equal("drop", failed.Verb)
 	s.Assert().Equal(event.ParseError, failed.Code)
+}
+
+// Dropped things don't last forever: a floor somebody keeps dropping things
+// on -- the donation room, where the bots leave what they find -- would
+// otherwise only ever grow.
+func (s *HandleDropSuite) TestDroppedItemsDecay() {
+	s.get("knife")
+	before := time.Now()
+	s.drop("knife")
+
+	knives := s.w.StartRoom.Inventory.FindAll("knife")
+	s.Require().Len(knives, 1)
+	s.Assert().WithinDuration(before.Add(rules.DroppedDecay), knives[0].DecaysAt, time.Second)
+
+	s.r.Sent = nil
+	s.w.decayFloors(time.Now().Add(rules.DroppedDecay + time.Second))
+	s.Assert().Empty(s.w.StartRoom.Inventory.FindAll("knife"), "crumbled")
+	s.Assert().Equal("knife", sent[event.Decayed](s.T(), s.r, 0).Item)
+}
+
+// Carrying something is never decay: picking it up stops the clock, and
+// dropping it again starts a new one.
+func (s *HandleDropSuite) TestPickingUpStopsTheClock() {
+	s.get("knife")
+	s.drop("knife")
+	s.get("knife")
+
+	knives := s.p.Inventory().FindAll("knife")
+	s.Require().Len(knives, 1)
+	s.Assert().True(knives[0].DecaysAt.IsZero())
 }

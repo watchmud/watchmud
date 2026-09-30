@@ -112,9 +112,9 @@ func (gs *GameServer) heartbeat(pulse rules.PulseCount, delta time.Duration) {
 	mobPulse := gs.catalog.MudTime.Mobile
 	if pulse.CheckInterval(mobPulse) {
 		recoverPulse("mobile", gs.world.DoMobileActivity)
-		// on the same pulse: CorpseDecay is minutes, and ten seconds late
-		// is nothing anyone will notice
-		recoverPulse("corpses", gs.world.DecayCorpses)
+		// on the same pulse: CorpseDecay and DroppedDecay are minutes, and
+		// ten seconds late is nothing anyone will notice
+		recoverPulse("floors", gs.world.DecayFloors)
 	}
 
 	// perform violence
