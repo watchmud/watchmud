@@ -404,6 +404,10 @@ func renderWho(players []event.WhoEntry) string {
 // consecutive `who`s if the player swaps their gear in between. Either half
 // can be missing -- a player in no role at all is just "alice the Hill Dwarf".
 func whoTitle(p event.WhoEntry) string {
+	name := p.PlayerName
+	if p.Bot {
+		name += " [bot]"
+	}
 	var parts []string
 	if p.Lineage != "" {
 		parts = append(parts, p.Lineage)
@@ -412,9 +416,9 @@ func whoTitle(p event.WhoEntry) string {
 		parts = append(parts, p.Role)
 	}
 	if len(parts) == 0 {
-		return p.PlayerName
+		return name
 	}
-	return p.PlayerName + " the " + strings.Join(parts, " ")
+	return name + " the " + strings.Join(parts, " ")
 }
 
 // renderConsidered puts the power gap into words, then gives the numbers. The

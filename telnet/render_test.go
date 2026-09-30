@@ -277,6 +277,16 @@ var commandCases = []commandCase{
 		want:  "-- Who Is Here --\notherdood the Human - Temple Square - Wrathrock\ntestdood the Human Tank - Temple Square - Wrathrock\n",
 	},
 	{
+		// a bot is labelled where players look for who is around: the label
+		// is the server's, from the record, never something a client claims
+		name: "who marks bots",
+		setup: func(_ *world.World, _ *player.Player, o *player.Player) {
+			o.SetBot(true)
+		},
+		input: "who",
+		want:  "-- Who Is Here --\notherdood [bot] the Human - Temple Square - Wrathrock\ntestdood the Human - Temple Square - Wrathrock\n",
+	},
+	{
 		// recall moves with direction.None, which must not render as "none!"
 		name:      "recall leaves in no direction",
 		input:     "recall",

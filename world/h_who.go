@@ -21,6 +21,7 @@ func (w *World) handleWho(msg *gameserver.HandlerParameter, cmd command.Who) {
 		r := w.playerRoom(p)
 		entries = append(entries, event.WhoEntry{
 			PlayerName: p.Name(),
+			Bot:        p.IsBot(),
 			Lineage:    p.LineageName(),
 			Role:       w.roleName(p.RoleWeights()),
 			ZoneName:   r.Zone.Name,

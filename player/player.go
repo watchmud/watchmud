@@ -18,6 +18,9 @@ type Player struct {
 	// wizard lets them run the builder commands. Nothing in the game grants
 	// it: it is set by hand on the record (make wizard NAME=...).
 	wizard bool
+	// bot marks a character a program plays, so who can say so. Nothing in
+	// the game grants it: it is set by hand on the record (make bot NAME=...).
+	bot bool
 
 	// Lineage is cosmetic and nothing reads it but the renderer. There is no
 	// Class beside it and no Role in its place: a role is read off
@@ -171,3 +174,5 @@ func (p *Player) Log() *zerolog.Logger {
 
 func (p *Player) IsWizard() bool        { return p.wizard }
 func (p *Player) SetWizard(wizard bool) { p.wizard = wizard }
+func (p *Player) IsBot() bool           { return p.bot }
+func (p *Player) SetBot(bot bool)       { p.bot = bot }

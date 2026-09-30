@@ -94,3 +94,20 @@ func (s *PlayerSuite) TestWizardSurvivesTheRecord() {
 	s.Require().NoError(err)
 	s.Assert().True(back.IsWizard())
 }
+
+// The bot flag is on the record like Wizard, for the same reason: a save
+// that forgot it would unlabel every bot at the next timed save.
+func (s *PlayerSuite) TestBotSurvivesTheRecord() {
+	p := NewTestPlayer(uuid.New(), "wren", &Recorder{})
+	s.Assert().False(p.IsBot(), "nobody starts as one")
+	p.SetBot(true)
+
+	rec := p.Record()
+	s.Assert().True(rec.Bot)
+
+	cat, err := rules.NewTestCatalog()
+	s.Require().NoError(err)
+	back, err := FromRecord(rec, &Recorder{}, cat, nil)
+	s.Require().NoError(err)
+	s.Assert().True(back.IsBot())
+}

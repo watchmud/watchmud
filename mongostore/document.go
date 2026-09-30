@@ -24,6 +24,7 @@ type playerDoc struct {
 	Name         string `bson:"name"`
 	PasswordHash string `bson:"password_hash"`
 	Wizard       bool   `bson:"wizard,omitempty"`
+	Bot          bool   `bson:"bot,omitempty"`
 	CurHealth    int    `bson:"cur_health"`
 	MaxHealth    int    `bson:"max_health"`
 
@@ -67,6 +68,7 @@ func newPlayerDoc(r *player.Record, now time.Time) playerDoc {
 		Name:         r.Name,
 		PasswordHash: r.PasswordHash,
 		Wizard:       r.Wizard,
+		Bot:          r.Bot,
 		CurHealth:    r.CurHealth,
 		MaxHealth:    r.MaxHealth,
 		LineageId:    r.LineageId,
@@ -108,6 +110,7 @@ func (d playerDoc) record() (*player.Record, error) {
 		Name:         d.Name,
 		PasswordHash: d.PasswordHash,
 		Wizard:       d.Wizard,
+		Bot:          d.Bot,
 		CurHealth:    d.CurHealth,
 		MaxHealth:    d.MaxHealth,
 		LineageId:    d.LineageId,

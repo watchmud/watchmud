@@ -85,6 +85,13 @@ wizard:
 	docker compose exec mongo mongosh watchmud --quiet --eval \
 		'const n = "$(NAME)", name = n[0].toUpperCase() + n.slice(1).toLowerCase(); const r = db.players.updateOne({name}, {$$set: {wizard: $(if $(UNSET),false,true)}}); print(r.matchedCount ? name + ": wizard=$(if $(UNSET),false,true)" : "no character named " + name)'
 
+## bot: label a character as a bot in `who` (while it's logged out); UNSET=1 to take it off
+.PHONY: bot
+bot:
+	@test -n "$(NAME)" || (echo "usage: make bot NAME=<character> [UNSET=1]" && exit 1)
+	docker compose exec mongo mongosh watchmud --quiet --eval \
+		'const n = "$(NAME)", name = n[0].toUpperCase() + n.slice(1).toLowerCase(); const r = db.players.updateOne({name}, {$$set: {bot: $(if $(UNSET),false,true)}}); print(r.matchedCount ? name + ": bot=$(if $(UNSET),false,true)" : "no character named " + name)'
+
 ## docker-build: build the deploy image, to check the Dockerfile still works
 .PHONY: docker-build
 docker-build:

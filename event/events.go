@@ -197,7 +197,9 @@ type Who struct {
 
 type WhoEntry struct {
 	PlayerName string
-	Lineage    string
+	// Bot is the record's flag: a program plays this character.
+	Bot     bool
+	Lineage string
 	// Role is what that player's equipment adds up to right now, and is
 	// empty when it adds up to nothing.
 	Role     string
