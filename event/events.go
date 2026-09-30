@@ -315,7 +315,7 @@ type RoomStatus struct {
 	Description string
 	ZoneId      string
 	ZoneName    string
-	Flags       []string
+	Flags       []rules.RoomFlag
 	Players     []RoomStatusPlayer
 	Items       []RoomStatusItem
 	Mobs        []RoomStatusMob
@@ -357,5 +357,5 @@ type RoomStatusExit struct {
 	Direction rules.Direction
 	RoomId    string
 	ZoneId    string
-	Flags     []string
+	Flags     []rules.RoomFlag
 }

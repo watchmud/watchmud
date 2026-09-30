@@ -343,9 +343,13 @@ func renderRoomStatus(rs event.RoomStatus) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Room %s.%s %q\n", rs.ZoneId, rs.Id, rs.Name)
 	fmt.Fprintf(&b, "Zone: %s (%s)\n", rs.ZoneName, rs.ZoneId)
-	if len(rs.Flags) > 0 {
-		fmt.Fprintf(&b, "Flags: %s\n", strings.Join(rs.Flags, ", "))
+
+	var flags []string
+	for _, f := range rs.Flags {
+		flags = append(flags, string(f))
 	}
+	fmt.Fprintf(&b, "Flags: %s\n", strings.Join(flags, ", "))
+
 	for _, ex := range rs.Exits {
 		fmt.Fprintf(&b, "  exit %-5s -> %s.%s\n", strings.ToLower(ex.Direction.String()), ex.ZoneId, ex.RoomId)
 	}

@@ -6,7 +6,6 @@ import (
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
 	"github.com/watchmud/watchmud/rules"
-	"github.com/watchmud/watchmud/spaces"
 )
 
 func (w *World) handleKill(msg *gameserver.HandlerParameter, cmd command.Kill) {
@@ -29,7 +28,7 @@ func (w *World) handleKill(msg *gameserver.HandlerParameter, cmd command.Kill) {
 	}
 
 	//  does this room allow fighting..
-	if room.Flag(spaces.RoomFlagNoFight) {
+	if room.Flag(rules.RoomFlagNoFight) {
 		msg.Fail(event.NoFightRoom)
 		return
 	}

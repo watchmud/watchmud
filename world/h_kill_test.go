@@ -8,7 +8,6 @@ import (
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
 	"github.com/watchmud/watchmud/rules"
-	"github.com/watchmud/watchmud/spaces"
 )
 
 type handleKillSuite struct {
@@ -75,7 +74,7 @@ func (s *handleKillSuite) TestNoFight() {
 }
 
 func (s *handleKillSuite) TestNoFightInRoom() {
-	s.w.StartRoom.SetFlag(spaces.RoomFlagNoFight)
+	s.w.StartRoom.SetFlag(rules.RoomFlagNoFight)
 
 	s.kill("target")
 

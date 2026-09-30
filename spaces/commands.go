@@ -2,26 +2,8 @@ package spaces
 
 import "fmt"
 
-/*
-// The known set of zone commands
-// Used for storing  the command information
-type CommandType int
-
-const (
-	UNKNOWN CommandType = iota
-	CREATE_OBJECT
-	CREATE_MOBILE
-	GIVE_OBJECT_TO_MOBILE
-	EQUIP_OBJECT_ON_MOBILE
-	PUT_OBJECT_IN_OBJECT
-	DOOR_STATE
-	REMOVE_OBJECT_FROM_ROOM
-)
-*/
-
-// Supertype for all Zone Commands
-type ZoneCommand interface {
-}
+// ZoneCommand describes all Zone Commands
+type ZoneCommand any
 
 // CreateObject instructs the world to create an object in the world.
 type CreateObject struct {
@@ -40,7 +22,7 @@ func (cmd CreateObject) String() string {
 	)
 }
 
-// Command: Create a Mobile
+// CreateMobile creates a mobile instance somewhere in the world
 type CreateMobile struct {
 	MobileDefinitionId string // what type of mobile
 	ZoneId             string // where the mobile is defined, or empty for "this zone"

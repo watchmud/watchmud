@@ -5,11 +5,11 @@ import (
 )
 
 type roomFileEntry struct {
-	Id          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Flags       []string `json:"flags"`
-	Exits       []exit   `json:"exits"`
+	Id          string           `json:"id"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Flags       []rules.RoomFlag `json:"flags"`
+	Exits       []exit           `json:"exits"`
 }
 
 type exit struct {

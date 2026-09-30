@@ -3,6 +3,7 @@ package spaces
 import (
 	"fmt"
 	"math/rand"
+	"slices"
 	"sort"
 	"time"
 	"uuid"
@@ -25,7 +26,7 @@ type Room struct {
 	Inventory   *object.List
 	mobs        *ordered.List[uuid.UUID, *mobile.Instance]
 	directions  map[rules.Direction]*Room
-	flags       map[string]bool
+	flags       map[rules.RoomFlag]bool
 }
 
 // NewRoom creates a new room in this zone.
@@ -40,7 +41,7 @@ func NewRoom(zone *Zone, id string, name string, description string) *Room {
 		Inventory:   object.NewFloor(),
 		mobs:        ordered.NewList[uuid.UUID, *mobile.Instance]((*mobile.Instance).Id),
 		directions:  make(map[rules.Direction]*Room),
-		flags:       make(map[string]bool),
+		flags:       make(map[rules.RoomFlag]bool),
 	}
 }
 
@@ -57,7 +58,7 @@ func (r *Room) Location() player.Location {
 	return player.NewLocation(r.Zone.Id, r.Id)
 }
 
-func (r *Room) SetFlags(flags []string) {
+func (r *Room) SetFlags(flags []rules.RoomFlag) {
 	if flags != nil {
 		for _, s := range flags {
 			r.SetFlag(s)
@@ -65,21 +66,23 @@ func (r *Room) SetFlags(flags []string) {
 	}
 }
 
-func (r *Room) SetFlag(flag string) {
+func (r *Room) SetFlag(flag rules.RoomFlag) {
 	r.flags[flag] = true
 }
 
-func (r *Room) Flag(flag string) bool {
+func (r *Room) Flag(flag rules.RoomFlag) bool {
 	return r.flags[flag]
 }
 
-func (r *Room) Flags() (result []string) {
+func (r *Room) Flags() []rules.RoomFlag {
+	result := make([]rules.RoomFlag, 0, len(r.flags))
 	for k, v := range r.flags {
 		if v {
 			result = append(result, k)
 		}
 	}
-	return
+	slices.Sort(result)
+	return result
 }
 
 // playerLeaves a room. Tells other room residents about it.
