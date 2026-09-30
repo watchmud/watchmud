@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/watchmud/watchmud/zonereset"
+	"github.com/watchmud/watchmud/rules"
 )
 
 // DoZoneActivity for each zone based on time.Now()
@@ -17,7 +17,7 @@ func (w *World) DoZoneActivity() {
 // For example, zone resets.
 func (w *World) doZoneActivity(now time.Time) {
 	for _, z := range w.content.Zones {
-		if z.ResetMode == zonereset.NO_PLAYERS || z.ResetMode == zonereset.ALWAYS {
+		if z.ResetMode == rules.ZoneResetNoPlayers || z.ResetMode == rules.ZoneResetAlways {
 			// is it time yet for this zone's lifetime?
 			if now.Sub(z.LastReset) > z.Lifetime {
 				if errs := z.Reset(w.occupancy); len(errs) != 0 {

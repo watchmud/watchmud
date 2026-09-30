@@ -10,7 +10,6 @@ import (
 	"github.com/watchmud/watchmud/mobile"
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/rules"
-	"github.com/watchmud/watchmud/zonereset"
 )
 
 type Zone struct {
@@ -20,14 +19,14 @@ type Zone struct {
 	MobileDefinitions map[string]*mobile.Definition // id -> mobile.Definition
 	Name              string
 	Commands          []ZoneCommand
-	ResetMode         zonereset.Mode
+	ResetMode         rules.ZoneReset
 	LastReset         time.Time
 	Lifetime          time.Duration
 	// Power is the band this zone is built for. See LEVELS.md.
 	Power rules.PowerBand
 }
 
-func NewZone(id string, name string, resetMode zonereset.Mode, lifetime time.Duration) *Zone {
+func NewZone(id string, name string, resetMode rules.ZoneReset, lifetime time.Duration) *Zone {
 	return &Zone{
 		Id:                id,
 		Name:              name,

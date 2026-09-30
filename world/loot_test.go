@@ -12,7 +12,7 @@ import (
 	"github.com/watchmud/watchmud/testdice"
 )
 
-// What a mob leaves behind. testcontent's target drone (power 3) has a loot
+// What a mob leaves behind. testcontent target drone (power 3) has a loot
 // table of a knife at 50% and a rope at 100%. Each entry takes a d100 (0-99)
 // for whether it drops, and each drop another for its power bump.
 type lootSuite struct {

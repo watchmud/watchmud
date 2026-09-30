@@ -9,7 +9,6 @@ import (
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/rules"
 	"github.com/watchmud/watchmud/spaces"
-	"github.com/watchmud/watchmud/zonereset"
 )
 
 // lootContent is contentWithGear's wrathrock plus a second zone, so a loot
@@ -17,7 +16,7 @@ import (
 func lootContent(t *testing.T) *Content {
 	t.Helper()
 	c := contentWithGear(t, nil)
-	caves := spaces.NewZone("caves", "Caves", zonereset.NEVER, 0)
+	caves := spaces.NewZone("caves", "Caves", rules.ZoneResetNever, 0)
 	caves.AddObjectDefinition(object.NewDefinition("bone", "bone", "caves",
 		rules.ObjectCategoryOther, nil, "a bone",
 		"A bone is here.", rules.SlotNone, rules.ArmorTypeNone, []rules.ObjectBehavior{}))

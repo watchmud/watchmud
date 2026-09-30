@@ -13,7 +13,6 @@ import (
 	"github.com/watchmud/watchmud/rules"
 	"github.com/watchmud/watchmud/script"
 	"github.com/watchmud/watchmud/spaces"
-	"github.com/watchmud/watchmud/zonereset"
 )
 
 // Content is the static game content read from the content directory and files: everything
@@ -126,7 +125,7 @@ func (c *Content) loadZoneManifest(fsys fs.FS) error {
 		zone := spaces.NewZone(
 			m.Id,
 			m.Name,
-			zonereset.Mode(m.ResetMode),
+			m.ResetMode,
 			time.Duration(m.LifetimeMinutes)*time.Minute,
 		)
 		zone.Power = band

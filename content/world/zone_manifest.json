@@ -2,28 +2,28 @@
   {
     "id": "void",
     "name": "The Void",
-    "reset_mode": 0,
     "lifetime_minutes": 0,
+    "reset_mode": "always",
     "enabled": true
   },
   {
     "id": "sample",
     "name": "Sample Zone",
-    "reset_mode": 2,
+    "reset_mode": "always",
     "lifetime_minutes": 3,
     "enabled": true
   },
   {
     "id":"wrathrock",
     "name":"Wrathrock",
-    "reset_mode": 2,
+    "reset_mode": "always",
     "lifetime_minutes": 3,
     "enabled": true
   },
   {
     "id": "hollowfield",
     "name": "The Hollowfields",
-    "reset_mode": 2,
+    "reset_mode": "always",
     "lifetime_minutes": 3,
     "enabled": true,
     "power": { "min": 1, "max": 5 }
@@ -31,7 +31,7 @@
   {
     "id": "barrow",
     "name": "The Sunken Barrow",
-    "reset_mode": 1,
+    "reset_mode": "noPlayers",
     "lifetime_minutes": 10,
     "enabled": true,
     "power": { "min": 6, "max": 10 }

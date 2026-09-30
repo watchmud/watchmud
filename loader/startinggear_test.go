@@ -9,7 +9,6 @@ import (
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/rules"
 	"github.com/watchmud/watchmud/spaces"
-	"github.com/watchmud/watchmud/zonereset"
 )
 
 func TestLoadContent_startingGear(t *testing.T) {
@@ -32,7 +31,7 @@ func contentWithGear(t *testing.T, gear rules.StartingGear) *Content {
 	cat, err := rules.NewTestCatalog()
 	require.NoError(t, err)
 	cat.StartingGear = gear
-	zone := spaces.NewZone("wrathrock", "Wrathrock", zonereset.NEVER, 0)
+	zone := spaces.NewZone("wrathrock", "Wrathrock", rules.ZoneResetNever, 0)
 	zone.AddObjectDefinition(object.NewDefinition("knife", "knife", "wrathrock",
 		rules.ObjectCategoryWeapon, nil, "knife", "A knife is here.", rules.SlotWield, rules.ArmorTypeNone, rules.EmptyObjectBehaviors))
 	zone.AddObjectDefinition(object.NewDefinition("dagger", "dagger", "wrathrock",
