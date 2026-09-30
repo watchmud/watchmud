@@ -756,9 +756,9 @@ func (c *conn) commandLoop() (quit bool) {
 			c.Send(reprompt{})
 			continue
 		}
-		if isHelp(line) {
+		if text, ok := helpFor(line); ok {
 			// the world never hears it, so the prompt has to come from here
-			c.Send(helpText)
+			c.Send(text)
 			c.Send(reprompt{})
 			continue
 		}

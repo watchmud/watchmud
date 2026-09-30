@@ -79,3 +79,39 @@ func TestShoutIsTellAll(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, command.TellAll{Value: "hello all"}, cmd)
 }
+
+// help takes a topic, for what isn't a command -- the first is who the bots
+// are -- and the command list says which topics there are.
+func TestHelp_topics(t *testing.T) {
+	text, ok := helpFor("help bots")
+	require.True(t, ok)
+	assert.Contains(t, text, "programs, not people")
+
+	again, ok := helpFor("  HELP   Bots ")
+	require.True(t, ok)
+	assert.Equal(t, text, again)
+
+	text, ok = helpFor("help dragons")
+	require.True(t, ok, "an unknown topic is still help, not a command")
+	assert.Equal(t, "There's no help on that. Type 'help' for the commands.\n", text)
+
+	_, ok = helpFor("helpful")
+	assert.False(t, ok)
+
+	assert.Contains(t, helpText, "help bots")
+	for name, topic := range helpTopics {
+		for _, l := range strings.Split(strings.TrimRight(topic.text, "\n"), "\n") {
+			assert.LessOrEqual(t, utf8.RuneCountInString(l), 79, "help %s: %q", name, l)
+		}
+	}
+}
+
+func TestHelp_topicInGame(t *testing.T) {
+	gs := &fakeServer{passwords: map[string]string{"Bob": "sekrit99"}}
+	s := startSession(t, gs)
+	s.answer("known? ", "Bob")
+	s.answer("Password: ", "sekrit99")
+	s.answer(echoOn, "help bots")
+	s.waitFor("programs, not people")
+	assert.Len(t, gs.commands(), 2, "only the login (name, then password) reached the server")
+}

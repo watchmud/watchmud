@@ -2,6 +2,8 @@ package telnet
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 )
 
@@ -59,6 +61,20 @@ var helpSections = []helpSection{
 	}},
 }
 
+// helpTopic is what "help <topic>" answers, for what isn't a command.
+type helpTopic struct {
+	what string // its line in the command list
+	text string
+}
+
+var helpTopics = map[string]helpTopic{
+	"bots": {"who the [bot] characters are",
+		"The characters marked [bot] in 'who' are programs, not people. They hunt\n" +
+			"the Hollowfields, rest when they're hurt, and give what they find to the\n" +
+			"donation room, east of Temple Square. They leave any hunting ground a\n" +
+			"player is using, and they can't chat: a tell gets you an automatic answer.\n"},
+}
+
 // helpText is built once: the sections never change while the server runs.
 var helpText = func() string {
 	var b strings.Builder
@@ -71,14 +87,37 @@ var helpText = func() string {
 			fmt.Fprintf(&b, "  %-26s %s\n", e.usage, e.what)
 		}
 	}
+	b.WriteString("\nMore\n")
+	for _, name := range slices.Sorted(maps.Keys(helpTopics)) {
+		fmt.Fprintf(&b, "  %-26s %s\n", "help "+name, helpTopics[name].what)
+	}
 	return b.String()
 }()
 
-// isHelp is every way of asking.
-func isHelp(line string) bool {
-	switch strings.ToLower(strings.TrimSpace(line)) {
-	case "help", "?", "commands":
-		return true
+// helpFor answers every way of asking: help, ? or commands for the command
+// list, with a word after it for a topic.
+func helpFor(line string) (string, bool) {
+	words := strings.Fields(strings.ToLower(line))
+	if len(words) == 0 {
+		return "", false
 	}
-	return false
+	switch words[0] {
+	case "help", "?", "commands":
+	default:
+		return "", false
+	}
+	if len(words) == 1 {
+		return helpText, true
+	}
+	if topic, ok := helpTopics[words[1]]; ok {
+		return topic.text, true
+	}
+	return "There's no help on that. Type 'help' for the commands.\n", true
+}
+
+// isHelp is every way of asking, for the name prompt, which explains itself
+// rather than answering.
+func isHelp(line string) bool {
+	_, ok := helpFor(line)
+	return ok
 }
