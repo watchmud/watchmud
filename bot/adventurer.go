@@ -19,7 +19,7 @@ const (
 	// by one watchmud-bots shares its address.
 	MaxBots = 5
 
-	donateAfter = 5                // things looted before a trip to the donation room
+	donateAfter = 5                // things looted before a trip to the donation room, unless configured
 	avoidFor    = 10 * time.Minute // a ground a player is using is theirs this long
 	tellEvery   = 10 * time.Minute // one honest answer per person this often
 	talkEvery   = 10 * time.Minute // at most one remark this often
@@ -59,7 +59,11 @@ type AdventurerConfig struct {
 	Siblings       []string
 	Seed           uint64
 	Pace           Pace
-	Log            func(format string, args ...any) // nil is silent
+	// DonateAfter is how many things it loots before a trip to the donation
+	// room; zero is donateAfter. Tests lower it: a world at a hundred times
+	// speed still respawns on the wall clock, so its fields run dry first.
+	DonateAfter int
+	Log         func(format string, args ...any) // nil is silent
 }
 
 // Stats is what an adventurer has done since it started.
@@ -284,7 +288,7 @@ func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
 					return a.dead, nil
 				}
 			}
-			if a.carrying >= donateAfter {
+			if a.carrying >= a.donateAt() {
 				return a.donate, nil
 			}
 		}
@@ -601,6 +605,13 @@ func (a *Adventurer) pickGround(power int) *ground {
 		return g
 	}
 	return nil
+}
+
+func (a *Adventurer) donateAt() int {
+	if a.cfg.DonateAfter > 0 {
+		return a.cfg.DonateAfter
+	}
+	return donateAfter
 }
 
 func (a *Adventurer) needsRest() bool { return a.below(restBelow) }
