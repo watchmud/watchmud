@@ -92,3 +92,40 @@ func TestIACFilter_reportsNegotiation(t *testing.T) {
 	assert.Equal(t, "hi", string(text))
 	assert.Equal(t, []heard{{DO, optEOR}, {DONT, optEcho}}, got, "a subnegotiation isn't a negotiation")
 }
+
+func TestIACFilter_reportsSubnegotiation(t *testing.T) {
+	type heard struct {
+		option byte
+		data   []byte
+	}
+	var got []heard
+	// 0x01FF wide: the 0xFF is doubled on the wire
+	in := []byte{'h', IAC, SB, optNAWS, 0x01, IAC, IAC, 0, 24, IAC, SE, 'i'}
+	f := &iacFilter{
+		src: bufio.NewReader(bytes.NewReader(in)),
+		subnegotiated: func(option byte, data []byte) {
+			got = append(got, heard{option, append([]byte(nil), data...)})
+		},
+	}
+
+	text, err := io.ReadAll(f)
+	require.NoError(t, err)
+	assert.Equal(t, "hi", string(text))
+	assert.Equal(t, []heard{{optNAWS, []byte{0x01, 0xFF, 0, 24}}}, got)
+}
+
+// A client can't make the filter hold more than maxSubneg of a
+// subnegotiation, however long it goes on.
+func TestIACFilter_boundsASubnegotiation(t *testing.T) {
+	in := append([]byte{IAC, SB, 99}, bytes.Repeat([]byte{'x'}, 10000)...)
+	in = append(in, IAC, SE)
+	var size int
+	f := &iacFilter{
+		src:           bufio.NewReader(bytes.NewReader(in)),
+		subnegotiated: func(_ byte, data []byte) { size = len(data) },
+	}
+
+	_, err := io.ReadAll(f)
+	require.NoError(t, err)
+	assert.Equal(t, maxSubneg-1, size)
+}

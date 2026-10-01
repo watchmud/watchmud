@@ -673,7 +673,8 @@ Additive once the byte loop exists:
   after every prompt, `IAC EOR` once the client says `DO EOR` (CLAUDE.md, telnet/).
 - ~~ANSI color, with a per-player toggle.~~ Done 2026-10-01: `color [on|off]`, saved on
   the record, on by default; `telnet/ansi.go` is the palette.
-- `NAWS` (window size) for wrapping; wrap output to the client's width.
+- ~~`NAWS` (window size) for wrapping; wrap output to the client's width.~~ Done
+  2026-10-01: `telnet/wrap.go`; no NAWS, no wrapping.
 - Then the MUD-specific layer as it earns its keep: `MSSP`, `GMCP`, `MCCP`, `MXP`.
 - Test against tintin++ specifically, since that's the target.
 

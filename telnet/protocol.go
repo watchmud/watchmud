@@ -30,7 +30,7 @@ const (
 	stateData      filterState = iota // passing bytes through
 	stateIAC                          // saw IAC, next byte is the command
 	stateOption                       // saw WILL/WONT/DO/DONT, consume the option byte
-	stateSubneg                       // inside SB ... SE, discard everything
+	stateSubneg                       // inside SB ... SE, collecting it
 	stateSubnegIAC                    // saw IAC inside a subnegotiation
 )
 
@@ -42,7 +42,16 @@ type iacFilter struct {
 	// negotiated, if set, hears every WILL/WONT/DO/DONT the client sends.
 	// It runs on the reading goroutine.
 	negotiated func(verb, option byte)
+
+	// subnegotiated, if set, hears every SB ... SE: the option, then what
+	// came with it, IAC IAC already undoubled. Also on the reading goroutine.
+	subnegotiated func(option byte, data []byte)
+	sub           []byte // the subnegotiation so far, option first
 }
+
+// maxSubneg bounds what a subnegotiation may carry before the rest is
+// dropped: NAWS is four bytes, and nothing the server listens for is long.
+const maxSubneg = 64
 
 func (f *iacFilter) Read(p []byte) (int, error) {
 	n := 0
@@ -72,6 +81,7 @@ func (f *iacFilter) Read(p []byte) (int, error) {
 				f.verb = b
 				f.state = stateOption // one option byte follows
 			case b == SB:
+				f.sub = f.sub[:0]
 				f.state = stateSubneg
 			default: // NOP, GA, AYT, etc: single byte, nothing follows
 				f.state = stateData
@@ -84,14 +94,29 @@ func (f *iacFilter) Read(p []byte) (int, error) {
 		case stateSubneg:
 			if b == IAC {
 				f.state = stateSubnegIAC
+			} else {
+				f.collect(b)
 			}
 		case stateSubnegIAC:
-			if b == SE {
+			switch b {
+			case SE:
 				f.state = stateData
-			} else if b != IAC {
+				if f.subnegotiated != nil && len(f.sub) > 0 {
+					f.subnegotiated(f.sub[0], f.sub[1:])
+				}
+			case IAC:
+				f.collect(IAC) // a doubled IAC is a literal 0xFF in the data
+				f.state = stateSubneg
+			default:
 				f.state = stateSubneg
 			}
 		}
 	}
 	return n, nil
+}
+
+func (f *iacFilter) collect(b byte) {
+	if len(f.sub) < maxSubneg {
+		f.sub = append(f.sub, b)
+	}
 }

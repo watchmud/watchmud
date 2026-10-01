@@ -184,7 +184,16 @@ one `addressLimit`, and returns the first one's error, which `main` treats as fa
 
 **`protocol.go`** is an `io.Reader` that strips `IAC` sequences, including subnegotiation
 payloads that legitimately contain `0x00` and doubled `0xFF`; it also hands each
-WILL/WONT/DO/DONT the client sends to `conn.negotiated`.
+WILL/WONT/DO/DONT the client sends to `conn.negotiated`, and each subnegotiation (capped at
+`maxSubneg`) to `conn.subnegotiated`.
+
+**Wrapping is to the client's window, and only if it says** (`telnet/wrap.go`). After the
+banner the server sends `DO NAWS`; a client that answers with its size gets every line
+wider than that rewrapped at spaces in `conn.frame`, after color is decided -- color takes
+no columns -- with a line's leading spaces carried onto its continuations. A line that fits
+is untouched, so padded tables keep their columns. No NAWS means no wrapping, which is
+what the bots get. The width reaches `writePump` through the queue (`windowSize`), like
+everything else readPump learns.
 
 **Every prompt is marked**, the in-game one and each login question (`question`, so
 `write` can tell): `IAC GA` after it, or `IAC EOR` once the client answers the

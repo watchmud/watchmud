@@ -50,6 +50,9 @@ type conn struct {
 	// the world sends at login and on the color command. Off until then, so
 	// the login conversation is plain. Owned by writePump.
 	color bool
+	// width is the client's window, to wrap to; zero until it says, and then
+	// no wrapping. Owned by writePump.
+	width int
 
 	// How long a line may take to arrive before the connection is dropped,
 	// before login and after. readPump owns readTimeout and switches it
@@ -268,9 +271,10 @@ func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, banner, host
 	go c.writePump()
 	go c.readPump()
 	c.Send(banner)
-	// a MUD client that says DO gets EOR after each prompt instead of GA;
-	// after the banner, which is what a person reads first
-	c.Send(negotiation([]byte{IAC, WILL, optEOR}))
+	// after the banner, which is what a person reads first: a MUD client
+	// that says DO EOR gets EOR after each prompt instead of GA, and one that
+	// says WILL NAWS tells us how wide to wrap
+	c.Send(negotiation([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS}))
 }
 
 func (c *conn) Player() *player.Player {
@@ -680,6 +684,9 @@ func (c *conn) write(msg any) error {
 	case endOfRecord:
 		c.eor = bool(m)
 		return nil
+	case windowSize:
+		c.width = wrapWidth(int(m))
+		return nil
 	}
 	text := c.frame(msg)
 	if text == "" {
@@ -739,7 +746,7 @@ func (c *conn) frame(msg any) string {
 	if !c.color {
 		text = plain(text)
 	}
-	return text
+	return wrap(text, c.width)
 }
 
 // layout is frame without the color decision.
@@ -781,7 +788,11 @@ func (c *conn) layout(msg any) string {
 
 func (c *conn) readPump() {
 	defer c.Close()
-	c.scanner = bufio.NewScanner(&iacFilter{src: bufio.NewReader(c.netConn), negotiated: c.negotiated})
+	c.scanner = bufio.NewScanner(&iacFilter{
+		src:           bufio.NewReader(c.netConn),
+		negotiated:    c.negotiated,
+		subnegotiated: c.subnegotiated,
+	})
 	c.readTimeout = c.loginIdle
 	if c.login() {
 		c.readTimeout = c.playIdle
@@ -800,18 +811,25 @@ func (c *conn) readPump() {
 	c.gs.Logout(c, cause)
 }
 
-// negotiated hears the client's side of option negotiation. EOR is the only
-// option the server offers that it acts on; WILL ECHO is only ever offered
-// around a password, and the client's answer changes nothing.
+// negotiated hears the client's side of option negotiation: EOR, and a client
+// that stops reporting its window. WILL ECHO is only ever offered around a
+// password, and the client's answer changes nothing.
 func (c *conn) negotiated(verb, option byte) {
-	if option != optEOR {
-		return
-	}
-	switch verb {
-	case DO:
+	switch {
+	case option == optEOR && verb == DO:
 		c.Send(endOfRecord(true))
-	case DONT:
+	case option == optEOR && verb == DONT:
 		c.Send(endOfRecord(false))
+	case option == optNAWS && verb == WONT:
+		c.Send(windowSize(0)) // won't say: back to not wrapping
+	}
+}
+
+// subnegotiated hears what a client says about an option. NAWS is the only
+// one listened to: width then height, two bytes each. The height is unused.
+func (c *conn) subnegotiated(option byte, data []byte) {
+	if option == optNAWS && len(data) >= 4 {
+		c.Send(windowSize(int(data[0])<<8 | int(data[1])))
 	}
 }
 
