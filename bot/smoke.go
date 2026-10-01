@@ -204,16 +204,18 @@ func fight(c *Client, geese int) error {
 
 // loot empties the newest corpse and drops what came out of it, so the bot
 // carries nothing from one deploy to the next. Only feathers: the character's
-// starting kit stays with it.
+// starting kit stays with it, and so do the coins, which are a purse and
+// not something to carry.
 func loot(c *Client) error {
 	if err := c.Send("get all from corpse"); err != nil {
 		return err
 	}
-	m, err := c.Expect(`(You get .+ from the corpse of angry goose\.|There's nothing in there\.)`, stepTimeout)
+	// the whole answer, to the prompt: a goose leaves coins, and maybe a feather
+	m, err := c.Expect(`(?s)((?:You get |There's nothing in there\.).*?)<\d+/\d+hp> `, stepTimeout)
 	if err != nil {
 		return err
 	}
-	if strings.HasPrefix(m[1], "There's nothing") {
+	if !strings.Contains(m[1], "feather from the corpse of angry goose.") {
 		return nil // the feather is a 60% drop
 	}
 	if err := c.Send("drop all.feather"); err != nil {

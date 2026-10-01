@@ -483,11 +483,17 @@ func capitalize(s string) string {
 }
 
 func renderContainerContents(c event.ContainerContents) string {
-	if len(c.Items) == 0 {
+	if len(c.Items) == 0 && c.Coins == 0 {
 		return capitalize(c.Container) + " is empty.\n"
 	}
 	var b strings.Builder
 	b.WriteString(capitalize(c.Container) + " holds:\n")
+	switch {
+	case c.Coins == 1:
+		b.WriteString("  1 coin\n")
+	case c.Coins > 1:
+		fmt.Fprintf(&b, "  %d coins\n", c.Coins)
+	}
 	for _, item := range c.Items {
 		b.WriteString(fmt.Sprintf("  %s [power %d]\n", item.ShortDescription, item.Power))
 	}

@@ -102,7 +102,8 @@ func TestSmoke_passes(t *testing.T) {
 			"An angry goose lowers its neck and hisses at you.")},
 		exchange{"kill goose", "You hit an angry goose.\r\nangry goose is dead!\r\n<98/100hp> " +
 			"\r\nAn angry goose bites you.\r\nangry goose is dead!\r\n<97/100hp> "},
-		exchange{"get all from corpse", "You get a long goose feather from the corpse of angry goose.\r\n<97/100hp> "},
+		exchange{"get all from corpse", "You get 4 coins from the corpse of angry goose.\r\n" +
+			"You get a long goose feather from the corpse of angry goose.\r\n<97/100hp> "},
 		exchange{"drop all.feather", "Dropped.\r\n<97/100hp> "},
 		exchange{"recall", fakeRoom("Temple Square")},
 		exchange{"quit", ""},
@@ -114,6 +115,24 @@ func TestSmoke_passes(t *testing.T) {
 	assert.Empty(t, res.Notes)
 	assert.Contains(t, log.String(), "fight")
 	assert.NotContains(t, c.Transcript(), "hunter22")
+}
+
+// A goose that left coins and no feather: the coins go in the purse, and
+// there's nothing to drop.
+func TestSmoke_coinsButNoFeather(t *testing.T) {
+	c := fakeGame(t, greeting, script(
+		exchange{"west", fakeRoom("The Millpond",
+			"An angry goose lowers its neck and hisses at you.")},
+		exchange{"kill goose", "You hit an angry goose.\r\nangry goose is dead!\r\n<98/100hp> "},
+		exchange{"get all from corpse", "You get 4 coins from the corpse of angry goose.\r\n<98/100hp> "},
+		exchange{"recall", fakeRoom("Temple Square")},
+		exchange{"quit", ""},
+	)...)
+
+	res, err := Smoke(c, cfg, io.Discard)
+	require.NoError(t, err, c.Transcript())
+	assert.Empty(t, res.Notes)
+	assert.NotContains(t, c.Transcript(), "drop all.feather")
 }
 
 // Somebody got the geese first: that's the world, not the deploy.

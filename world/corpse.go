@@ -59,11 +59,28 @@ func (w *World) becomeMobileCorpse(m *mobile.Instance) {
 			log.Error().Err(err).Msgf("becomeMobileCorpse: adding %s to the corpse of %s", drop.Definition.Name, m.Definition.Name)
 		}
 	}
+	corpse.Coins = w.rollCoins(m) // after the loot, so its dice come first
 	r := w.mobileRoom(m)
 	w.RemoveMobile(m)
 	if err := r.Inventory.Add(corpse); err != nil {
 		log.Error().Msgf("becomeMobileCorpse: could not add corpse %s to room %s, %v", corpse.Definition.Name, r.Name, err)
 	}
+}
+
+// rollCoins is what a mob was carrying: more the stronger it is. See
+// rules.Economy.Coins.
+func (w *World) rollCoins(m *mobile.Instance) int {
+	econ := w.content.Catalog.Economy
+	span := econ.CoinRange(m.Power())
+	if span == 0 {
+		return 0
+	}
+	roll, err := w.roller.IntN(span)
+	if err != nil {
+		log.Error().Err(err).Msgf("rollCoins: %s", m.Definition.Id)
+		roll = 0
+	}
+	return econ.Coins(m.Power(), roll)
 }
 
 // rollLoot rolls each line of a mob's loot table on its own -- a d100 against

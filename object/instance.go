@@ -28,6 +28,11 @@ type Instance struct {
 	// isn't one. Only corpses are containers so far.
 	Contents *List
 
+	// Coins is what a container holds besides its Contents: coins are a
+	// count, not things, so they don't go in the list. Only a corpse has
+	// any, and they go with it when it crumbles.
+	Coins int
+
 	// DecaysAt is when this crumbles away, whatever it's holding; the zero
 	// time means never. Only corpses decay so far.
 	DecaysAt time.Time

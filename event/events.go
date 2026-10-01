@@ -114,6 +114,7 @@ type Got struct {
 type ContainerContents struct {
 	Container string
 	Items     []ContainedItem
+	Coins     int
 }
 
 // Decayed is something on the floor crumbling away: a corpse, so far.

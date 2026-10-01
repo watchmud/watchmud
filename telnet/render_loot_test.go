@@ -1,7 +1,11 @@
 package telnet
 
 import (
+	"testing"
 	"uuid"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/watchmud/watchmud/event"
 
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/player"
@@ -99,4 +103,13 @@ var lootCases = []commandCase{
 		input: "look in",
 		want:  "Look in what?\n",
 	},
+}
+
+func TestRenderContainerContents_coins(t *testing.T) {
+	assert.Equal(t, "The corpse of a rat holds:\n  7 coins\n",
+		render(event.ContainerContents{Container: "the corpse of a rat", Coins: 7}, "testdood"))
+	assert.Equal(t, "The corpse of a rat holds:\n  1 coin\n",
+		render(event.ContainerContents{Container: "the corpse of a rat", Coins: 1}, "testdood"))
+	assert.Equal(t, "You get 7 coins from the corpse of a rat.\n",
+		render(event.Got{Actor: "testdood", Item: "7 coins", From: "the corpse of a rat"}, "testdood"))
 }

@@ -125,3 +125,70 @@ func (s *lootSuite) TestBareCorpseIsTheNewest() {
 
 	s.Assert().Equal("the corpse of Little Drone", sent[event.ContainerContents](s.T(), s.r, 0).Container)
 }
+
+// After the loot, one more roll: the coins, from power x 3 to twice that for
+// the power-3 drone in testcontent's economy -- 9 to 18. The dice: the knife
+// misses, the rope (always) drops with no bump, then the coins.
+var coinDice = []int{99, 99, 50, 4}
+
+func (s *lootSuite) killForCoins() *object.Instance {
+	s.T().Helper()
+	s.dice.Load(coinDice)
+	corpse := s.killDrone()
+	s.r.Sent = nil // the death they watched
+	return corpse
+}
+
+func (s *lootSuite) TestCoinsGoIntoTheCorpse() {
+	corpse := s.killForCoins()
+
+	s.Assert().Equal(9+4, corpse.Coins)
+	s.Assert().Equal(map[string]int{"rope": 3}, s.contents(corpse), "the loot rolled first")
+}
+
+func (s *lootSuite) TestGetCoinsFromTheCorpse() {
+	corpse := s.killForCoins()
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Get{Target: "5 coins", From: "corpse"})))
+	s.Assert().Equal(5, s.p.Coins())
+	s.Assert().Equal(8, corpse.Coins)
+	s.Assert().Equal(event.Got{Actor: "testdood", Item: "5 coins", From: corpse.Definition.ShortDescription}, sent[event.Got](s.T(), s.r, 0))
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Get{Target: "coins", From: "corpse"})))
+	s.Assert().Equal(13, s.p.Coins())
+	s.Assert().Zero(corpse.Coins)
+	s.Assert().Equal(1, corpse.Contents.Len(), "the rope stays: coins were all that was asked for")
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Get{Target: "coins", From: "corpse"})))
+	s.Assert().Equal(event.NotInContainer, sent[event.Failed](s.T(), s.r, 2).Code, "none left")
+}
+
+// get all takes the coins along with everything else.
+func (s *lootSuite) TestGetAllTakesTheCoinsToo() {
+	corpse := s.killForCoins()
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Get{Target: "all", From: "corpse"})))
+	s.Assert().Equal(13, s.p.Coins())
+	s.Assert().Equal("13 coins", sent[event.Got](s.T(), s.r, 0).Item)
+	s.Assert().Zero(corpse.Contents.Len())
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Get{Target: "all", From: "corpse"})))
+	s.Assert().Equal(event.ContainerEmpty, sent[event.Failed](s.T(), s.r, 2).Code)
+}
+
+// A corpse holding nothing but coins isn't empty.
+func (s *lootSuite) TestOnlyCoinsIsNotEmpty() {
+	corpse := s.killForCoins()
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Get{Target: "rope", From: "corpse"})))
+	s.Require().Zero(corpse.Contents.Len())
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Get{Target: "all", From: "corpse"})))
+	s.Assert().Equal(13, s.p.Coins())
+}
+
+func (s *lootSuite) TestLookInShowsTheCoins() {
+	s.killForCoins()
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Look{Target: "corpse", In: true})))
+	s.Assert().Equal(13, sent[event.ContainerContents](s.T(), s.r, 0).Coins)
+}

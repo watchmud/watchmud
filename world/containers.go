@@ -1,6 +1,8 @@
 package world
 
 import (
+	"fmt"
+
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
@@ -42,9 +44,20 @@ func (w *World) getFrom(msg *gameserver.HandlerParameter, cmd command.Get) {
 		msg.Fail(event.ParseError)
 		return
 	}
+	// coins aren't things: "get coins from corpse", "get 5 coins from
+	// corpse", or they come along with "get all"
+	everything := target.All && target.Name == ""
+	if isCoins(target.Name) {
+		if container.Coins == 0 {
+			msg.Fail(event.NotInContainer)
+			return
+		}
+		w.takeCoins(msg, container, target.Quantity)
+		return
+	}
 	items := targetsIn(target, container.Contents.All())
-	if len(items) == 0 {
-		if target.All && target.Name == "" {
+	if len(items) == 0 && !(everything && container.Coins > 0) {
+		if everything {
 			msg.Fail(event.ContainerEmpty)
 		} else {
 			msg.Fail(event.NotInContainer)
@@ -53,6 +66,9 @@ func (w *World) getFrom(msg *gameserver.HandlerParameter, cmd command.Get) {
 	}
 
 	room := w.playerRoom(msg.Player)
+	if everything && container.Coins > 0 {
+		w.takeCoins(msg, container, 0)
+	}
 	for _, item := range items {
 		if err := object.Move(item, container.Contents, msg.Player.Inventory()); err != nil {
 			log.Error().Err(err).Str("player", msg.Player.Name()).Str("room", room.Location().String()).Msg("get")
@@ -65,6 +81,36 @@ func (w *World) getFrom(msg *gameserver.HandlerParameter, cmd command.Get) {
 			From:  container.Definition.ShortDescription,
 		})
 	}
+}
+
+// isCoins is whether a target names the coins rather than a thing.
+func isCoins(name string) bool {
+	return name == "coins" || name == "coin"
+}
+
+// takeCoins moves coins from a container to the player's purse: up to want
+// of them, or all when want is zero. The room sees it the way it sees any
+// other get.
+func (w *World) takeCoins(msg *gameserver.HandlerParameter, container *object.Instance, want int) {
+	n := container.Coins
+	if want > 0 {
+		n = min(n, want)
+	}
+	container.Coins -= n
+	msg.Player.AddCoins(n)
+	w.playerRoom(msg.Player).Send(event.Got{
+		Actor: msg.Player.Name(),
+		Item:  coinsText(n),
+		From:  container.Definition.ShortDescription,
+	})
+}
+
+// coinsText is a number of coins as a player reads it.
+func coinsText(n int) string {
+	if n == 1 {
+		return "1 coin"
+	}
+	return fmt.Sprintf("%d coins", n)
 }
 
 // lookIn is "look in <container>".
@@ -87,5 +133,6 @@ func (w *World) lookIn(msg *gameserver.HandlerParameter, name string) {
 	msg.Player.Send(event.ContainerContents{
 		Container: container.Definition.ShortDescription,
 		Items:     items,
+		Coins:     container.Coins,
 	})
 }

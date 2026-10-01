@@ -15,6 +15,7 @@ var (
 	deathRe    = regexp.MustCompile(`(?m)^(.+) is dead!$`)
 	hereRe     = regexp.MustCompile(`(?m)^([A-Z][a-z]+) is here\.$`)
 	gotRe      = regexp.MustCompile(`(?m)^You get .+ from .+\.$`)
+	coinsRe    = regexp.MustCompile(`^You get \d+ coins? from `)
 	powerRe    = regexp.MustCompile(`You are using \(power (\d+)\)`)
 	considerRe = regexp.MustCompile(`\(power (\d+); you are (\d+)\)`)
 )
@@ -70,5 +71,14 @@ func isSibling(name string, siblings []string) bool {
 	return false
 }
 
-// looted is how many things one "get all from corpse" took.
-func looted(text string) int { return len(gotRe.FindAllString(text, -1)) }
+// looted is how many things one "get all from corpse" took. Coins go in the
+// purse, not the pack, so they aren't things to carry to the donation room.
+func looted(text string) int {
+	n := 0
+	for _, line := range gotRe.FindAllString(text, -1) {
+		if !coinsRe.MatchString(line) {
+			n++
+		}
+	}
+	return n
+}

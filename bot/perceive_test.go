@@ -45,3 +45,9 @@ func TestPowerAndConsider(t *testing.T) {
 	m = considerRe.FindStringSubmatch("Giant beetle looks like a fair fight. (power 2; you are 1)\n")
 	assert.Equal(t, []string{"(power 2; you are 1)", "2", "1"}, m)
 }
+
+// Coins go in the purse; they aren't things to take to the donation room.
+func TestLooted_coinsDontCount(t *testing.T) {
+	text := "You get 7 coins from the corpse of angry goose.\nYou get a long goose feather from the corpse of angry goose.\n"
+	assert.Equal(t, 1, looted(text))
+}
