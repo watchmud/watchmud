@@ -93,11 +93,12 @@ func TestCreatePlayer_startingGear(t *testing.T) {
 	require.NotNil(t, p)
 	// created, then shown where they are -- in that order, so the telnet login
 	// conversation is over before the description arrives -- then told where
-	// to go from there
-	require.Len(t, c.sent, 3)
+	// to go from there. Their color setting goes ahead of the room.
+	require.Len(t, c.sent, 4)
 	assert.IsType(t, event.PlayerCreated{}, c.sent[0])
-	assert.IsType(t, event.RoomDescription{}, c.sent[1])
-	assert.Equal(t, event.Welcome{Text: "Welcome! The fighting is south."}, c.sent[2])
+	assert.Equal(t, event.Color{On: true}, c.sent[1])
+	assert.IsType(t, event.RoomDescription{}, c.sent[2])
+	assert.Equal(t, event.Welcome{Text: "Welcome! The fighting is south."}, c.sent[3])
 
 	// testcontent's kit: a knife, a helmet, and a rope that is only carried.
 	assert.Equal(t, 3, p.Inventory().Len())
@@ -163,9 +164,10 @@ func TestLogin_returnsToTheLastRoom(t *testing.T) {
 	login(t, gs, back, "wanderer", "sekrit")
 
 	require.NotNil(t, back.Player())
-	require.Len(t, back.sent, 2, "no welcome for a returning player")
+	require.Len(t, back.sent, 3, "no welcome for a returning player")
 	assert.IsType(t, event.LoggedIn{}, back.sent[0])
-	assert.Equal(t, "Market Square", back.sent[1].(event.RoomDescription).Name, "shown where they came back to")
+	assert.IsType(t, event.Color{}, back.sent[1])
+	assert.Equal(t, "Market Square", back.sent[2].(event.RoomDescription).Name, "shown where they came back to")
 
 	// a look is saved like any other command, and the save says where they are
 	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(back, command.Look{})))

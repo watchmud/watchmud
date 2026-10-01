@@ -33,6 +33,16 @@ var commandCases = []commandCase{
 		want:  "You don't see that here.\n",
 	},
 	{
+		name:  "color off",
+		input: "color off",
+		want:  "Color is off.\n",
+	},
+	{
+		name:  "color with nonsense",
+		input: "color purple",
+		want:  "Color on, color off, or just color to switch it.\n",
+	},
+	{
 		name:  "look shows the room",
 		input: "look",
 		want:  startRoomBlock,
@@ -342,13 +352,13 @@ func TestCommandRendering(t *testing.T) {
 
 			var got strings.Builder
 			for _, m := range rec.Sent {
-				got.WriteString(render(m, p.Name()))
+				got.WriteString(plain(render(m, p.Name())))
 			}
 			assert.Equal(t, tc.want, got.String())
 
 			var otherGot strings.Builder
 			for _, m := range otherRec.Sent {
-				otherGot.WriteString(render(m, o.Name()))
+				otherGot.WriteString(plain(render(m, o.Name())))
 			}
 			assert.Equal(t, tc.wantOther, otherGot.String())
 		})

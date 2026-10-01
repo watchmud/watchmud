@@ -21,6 +21,9 @@ type Player struct {
 	// bot marks a character a program plays, so who can say so. Nothing in
 	// the game grants it: it is set by hand on the record (make bot NAME=...).
 	bot bool
+	// noColor is the player turning ANSI color off. Inverted so the zero
+	// value, which is every record written before there was a choice, is on.
+	noColor bool
 
 	// Lineage is cosmetic and nothing reads it but the renderer. There is no
 	// Class beside it and no Role in its place: a role is read off
@@ -176,3 +179,5 @@ func (p *Player) IsWizard() bool        { return p.wizard }
 func (p *Player) SetWizard(wizard bool) { p.wizard = wizard }
 func (p *Player) IsBot() bool           { return p.bot }
 func (p *Player) SetBot(bot bool)       { p.bot = bot }
+func (p *Player) Color() bool           { return !p.noColor }
+func (p *Player) SetColor(on bool)      { p.noColor = !on }

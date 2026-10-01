@@ -26,7 +26,8 @@ func render(msg any, self string) string {
 		return m
 
 	case event.Prompt:
-		return fmt.Sprintf("<%d/%dhp> ", m.CurrentHealth, m.MaxHealth)
+		hp := fmt.Sprintf("%d/%d", m.CurrentHealth, m.MaxHealth)
+		return "<" + paint(healthColor(m.CurrentHealth, m.MaxHealth), hp) + "hp> "
 
 	case event.Failed:
 		return failureText(m.Verb, string(m.Code))
@@ -46,6 +47,16 @@ func render(msg any, self string) string {
 
 	case event.Welcome:
 		return m.Text + "\n"
+
+	case event.Color:
+		// conn.frame has already switched; this only answers the player
+		switch {
+		case !m.Changed:
+			return ""
+		case m.On:
+			return "Color is " + paint(colorRoomName, "on") + ".\n"
+		}
+		return "Color is off.\n"
 
 	case event.Pong:
 		return "Pong " + m.Target + ".\n"
@@ -112,21 +123,21 @@ func render(msg any, self string) string {
 
 	case event.Said:
 		if m.Speaker == self {
-			return "You say, \"" + m.Value + "\".\n"
+			return "You say, \"" + paint(colorSay, m.Value) + "\".\n"
 		}
-		return m.Speaker + " says, \"" + m.Value + "\".\n"
+		return m.Speaker + " says, \"" + paint(colorSay, m.Value) + "\".\n"
 
 	case event.Told:
 		if m.From == self {
 			return "Ok.\n"
 		}
-		return m.From + " tells you, \"" + m.Value + "\".\n"
+		return paint(colorTell, m.From+" tells you, \""+m.Value+"\".") + "\n"
 
 	case event.Shouted:
 		if m.Speaker == self {
 			return "Ok.\n"
 		}
-		return m.Speaker + " shouts, \"" + m.Value + "\".\n"
+		return paint(colorShout, m.Speaker+" shouts, \""+m.Value+"\".") + "\n"
 
 	// ---- the player --------------------------------------------------------
 
@@ -155,7 +166,7 @@ func render(msg any, self string) string {
 
 	case event.Broke:
 		if m.Actor == self {
-			return fmt.Sprintf("Your %s gives out, ruined.\n", m.Item)
+			return paint(colorBroken, fmt.Sprintf("Your %s gives out, ruined.", m.Item)) + "\n"
 		}
 		return fmt.Sprintf("%s's %s gives out, ruined.\n", m.Actor, m.Item)
 
@@ -164,9 +175,9 @@ func render(msg any, self string) string {
 
 	case event.Died:
 		if m.IsPlayer && m.Target == self {
-			return "You are dead!\n"
+			return paint(colorDeath, "You are dead!") + "\n"
 		}
-		return m.Target + " is dead!\n"
+		return paint(colorDeath, m.Target+" is dead!") + "\n"
 
 	case event.Fleeing:
 		if m.Who == self {
@@ -318,21 +329,21 @@ func renderRole(r event.Role) string {
 // print as-is; player names don't, so they get a verb here.
 func renderRoom(rd event.RoomDescription) string {
 	var b strings.Builder
-	b.WriteString(rd.Name + "\n")
+	b.WriteString(paint(colorRoomName, rd.Name) + "\n")
 	if rd.Description != "" {
 		b.WriteString(" " + rd.Description + "\n")
 	}
 
-	b.WriteString("[ Exits: " + rd.Exits + " ]\n")
+	b.WriteString(paint(colorExits, "[ Exits: "+rd.Exits+" ]") + "\n")
 
 	for _, o := range rd.Objects {
-		b.WriteString(o + "\n")
+		b.WriteString(paint(colorObject, o) + "\n")
 	}
 	for _, m := range rd.Mobs {
-		b.WriteString(m + "\n")
+		b.WriteString(paint(colorMob, m) + "\n")
 	}
 	for _, p := range rd.Players {
-		b.WriteString(p + " is here.\n")
+		b.WriteString(paint(colorPlayer, p) + " is here.\n")
 	}
 	return b.String()
 }
@@ -376,7 +387,7 @@ func renderViolence(self string, s event.Struck) string {
 		if !s.Hit {
 			return fmt.Sprintf("%s misses you.\n", s.Attacker)
 		}
-		return fmt.Sprintf("%s hits you for %d damage.\n", s.Attacker, s.Damage)
+		return paint(colorHurt, fmt.Sprintf("%s hits you for %d damage.", s.Attacker, s.Damage)) + "\n"
 	default:
 		if !s.Hit {
 			return fmt.Sprintf("%s misses %s.\n", s.Attacker, s.Target)

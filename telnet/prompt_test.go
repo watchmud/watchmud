@@ -29,7 +29,7 @@ func loggedInConn() *conn {
 var fullHealth = event.Prompt{CurrentHealth: 100, MaxHealth: 100}
 
 func TestRenderPrompt(t *testing.T) {
-	assert.Equal(t, "<1/100hp> ", render(event.Prompt{CurrentHealth: 1, MaxHealth: 100}, "testdood"))
+	assert.Equal(t, "<1/100hp> ", plain(render(event.Prompt{CurrentHealth: 1, MaxHealth: 100}, "testdood")))
 }
 
 func TestPrompt_afterACommand(t *testing.T) {

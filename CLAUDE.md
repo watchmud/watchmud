@@ -191,7 +191,17 @@ WILL/WONT/DO/DONT the client sends to `conn.negotiated`.
 `WILL EOR` sent after the banner with `DO`. A prompt has no newline, so without the mark a
 MUD client can only guess from a pause whether a partial line is a prompt; tintin's
 `#action {^Password:}` depended on that guess. A prompt `frame` doesn't print gets no mark --
-a bare GA would announce a prompt that never came. The rest of Phase 7 is still to do.
+a bare GA would announce a prompt that never came.
+
+**Color is the renderer's, and the connection's to take away.** `render` always paints
+(`telnet/ansi.go`: the palette is named by what a thing *is* -- `colorRoomName`,
+`colorMob` -- so restyling is one file), and `conn.frame` strips it with `plain` unless the
+player wants it. The connection learns that from `event.Color`, which `World.Arrive` sends
+silently ahead of the first room and `color [on|off]` sends with `Changed` set; until then
+it's plain, so the login conversation never has any. The choice is `NoColor` on the record,
+inverted so old records and new characters are both on. Tests about *wording* compare
+`plain(render(...))`; `ansi_test.go` is where the colors are pinned. The bot drops color as
+a terminal would (`bot/telnet.go`), so a palette change never breaks a bot pattern.
 
 **Login is straight-line code, not a state machine.** `login()` blocks on an `authResult`
 channel that `Send` signals when one of `event.LoggedIn` / `PlayerCreated` / `LoginFailed` /

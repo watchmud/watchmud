@@ -139,6 +139,13 @@ type Who struct{}
 
 func (Who) Verb() string { return "who" }
 
+// Color is "color on", "color off", or a bare "color" to switch it.
+type Color struct {
+	Setting string
+}
+
+func (Color) Verb() string { return "color" }
+
 type Stat struct{}
 
 func (Stat) Verb() string { return "stat" }

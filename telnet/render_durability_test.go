@@ -28,7 +28,7 @@ func TestRenderEquipment_condition(t *testing.T) {
 func TestRenderBroke(t *testing.T) {
 	broke := event.Broke{Actor: "testdood", Item: "chain shirt"}
 
-	assert.Equal(t, "Your chain shirt gives out, ruined.\n", render(broke, "testdood"))
+	assert.Equal(t, "Your chain shirt gives out, ruined.\n", plain(render(broke, "testdood")))
 	assert.Equal(t, "testdood's chain shirt gives out, ruined.\n", render(broke, "otherdood"))
 }
 

@@ -97,6 +97,9 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "who":
 		return command.Who{}, nil
 
+	case "color", "colour":
+		return command.Color{Setting: strings.ToLower(rest)}, nil
+
 	case "stat", "stats":
 		return command.Stat{}, nil
 

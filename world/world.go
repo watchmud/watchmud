@@ -110,6 +110,7 @@ func (w *World) ReturnPlayer(p *player.Player, zoneId, roomId string) {
 func (w *World) Arrive(p *player.Player) {
 	r := w.playerRoom(p)
 	r.SendExcept(p, event.EnteredGame{Actor: p.Name()})
+	p.Send(event.Color{On: p.Color()}) // ahead of the first thing worth coloring
 	p.Send(r.DescriptionExcept(p))
 }
 

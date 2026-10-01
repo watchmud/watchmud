@@ -65,14 +65,16 @@ func newClient(nc net.Conn) *Client {
 	return c
 }
 
-// read is the only reader of the socket. Telnet commands are dropped, and so
-// is every \r: the server sends \r\n, and patterns are simpler with \n.
+// read is the only reader of the socket. Telnet commands and color are
+// dropped, and so is every \r: the server sends \r\n, and patterns are
+// simpler with \n.
 func (c *Client) read() {
 	var strip iacStripper
+	var uncolor colorStripper
 	buf := make([]byte, 4096)
 	for {
 		n, err := c.nc.Read(buf)
-		text := bytes.ReplaceAll(strip.strip(buf[:n]), []byte("\r"), nil)
+		text := bytes.ReplaceAll(uncolor.strip(strip.strip(buf[:n])), []byte("\r"), nil)
 		c.mu.Lock()
 		c.unread = append(c.unread, text...)
 		c.record(string(text))

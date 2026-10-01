@@ -191,6 +191,14 @@ type Shouted struct {
 
 // ---- the player -----------------------------------------------------------
 
+// Color is whether a player's connection shows ANSI color. Changed is the
+// player having just asked; without it this is the setting being applied at
+// login, which says nothing.
+type Color struct {
+	On      bool
+	Changed bool
+}
+
 type Who struct {
 	Players []WhoEntry
 }

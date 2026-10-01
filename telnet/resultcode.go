@@ -42,6 +42,7 @@ func failureText(verb, code string) string {
 }
 
 var failureByVerb = map[string]string{
+	"color/BAD_REQUEST":      "Color on, color off, or just color to switch it.",
 	"drop/TARGET_NOT_FOUND":  "You aren't carrying that.",
 	"wear/TARGET_NOT_FOUND":  "You aren't carrying that.",
 	"equip/TARGET_NOT_FOUND": "You aren't carrying that.",

@@ -46,6 +46,10 @@ type conn struct {
 	// eor is whether the client agreed to IAC EOR as the end of a prompt;
 	// until it does, a prompt ends with IAC GA. Owned by writePump.
 	eor bool
+	// color is whether this player wants ANSI color, from the event.Color
+	// the world sends at login and on the color command. Off until then, so
+	// the login conversation is plain. Owned by writePump.
+	color bool
 
 	// How long a line may take to arrive before the connection is dropped,
 	// before login and after. readPump owns readTimeout and switches it
@@ -728,6 +732,18 @@ func echoBytes(on bool) string {
 // is sitting there unanswered -- a combat round, somebody's shout -- starts on
 // a line of its own instead of after the "> ".
 func (c *conn) frame(msg any) string {
+	if m, ok := msg.(event.Color); ok {
+		c.color = m.On // before rendering, so the answer is in the new setting
+	}
+	text := c.layout(msg)
+	if !c.color {
+		text = plain(text)
+	}
+	return text
+}
+
+// layout is frame without the color decision.
+func (c *conn) layout(msg any) string {
 	switch m := msg.(type) {
 	case question:
 		msg = string(m)

@@ -78,6 +78,18 @@ func TestExpect_ignoresTelnetNegotiation(t *testing.T) {
 	assert.Equal(t, "\xff", m[1], "a doubled IAC is a literal 0xFF")
 }
 
+// Color is what a terminal shows, not what a player reads -- even when a
+// sequence arrives in two pieces.
+func TestExpect_ignoresColor(t *testing.T) {
+	c, nc := connect(t)
+	_, _ = io.WriteString(nc, "<\x1b[32m97/100\x1b[0mhp> \x1b[1;3")
+	_, err := c.Expect(`<97/100hp> $`, time.Second)
+	require.NoError(t, err)
+	_, _ = io.WriteString(nc, "1mgoose is dead!\x1b[0m\r\n")
+	_, err = c.Expect(`^goose is dead!\n`, time.Second)
+	require.NoError(t, err)
+}
+
 func TestExpect_failsWhenTheConnectionCloses(t *testing.T) {
 	c, nc := connect(t)
 	_, _ = io.WriteString(nc, "Goodbye.\r\n")

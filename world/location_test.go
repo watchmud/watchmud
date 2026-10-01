@@ -90,6 +90,7 @@ func (s *locationSuite) TestArrive() {
 	s.Require().Len(s.r.Sent, 1)
 	s.Assert().Equal("newcomer", sent[event.EnteredGame](s.T(), s.r, 0).Actor)
 
-	s.Require().Len(rec.Sent, 1)
-	s.Assert().Equal(s.w.StartRoom.Name, sent[event.RoomDescription](s.T(), rec, 0).Name)
+	s.Require().Len(rec.Sent, 2)
+	s.Assert().Equal(event.Color{On: true}, sent[event.Color](s.T(), rec, 0), "the setting, ahead of the room")
+	s.Assert().Equal(s.w.StartRoom.Name, sent[event.RoomDescription](s.T(), rec, 1).Name)
 }
