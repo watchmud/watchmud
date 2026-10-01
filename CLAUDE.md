@@ -277,7 +277,10 @@ of a crowd vanishing. A bot with nowhere to hunt waits in Market Square (`waitIn
 Temple Square: that's where every recall, death and new character lands; `consider` gates every kill; it answers each person's tell once per 10
 minutes with the same honest line. Hunting grounds (`bot/grounds.go`) are hand-written
 tables walked against the real content by `TestGrounds_walk`; never add the
-hedge-witch as prey. `cmd/watchmud-bots` runs up to 5 (one address, the server's
+hedge-witch as prey. There are two, the west and east fields: a bot is power 1 for good
+(it never wears loot) and fights nothing above power 2, which is only the farms. It picks
+at random among the grounds its power suits and nobody is using, so bots spread out and a
+player on one sends them to the other. `cmd/watchmud-bots` runs up to 5 (one address, the server's
 cap), reconnecting forever.
 
 ### Content loading (loader -> world)

@@ -160,9 +160,13 @@ func TestHunt_leavesAGroundToAPlayer(t *testing.T) {
 	g.say("The Millpond\r\n A pond.\r\n[ Exits: e s ]\r\nAn angry goose lowers its neck and hisses at you.\r\nPim is here.\r\nBob is here.\r\n<100/100hp> ")
 	require.NoError(t, <-done)
 	assert.Equal(t, 1, a.Stats().Avoided)
-	assert.Nil(t, a.pickGround(1), "avoiding the only ground")
+	for range 20 {
+		assert.Equal(t, &grounds[1], a.pickGround(1), "only the other ground, while they're there")
+	}
+	a.avoiding[grounds[1].name] = now.Add(avoidFor)
+	assert.Nil(t, a.pickGround(1), "both taken: wait in town")
 	now = now.Add(avoidFor + time.Minute)
-	assert.Equal(t, &grounds[0], a.pickGround(1))
+	assert.NotNil(t, a.pickGround(1))
 }
 
 // Resting reads health off prompts it asks for with a bare Enter, since regen
@@ -179,4 +183,18 @@ func TestRest_pollsUntilRested(t *testing.T) {
 	g.say("<95/100hp> ")
 	require.NoError(t, <-done)
 	assert.Equal(t, 95, a.health)
+}
+
+// With more than one ground open, bots spread out rather than all taking the
+// first in the list.
+func TestPickGround_spreadsOut(t *testing.T) {
+	a, _ := adventurer(t)
+	seen := map[string]int{}
+	for range 100 {
+		seen[a.pickGround(1).name]++
+	}
+	for _, g := range grounds {
+		assert.Positive(t, seen[g.name], "never chose %s", g.name)
+	}
+	assert.Nil(t, a.pickGround(99), "nothing suits power 99")
 }

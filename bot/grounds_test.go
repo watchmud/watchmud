@@ -64,11 +64,11 @@ func TestGround_homeward(t *testing.T) {
 
 	assert.Equal(t, append([]step{{"east", "The Waystone"}}, upTheRoute...), g.homeward(0), "back from the millpond")
 	assert.Equal(t, append([]step{
-		{"east", "The Wheat Field"},
-		{"north", "Along the Hedgerow"},
-		{"west", "The Waystone"},
-	}, upTheRoute...), g.homeward(4), "on round from farm lane")
+		{"north", "The Millpond"},
+		{"east", "The Waystone"},
+	}, upTheRoute...), g.homeward(3), "on round from the orchard, the second time through")
 	assert.Equal(t, upTheRoute, g.homeward(len(g.patrol)-1), "already at the waystone")
+	assert.Equal(t, append([]step{{"west", "The Waystone"}}, upTheRoute...), grounds[1].homeward(0), "back from the hedgerow")
 }
 
 // Broken gear stops counting toward power, so a bot in worn-out kit is power

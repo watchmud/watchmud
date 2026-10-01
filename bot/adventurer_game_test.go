@@ -22,11 +22,14 @@ var fastPace = Pace{
 
 // runAdventurer starts one and stops it when the test ends, checking it quit
 // cleanly.
-func runAdventurer(t *testing.T, addr, name string) *Adventurer {
+func runAdventurer(t *testing.T, addr, name string, setup ...func(*Adventurer)) *Adventurer {
 	t.Helper()
 	// two, not five: the zone respawns on the wall clock, every few minutes,
 	// and at this speed the fields are cleared in seconds
 	a := NewAdventurer(AdventurerConfig{Name: name, Password: "correcthorse", Seed: 7, Pace: fastPace, DonateAfter: 2, Log: t.Logf})
+	for _, f := range setup {
+		f(a)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
 	go func() { done <- a.Run(ctx, addr) }()
@@ -75,7 +78,7 @@ func TestAdventurer_answersATell(t *testing.T) {
 	require.NoError(t, err, v.Transcript())
 }
 
-// A player at the millpond has the Hollowfields: the bot sees them on its
+// A player at the millpond has the west fields: the bot sees them on its
 // first patrol step, walks back out the way it came, and waits it out in the
 // market -- not in Temple Square, where everyone arrives. No pulses: at a
 // hundred times speed the geese would kill the visitor in about a second, and
@@ -93,7 +96,11 @@ func TestAdventurer_leavesAGroundToAPlayer(t *testing.T) {
 		require.NoError(t, err, v.Transcript())
 	}
 
-	a := runAdventurer(t, addr, "Wren")
+	// the east fields are taken too, so the millpond is where it goes, and
+	// once it has seen the visitor there is nowhere left but the market
+	a := runAdventurer(t, addr, "Wren", func(a *Adventurer) {
+		a.avoiding[grounds[1].name] = time.Now().Add(time.Hour)
+	})
 	ok := assert.Eventually(t, func() bool { return a.Stats().Avoided >= 1 }, 30*time.Second, 20*time.Millisecond)
 	require.True(t, ok, "stats: %+v", a.Stats())
 	_, err := v.Expect(`Wren leaves east\.`, 5*time.Second)

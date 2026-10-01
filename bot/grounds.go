@@ -22,41 +22,56 @@ type step struct{ dir, room string }
 // looks in a room -- a room shows descriptions, not keywords.
 type prey struct{ keyword, name, seen string }
 
+// Every bot is power 1 for good -- it never wears what it finds -- and fights
+// nothing more than a power above it, so its grounds are the farms: rats,
+// geese, beetles and dogs. The bandit track and the Old Wood are past it, and
+// the hedge-witch is never prey. Two grounds rather than one so a player on
+// one sends the bots to the other, instead of back to town to wait.
+var hollowfieldsRoute = []step{
+	{"south", "Market Square"},
+	{"south", "South Gate"},
+	{"south", "Outside South Gate"},
+	{"south", "southern path"},
+	{"south", "The Waystone"},
+}
+
 var grounds = []ground{{
-	name: "the Hollowfields",
+	name: "the west fields",
 	// 0, not the zone's 1: broken gear stops counting toward power, and a bot
 	// whose kit has all worn out is power 0. It should still hunt rats.
 	minPower: 0,
 	maxPower: 5,
-	route: []step{
-		{"south", "Market Square"},
-		{"south", "South Gate"},
-		{"south", "Outside South Gate"},
-		{"south", "southern path"},
-		{"south", "The Waystone"},
-	},
-	// the farms: not the bandit track, the wood or the witch's hollow
+	route:    hollowfieldsRoute,
 	patrol: []step{
 		{"west", "The Millpond"},
 		{"south", "The Overgrown Orchard"},
 		{"south", "The Red Barn"},
 		{"north", "The Overgrown Orchard"},
-		{"east", "Farm Lane"},
-		{"east", "The Wheat Field"},
-		{"north", "Along the Hedgerow"},
-		{"west", "The Waystone"},
+		{"north", "The Millpond"},
+		{"east", "The Waystone"},
 	},
-	// Never the hedge-witch: her ring and censer are where the first healers
-	// come from (LEVELS.md), and a bot farming her would take them from
-	// players. consider decides among these; the table only says which are
-	// fair game at all.
 	prey: []prey{
 		{"rat", "field rat", "A fat field rat noses through the straw."},
 		{"goose", "angry goose", "An angry goose lowers its neck and hisses at you."},
 		{"beetle", "giant beetle", "A giant beetle the size of a dog clicks its mandibles."},
-		{"dog", "wild dog", "A mangy wild dog watches you, hackles up."},
 	},
 	loot: []string{"pelt", "feather", "carapace"},
+}, {
+	name:     "the east fields",
+	minPower: 0,
+	maxPower: 5,
+	route:    hollowfieldsRoute,
+	patrol: []step{
+		{"east", "Along the Hedgerow"},
+		{"south", "The Wheat Field"},
+		{"west", "Farm Lane"},
+		{"north", "The Waystone"},
+	},
+	prey: []prey{
+		{"rat", "field rat", "A fat field rat noses through the straw."},
+		{"dog", "wild dog", "A mangy wild dog watches you, hackles up."},
+	},
+	loot: []string{"pelt"},
 }}
 
 // preyIn is the kinds of prey in a room's description, once each.

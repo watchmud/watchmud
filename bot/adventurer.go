@@ -641,7 +641,11 @@ func (a *Adventurer) told(who string) {
 
 // ---- small things -------------------------------------------------------------
 
+// pickGround chooses among the grounds its power suits and no player is
+// using, at random: the first in the list every time would put every bot on
+// it together.
 func (a *Adventurer) pickGround(power int) *ground {
+	var open []*ground
 	for i := range grounds {
 		g := &grounds[i]
 		if power < g.minPower || power > g.maxPower {
@@ -650,9 +654,12 @@ func (a *Adventurer) pickGround(power int) *ground {
 		if until, ok := a.avoiding[g.name]; ok && a.now().Before(until) {
 			continue
 		}
-		return g
+		open = append(open, g)
 	}
-	return nil
+	if len(open) == 0 {
+		return nil
+	}
+	return open[a.rng.IntN(len(open))]
 }
 
 func (a *Adventurer) donateAt() int {
