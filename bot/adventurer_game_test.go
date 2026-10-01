@@ -76,7 +76,8 @@ func TestAdventurer_answersATell(t *testing.T) {
 }
 
 // A player at the millpond has the Hollowfields: the bot sees them on its
-// first patrol step, turns round, and waits it out in town. No pulses: at a
+// first patrol step, walks back out the way it came, and waits it out in the
+// market -- not in Temple Square, where everyone arrives. No pulses: at a
 // hundred times speed the geese would kill the visitor in about a second, and
 // they'd wake in town before the bot arrived.
 func TestAdventurer_leavesAGroundToAPlayer(t *testing.T) {
@@ -95,6 +96,16 @@ func TestAdventurer_leavesAGroundToAPlayer(t *testing.T) {
 	a := runAdventurer(t, addr, "Wren")
 	ok := assert.Eventually(t, func() bool { return a.Stats().Avoided >= 1 }, 30*time.Second, 20*time.Millisecond)
 	require.True(t, ok, "stats: %+v", a.Stats())
+	_, err := v.Expect(`Wren leaves east\.`, 5*time.Second)
+	require.NoError(t, err, "walked off, didn't recall: %s", v.Transcript())
+
+	require.Eventually(t, func() bool {
+		if v.Send("who") != nil {
+			return false
+		}
+		_, err := v.Expect(`(?m)^Wren .* - Market Square - `, 200*time.Millisecond)
+		return err == nil
+	}, 20*time.Second, 50*time.Millisecond, "never waited in the market: %s", v.Transcript())
 	time.Sleep(500 * time.Millisecond) // a few idle rounds in town
 	assert.Zero(t, a.Stats().Kills, "it never fought on a ground a player was using")
 }

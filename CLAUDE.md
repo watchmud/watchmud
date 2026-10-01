@@ -262,7 +262,10 @@ check`. If you move the geese or rename a room on the route, update `route` in
 donate; fight and rest are procedures) driven by `Client.ReadChunk`, one prompt's
 worth of output at a time. Its manners are constants, not config: it never fights
 in a room with a real player (siblings are known by name) and leaves that ground for
-10 minutes; `consider` gates every kill; it answers each person's tell once per 10
+10 minutes -- on foot (`ground.homeward`, walked from every patrol room by
+`TestGrounds_walk`), never by recall, so a player sees bots walk off one at a time instead
+of a crowd vanishing. A bot with nowhere to hunt waits in Market Square (`waitIn`), never
+Temple Square: that's where every recall, death and new character lands; `consider` gates every kill; it answers each person's tell once per 10
 minutes with the same honest line. Hunting grounds (`bot/grounds.go`) are hand-written
 tables walked against the real content by `TestGrounds_walk`; never add the
 hedge-witch as prey. `cmd/watchmud-bots` runs up to 5 (one address, the server's

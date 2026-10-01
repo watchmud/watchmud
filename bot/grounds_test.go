@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -20,6 +21,7 @@ func TestGrounds_walk(t *testing.T) {
 			require.NotEmpty(t, g.patrol)
 			assert.Equal(t, g.route[len(g.route)-1].room, g.patrol[len(g.patrol)-1].room,
 				"the patrol is a loop from where the route ends")
+			assert.Equal(t, waitIn, g.route[0], "every route is out through the market, where bots wait")
 
 			c := loginAs(t, addr, "Quillon", "correcthorse")
 			require.NoError(t, recall(c))
@@ -31,7 +33,42 @@ func TestGrounds_walk(t *testing.T) {
 			require.NoError(t, c.Send("quit"))
 			require.NoError(t, c.ExpectClosed(5*time.Second))
 		})
+		// and the way out on foot, from every room on the patrol
+		for i := range g.patrol {
+			t.Run(fmt.Sprintf("%s, homeward from %s", g.name, g.patrol[i].room), func(t *testing.T) {
+				c := loginAs(t, addr, "Quillon", "correcthorse")
+				require.NoError(t, recall(c))
+				way := append(append([]step{}, g.route...), g.patrol[:i+1]...)
+				for _, s := range append(way, g.homeward(i)...) {
+					require.NoError(t, c.Send(s.dir))
+					_, err := room(c, s.room)
+					require.NoError(t, err, "going %s to %s", s.dir, s.room)
+				}
+				require.NoError(t, c.Send("quit"))
+				require.NoError(t, c.ExpectClosed(5*time.Second))
+			})
+		}
 	}
+}
+
+// The short way round: back the way it came from near the loop's start, on
+// round from near its end; then up the route, to the market.
+func TestGround_homeward(t *testing.T) {
+	g := &grounds[0]
+	upTheRoute := []step{
+		{"north", "southern path"},
+		{"north", "Outside South Gate"},
+		{"north", "South Gate"},
+		{"north", "Market Square"},
+	}
+
+	assert.Equal(t, append([]step{{"east", "The Waystone"}}, upTheRoute...), g.homeward(0), "back from the millpond")
+	assert.Equal(t, append([]step{
+		{"east", "The Wheat Field"},
+		{"north", "Along the Hedgerow"},
+		{"west", "The Waystone"},
+	}, upTheRoute...), g.homeward(4), "on round from farm lane")
+	assert.Equal(t, upTheRoute, g.homeward(len(g.patrol)-1), "already at the waystone")
 }
 
 // Broken gear stops counting toward power, so a bot in worn-out kit is power

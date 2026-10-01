@@ -32,6 +32,15 @@ const (
 	botReply = "I'm a bot (see 'help bots') - I can't chat, sorry!"
 )
 
+// home is where recall lands -- and where every death and every new character
+// lands too, so it's no place for bots to stand around. waitIn is where one
+// with nowhere to hunt waits instead: a step south, and the first room of
+// every route, since every ground is out through the market.
+var (
+	home   = "Temple Square"
+	waitIn = step{"south", "Market Square"}
+)
+
 // Pace is how fast a bot plays. HumanPace is the real one; tests go faster.
 type Pace struct {
 	Think  [2]time.Duration // before each decision, uniformly in [min, max)
@@ -82,7 +91,8 @@ type Adventurer struct {
 
 	health, maxHealth int
 	attacked, died    bool
-	carrying          int // looted since the last donation
+	carrying          int    // looted since the last donation
+	here              string // the room it's in, as far as it knows
 	ground            *ground
 	avoiding          map[string]time.Time // ground name -> until
 	toldAt            map[string]time.Time
@@ -208,7 +218,7 @@ func (a *Adventurer) goHome(ctx context.Context) (stateFn, error) {
 	if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
 		return nil, err
 	}
-	if _, _, err := a.ask("recall", roomRe("Temple Square")); err != nil {
+	if err := a.recall(); err != nil {
 		return nil, err
 	}
 	a.say(momentTown)
@@ -233,14 +243,28 @@ func (a *Adventurer) town(ctx context.Context) (stateFn, error) {
 	a.ground = a.pickGround(power)
 	if a.ground == nil {
 		a.log("nowhere to hunt at power %d; waiting in town", power)
+		if a.here == home {
+			if _, err := a.walk(ctx, waitIn); err != nil {
+				return nil, err
+			}
+		}
 		return a.waitThen(a.cfg.Pace.Idle, a.town), nil
 	}
 	a.log("off to %s at power %d", a.ground.name, power)
 	return a.travel, nil
 }
 
+// travel sets out from wherever in town it is: home, or partway down the
+// route already, waiting in the market.
 func (a *Adventurer) travel(ctx context.Context) (stateFn, error) {
-	for _, s := range a.ground.route {
+	route := a.ground.route
+	for i, s := range route {
+		if s.room == a.here {
+			route = route[i+1:]
+			break
+		}
+	}
+	for _, s := range route {
 		if _, err := a.walk(ctx, s); err != nil {
 			return nil, err
 		}
@@ -253,7 +277,7 @@ func (a *Adventurer) travel(ctx context.Context) (stateFn, error) {
 func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
 	g := a.ground
 	for range patrolLaps {
-		for _, s := range g.patrol {
+		for i, s := range g.patrol {
 			room, err := a.walk(ctx, s)
 			if err != nil {
 				return nil, err
@@ -262,7 +286,7 @@ func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
 				a.avoiding[g.name] = a.now().Add(avoidFor)
 				a.count(func(st *Stats) { st.Avoided++ })
 				a.log("%s is in %s; leaving %s to them", who[0], s.room, g.name)
-				return a.goHome, nil
+				return a.leave(g.homeward(i)), nil
 			}
 			for _, p := range g.preyIn(room) {
 				if err := a.engage(ctx, p); err != nil {
@@ -301,7 +325,7 @@ func (a *Adventurer) donate(ctx context.Context) (stateFn, error) {
 	if a.attacked {
 		return a.fightThen(a.donate), nil
 	}
-	if _, _, err := a.ask("recall", roomRe("Temple Square")); err != nil {
+	if err := a.recall(); err != nil {
 		return nil, err
 	}
 	if _, err := a.walk(ctx, step{"east", "Donation Room"}); err != nil {
@@ -323,6 +347,18 @@ func (a *Adventurer) donate(ctx context.Context) (stateFn, error) {
 		return nil, err
 	}
 	return a.town, nil
+}
+
+// leave walks off a ground a player has turned up on, back to town.
+func (a *Adventurer) leave(way []step) stateFn {
+	return func(ctx context.Context) (stateFn, error) {
+		for _, s := range way {
+			if _, err := a.walk(ctx, s); err != nil {
+				return nil, err
+			}
+		}
+		return a.town, nil
+	}
 }
 
 // dead: it woke in the player-death room at 1hp; recall makes sure where.
@@ -382,7 +418,19 @@ func (a *Adventurer) walk(ctx context.Context, s step) (string, error) {
 		return "", err
 	}
 	text, _, err := a.ask(s.dir, roomRe(s.room))
+	if err == nil {
+		a.here = s.room
+	}
 	return text, err
+}
+
+// recall goes home, the one way back that works from anywhere.
+func (a *Adventurer) recall() error {
+	if _, _, err := a.ask("recall", roomRe(home)); err != nil {
+		return err
+	}
+	a.here = home
+	return nil
 }
 
 // engage considers one kind of prey and fights it if it's a fair fight or

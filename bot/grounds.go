@@ -79,3 +79,40 @@ func (g *ground) isPrey(name string) bool {
 	}
 	return false
 }
+
+// homeward is the way off a ground on foot, from patrol step i -- the room
+// it just reached -- to the first room of the route: round the loop to its
+// start whichever way is shorter, then back up the route. Walking out, rather
+// than recalling, is what a player sees as "Wren leaves east." and not a
+// crowd blinking out of existence the moment they arrive.
+func (g *ground) homeward(i int) []step {
+	var out []step
+	forward := len(g.patrol) - 1 - i // steps on round to where the loop starts
+	if forward <= i+1 {
+		out = append(out, g.patrol[i+1:]...)
+	} else {
+		for j := i; j >= 0; j-- {
+			out = append(out, step{opposite[g.patrol[j].dir], g.patrolRoomBefore(j)})
+		}
+	}
+	for k := len(g.route) - 1; k >= 1; k-- {
+		out = append(out, step{opposite[g.route[k].dir], g.route[k-1].room})
+	}
+	return out
+}
+
+// patrolRoomBefore is where patrol step j sets out from.
+func (g *ground) patrolRoomBefore(j int) string {
+	if j == 0 {
+		return g.route[len(g.route)-1].room
+	}
+	return g.patrol[j-1].room
+}
+
+// opposite is the way back. Every exit a route or patrol uses must have one,
+// which TestGrounds_walk checks against the real content.
+var opposite = map[string]string{
+	"north": "south", "south": "north",
+	"east": "west", "west": "east",
+	"up": "down", "down": "up",
+}
