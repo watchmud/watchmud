@@ -41,6 +41,16 @@ func LoadCatalog(rulesFS fs.FS) (*rules.Catalog, error) {
 	}
 	c.Durability = durability
 
+	// Optional too, and absent is the economy switched off: see rules.Economy.
+	economy, err := readOptionalJSONFile[rules.Economy](rulesFS, "economy.json")
+	if err != nil {
+		return nil, err
+	}
+	if err := economy.Check(); err != nil {
+		return nil, err
+	}
+	c.Economy = economy
+
 	// Optional: a content set with no starting_gear.json hands new characters
 	// nothing, which is a game you can play. What it can't be is wrong, so
 	// every item in it is checked against the zones once they are loaded --

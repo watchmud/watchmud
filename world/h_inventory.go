@@ -17,5 +17,5 @@ func (w *World) handleInventory(msg *gameserver.HandlerParameter, cmd command.In
 			})
 		}
 	}
-	msg.Player.Send(event.Inventory{Items: items})
+	msg.Player.Send(event.Inventory{Items: items, Coins: msg.Player.Coins()})
 }

@@ -20,6 +20,8 @@ func testRecord() *player.Record {
 		PasswordHash: "$2a$10$abcdefghijklmnopqrstuuvwxyzABCDEFGHIJKLMNOPQRSTUVWXY",
 		Wizard:       true,
 		Bot:          true,
+		NoColor:      true,
+		Coins:        42,
 		CurHealth:    93,
 		MaxHealth:    100,
 		LineageId:    "hill_dwarf",

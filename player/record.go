@@ -16,6 +16,7 @@ type Record struct {
 	Wizard                 bool
 	Bot                    bool
 	NoColor                bool // inverted: a record from before the choice is color on
+	Coins                  int
 	CurHealth, MaxHealth   int
 	LineageId              string // cosmetic; there is no ClassId beside it any more
 	LastZoneId, LastRoomId string
@@ -68,6 +69,7 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 	p.wizard = rec.Wizard
 	p.bot = rec.Bot
 	p.noColor = rec.NoColor
+	p.coins = max(rec.Coins, 0)
 
 	for _, ir := range rec.Inventory {
 		//Missing definitions. A saved InventoryRecord can reference a zone or object id that content no longer defines — you edit content/, and last week's save now points at nothing. Erroring means an unlucky
@@ -121,6 +123,7 @@ func (p *Player) Record() *Record {
 		Wizard:       p.wizard,
 		Bot:          p.bot,
 		NoColor:      p.noColor,
+		Coins:        p.coins,
 		CurHealth:    p.curHealth,
 		MaxHealth:    p.maxHealth,
 		LineageId:    p.Lineage.Id,

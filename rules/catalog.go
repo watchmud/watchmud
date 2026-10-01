@@ -18,6 +18,10 @@ type Catalog struct {
 	// feature -- it means nothing in the game wears out.
 	Durability DurabilityTable
 
+	// Economy is what things cost. Assigned by the loader; the zero value is
+	// the economy switched off. See Economy.
+	Economy Economy
+
 	// StartingGear is what a new character is created holding. Assigned by
 	// the loader rather than passed to NewCatalog, for the same reason
 	// object.Definition.RoleWeights is: it is content that has to be checked

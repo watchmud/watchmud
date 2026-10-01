@@ -111,3 +111,24 @@ func (s *PlayerSuite) TestBotSurvivesTheRecord() {
 	s.Require().NoError(err)
 	s.Assert().True(back.IsBot())
 }
+
+// The purse never goes below empty, and it's on the record: coins a save
+// forgot would be gone at the next timed save.
+func (s *PlayerSuite) TestCoins() {
+	p := NewTestPlayer(uuid.New(), "wren", &Recorder{})
+	s.Assert().Zero(p.Coins())
+
+	p.AddCoins(12)
+	s.Assert().False(p.Spend(13), "can't pay what you haven't got")
+	s.Assert().Equal(12, p.Coins())
+	s.Assert().True(p.Spend(5))
+	s.Assert().Equal(7, p.Coins())
+	p.AddCoins(-50)
+	s.Assert().Equal(7, p.Coins(), "adding a negative is not a way to spend")
+
+	cat, err := rules.NewTestCatalog()
+	s.Require().NoError(err)
+	back, err := FromRecord(p.Record(), &Recorder{}, cat, nil)
+	s.Require().NoError(err)
+	s.Assert().Equal(7, back.Coins())
+}

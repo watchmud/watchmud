@@ -24,6 +24,8 @@ type Player struct {
 	// noColor is the player turning ANSI color off. Inverted so the zero
 	// value, which is every record written before there was a choice, is on.
 	noColor bool
+	// coins is the purse. Never negative: Spend refuses what it can't pay.
+	coins int
 
 	// Lineage is cosmetic and nothing reads it but the renderer. There is no
 	// Class beside it and no Role in its place: a role is read off
@@ -180,4 +182,17 @@ func (p *Player) SetWizard(wizard bool) { p.wizard = wizard }
 func (p *Player) IsBot() bool           { return p.bot }
 func (p *Player) SetBot(bot bool)       { p.bot = bot }
 func (p *Player) Color() bool           { return !p.noColor }
-func (p *Player) SetColor(on bool)      { p.noColor = !on }
+func (p *Player) Coins() int            { return p.coins }
+
+// AddCoins puts n in the purse.
+func (p *Player) AddCoins(n int) { p.coins += max(n, 0) }
+
+// Spend takes n from the purse if it holds that much, and says whether it did.
+func (p *Player) Spend(n int) bool {
+	if n < 0 || n > p.coins {
+		return false
+	}
+	p.coins -= n
+	return true
+}
+func (p *Player) SetColor(on bool) { p.noColor = !on }

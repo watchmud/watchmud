@@ -1,0 +1,13 @@
+{
+  "coins_per_power": 3,
+  "value": {
+    "default": 10,
+    "by_category": {
+      "armor": 20,
+      "weapon": 20,
+      "treasure": 4
+    }
+  },
+  "sell_percent": 40,
+  "repair_percent": 50
+}

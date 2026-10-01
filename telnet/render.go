@@ -117,7 +117,7 @@ func render(msg any, self string) string {
 		return "The smith works on " + m.Item + " until it's as good as new.\n"
 
 	case event.Inventory:
-		return renderInventory(m.Items)
+		return renderInventory(m.Items) + renderPurse(m.Coins)
 
 	case event.Equipment:
 		return renderEquipment(m.Power, m.Items)
@@ -274,6 +274,19 @@ func renderInventory(items []event.InventoryItem) string {
 	return b.String()
 }
 
+// renderPurse is the line under the inventory. Nothing at all for an empty
+// purse, which is everyone before the economy, and a player shouldn't be told
+// about a thing they've never seen.
+func renderPurse(coins int) string {
+	switch coins {
+	case 0:
+		return ""
+	case 1:
+		return "You have 1 coin.\n"
+	}
+	return fmt.Sprintf("You have %d coins.\n", coins)
+}
+
 // renderPlayerStat formats a player's stats as a string for display to a mud
 // client.
 func renderPlayerStat(s event.Stat) string {
@@ -283,6 +296,7 @@ func renderPlayerStat(s event.Stat) string {
 	b.WriteString("Lineage:\t" + s.Lineage + "\tRole: " + roleOrNone(s.Role) + "\n")
 	b.WriteString(fmt.Sprintf("Power:\t%d\n", s.Power))
 	b.WriteString(fmt.Sprintf("Health:\t%d of %d\n", s.CurrentHealth, s.MaxHealth))
+	b.WriteString(fmt.Sprintf("Coins:\t%d\n", s.Coins))
 	b.WriteString("Location:\t" + player.NewLocation(s.ZoneId, s.RoomId).String() + "\n")
 	b.WriteString("\n")
 	return b.String()

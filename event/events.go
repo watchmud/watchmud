@@ -144,6 +144,7 @@ type Repaired struct {
 
 type Inventory struct {
 	Items []InventoryItem
+	Coins int
 }
 
 type InventoryItem struct {
@@ -228,6 +229,7 @@ type Stat struct {
 	Power         int
 	CurrentHealth int
 	MaxHealth     int
+	Coins         int
 	ZoneId        string
 	RoomId        string
 }

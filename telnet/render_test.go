@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/player"
@@ -452,6 +453,7 @@ const statBlockNoGear = "Status:\n" +
 	"Lineage:\tHuman\tRole: none\n" +
 	"Power:\t0\n" +
 	"Health:\t100 of 100\n" +
+	"Coins:\t0\n" +
 	"Location:\t(wrathrock - temple_square)\n\n"
 
 const statBlockTank = "Status:\n" +
@@ -459,6 +461,7 @@ const statBlockTank = "Status:\n" +
 	"Lineage:\tHuman\tRole: Tank\n" +
 	"Power:\t0\n" +
 	"Health:\t100 of 100\n" +
+	"Coins:\t0\n" +
 	"Location:\t(wrathrock - temple_square)\n\n"
 
 const statBlockPowered = "Status:\n" +
@@ -466,4 +469,11 @@ const statBlockPowered = "Status:\n" +
 	"Lineage:\tHuman\tRole: Tank\n" +
 	"Power:\t7\n" +
 	"Health:\t100 of 100\n" +
+	"Coins:\t0\n" +
 	"Location:\t(wrathrock - temple_square)\n\n"
+
+func TestRenderPurse(t *testing.T) {
+	assert.Equal(t, "You aren't carrying anything.\n", render(event.Inventory{}, "testdood"), "an empty purse says nothing")
+	assert.Equal(t, "You aren't carrying anything.\nYou have 1 coin.\n", render(event.Inventory{Coins: 1}, "testdood"))
+	assert.Equal(t, "You aren't carrying anything.\nYou have 30 coins.\n", render(event.Inventory{Coins: 30}, "testdood"))
+}

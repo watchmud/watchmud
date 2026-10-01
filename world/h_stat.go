@@ -22,6 +22,7 @@ func (w *World) handleStat(msg *gameserver.HandlerParameter, cmd command.Stat) {
 		Power:         p.Power(),
 		CurrentHealth: p.CurrentHealth(),
 		MaxHealth:     p.MaxHealth(),
+		Coins:         p.Coins(),
 		ZoneId:        room.Zone.Id,
 		RoomId:        room.Id,
 	})
