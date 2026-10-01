@@ -1,0 +1,39 @@
+# Publish site/ to GitHub Pages, at www.watchmud.com.
+#
+# From master, not from a release tag: the site is how to connect and play,
+# not the game, and a fix to it shouldn't wait for a release. The custom
+# domain lives in the repository's Pages settings; DNS has www as a CNAME to
+# watchmud.github.io. The bare watchmud.com stays on the droplet, for telnet.
+
+name: pages
+
+on:
+  push:
+    branches: [master]
+    paths: ["site/**", ".github/workflows/pages.yaml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  # one deploy at a time, and never cut one off halfway
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -670,3 +670,8 @@ is no threat yet -- nothing lets a tank take a mob back.
   or `hotfix/` branch; `master` is development. `deploy/deploy.sh` is how a version
   reaches the droplet. Rules and zones are in the image: content changes are released
   like code.
+- `site/` is www.watchmud.com: GitHub Pages, published by `.github/workflows/pages.yaml`
+  on any master push that touches it -- no release needed, since it's how to play, not
+  the game. One self-contained `index.html` (the Windows/Mudlet guide). DNS has `www` as
+  a CNAME to `watchmud.github.io`; the bare domain stays on the droplet for telnet. Keep
+  its commands and wording in step with `help` when either changes.

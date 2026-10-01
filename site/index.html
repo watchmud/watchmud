@@ -1,0 +1,438 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Playing WatchMUD</title>
+<meta name="description" content="How to connect to WatchMUD from Windows with Mudlet, make a character, and start playing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,500;7..72,650&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* Layout: one readable column, like a field guide; the game's own terminal colors are the only loud thing on the page. */
+:root {
+  --paper: #f2f5f7;
+  --surface: #ffffff;
+  --ink: #18212b;
+  --muted: #55636f;
+  --rule: #d5dde3;
+  --accent: #0b6f78;
+  --accent-soft: #e0eff0;
+
+  /* the terminal, in both themes: it is a dark window either way */
+  --term-bg: #0f151a;
+  --term-fg: #c9d3da;
+  --term-cyan: #4fc3cf;
+  --term-cyan-bold: #7fe3ec;
+  --term-green: #7ccf7a;
+  --term-yellow: #e2c25b;
+  --term-red: #ef7b6c;
+  --term-magenta: #d18be0;
+  --term-dim: #73828e;
+
+  --display: "Literata", Georgia, "Times New Roman", serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #12181d;
+    --surface: #182128;
+    --ink: #e3e9ed;
+    --muted: #9aa8b3;
+    --rule: #2a3640;
+    --accent: #5cc8d2;
+    --accent-soft: #19343a;
+    --term-bg: #0a0f13;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #12181d;
+  --surface: #182128;
+  --ink: #e3e9ed;
+  --muted: #9aa8b3;
+  --rule: #2a3640;
+  --accent: #5cc8d2;
+  --accent-soft: #19343a;
+  --term-bg: #0a0f13;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  padding-inline: 16px;
+  padding-block: 0 4rem;
+}
+.page { max-width: 44rem; margin-inline: auto; display: grid; gap: 3rem; }
+
+header { padding-block: 3.5rem 0; display: grid; gap: 1rem; }
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+h1, h2, h3 { font-family: var(--display); font-weight: 650; text-wrap: balance; line-height: 1.2; margin: 0; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.1rem); letter-spacing: -0.01em; }
+h2 { font-size: 1.65rem; }
+h3 { font-size: 1.15rem; font-weight: 500; }
+p { margin: 0; }
+.lede { font-size: 1.2rem; color: var(--muted); max-width: 38rem; }
+
+section { display: grid; gap: 1.1rem; }
+section > h2 { padding-top: 1.25rem; border-top: 1px solid var(--rule); }
+.step-no {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  color: var(--accent);
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 400;
+}
+
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code, kbd {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  background: var(--accent-soft);
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+}
+kbd { border: 1px solid var(--rule); background: var(--surface); }
+
+ol.steps { margin: 0; padding-left: 1.4rem; display: grid; gap: 0.6rem; }
+ol.steps li::marker { color: var(--accent); font-family: var(--mono); font-size: 0.9em; }
+ul { margin: 0; padding-left: 1.2rem; display: grid; gap: 0.4rem; }
+
+/* the connection card: the three things to type, and the one box to tick */
+.connect {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 1.25rem;
+  display: grid;
+  gap: 0.9rem;
+}
+.connect h3 { font-family: var(--body); font-weight: 600; font-size: 0.95rem; color: var(--muted); }
+.field { display: grid; grid-template-columns: 9rem 1fr auto; gap: 0.75rem; align-items: center; }
+.field .label { color: var(--muted); font-size: 0.95rem; }
+.field .value { font-family: var(--mono); font-size: 1.05rem; font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.copy {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 0.2rem 0.65rem;
+  cursor: pointer;
+}
+.copy:hover { background: var(--accent-soft); }
+.tick { font-family: var(--mono); font-weight: 700; }
+@media (max-width: 480px) {
+  .field { grid-template-columns: 1fr auto; }
+  .field .label { grid-column: 1 / -1; }
+}
+
+/* the terminal */
+.term {
+  background: var(--term-bg);
+  color: var(--term-fg);
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  margin: 0;
+  white-space: pre;
+}
+.term .you { color: var(--term-dim); }
+.term .room { color: var(--term-cyan-bold); font-weight: 700; }
+.term .exits { color: var(--term-cyan); }
+.term .obj { color: var(--term-green); }
+.term .mob { color: var(--term-yellow); }
+.term .hurt { color: var(--term-red); }
+.term .tell { color: var(--term-magenta); }
+.term .hp { color: var(--term-green); }
+.term .hp.mid { color: var(--term-yellow); }
+.term-caption { font-size: 0.92rem; color: var(--muted); }
+
+/* the cheat sheet */
+.table-wrap { overflow-x: auto; border: 1px solid var(--rule); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.98rem; }
+th, td { text-align: left; padding: 0.55rem 0.9rem; vertical-align: top; border-bottom: 1px solid var(--rule); }
+tr:last-child td { border-bottom: 0; }
+th {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 400;
+}
+td:first-child { white-space: nowrap; }
+td code { background: none; padding: 0; font-weight: 700; color: var(--accent); }
+tr.group td {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 1rem;
+  background: var(--accent-soft);
+  padding-block: 0.4rem;
+}
+
+.note {
+  border-left: 3px solid var(--accent);
+  padding: 0.2rem 0 0.2rem 1rem;
+  color: var(--ink);
+}
+dl { margin: 0; display: grid; gap: 0.9rem; }
+dt { font-weight: 600; }
+dd { margin: 0.15rem 0 0; color: var(--muted); }
+
+footer { color: var(--muted); font-size: 0.95rem; border-top: 1px solid var(--rule); padding-top: 1.25rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <span class="eyebrow">watchmud.com · port 4443</span>
+  <h1>Playing WatchMUD</h1>
+  <p class="lede">WatchMUD is a game made entirely of text. You read where you are, you type what you do, and other people are in the same world with you while you play. This page gets you from a Windows PC with nothing installed to standing in the town square in about ten minutes.</p>
+</header>
+
+<section>
+  <h2>What you're getting into</h2>
+  <p>A <strong>MUD</strong> ("multi-user dungeon") is the ancestor of every online roleplaying game. There are no graphics. The game describes a place, and you answer by typing short commands like <code>look</code>, <code>north</code> or <code>get knife</code>. The world is split into <strong>rooms</strong>, and you walk between them by compass direction. Creatures in the world are called <strong>mobs</strong>, and some of them fight back.</p>
+  <p>You connect with a small program called a <strong>MUD client</strong>. People in 1990 used bare <code>telnet</code>. You don't have to: the client below is free, friendly, and runs on Windows.</p>
+</section>
+
+<section>
+  <h2><span class="step-no">Step 1</span>Install Mudlet</h2>
+  <ol class="steps">
+    <li>Go to <a href="https://www.mudlet.org/download/">mudlet.org/download</a> and download the Windows version.</li>
+    <li>Run the file you downloaded. The installer is signed, so Windows should let it through. If a blue "Windows protected your PC" box appears anyway, click <strong>More info</strong>, then <strong>Run anyway</strong>.</li>
+    <li>When it finishes, Mudlet opens on its <strong>connection window</strong>: a list of games on the left, and some fields on the right.</li>
+  </ol>
+  <p>You don't need telnet, ssh, a terminal, or anything else. Mudlet is the whole kit.</p>
+</section>
+
+<section>
+  <h2><span class="step-no">Step 2</span>Add WatchMUD to Mudlet</h2>
+  <p>WatchMUD isn't in Mudlet's built-in list of games, so you add it yourself, once.</p>
+  <ol class="steps">
+    <li>In the connection window, click <strong>New</strong>.</li>
+    <li>Fill in the three fields below.</li>
+    <li>Tick the <strong>Secure</strong> box. This encrypts your connection, including your password. Without it, nothing will happen when you connect.</li>
+    <li>Leave the character name and password fields on Mudlet's Options tab empty for now. You'll make your character in the next step.</li>
+    <li>Click <strong>Connect</strong>.</li>
+  </ol>
+
+  <div class="connect" aria-label="Connection details">
+    <h3>Type exactly this</h3>
+    <div class="field">
+      <span class="label">Profile name</span>
+      <span class="value" id="v-name">WatchMUD</span>
+      <button class="copy" type="button" data-copy="v-name">Copy</button>
+    </div>
+    <div class="field">
+      <span class="label">Server address</span>
+      <span class="value" id="v-host">watchmud.com</span>
+      <button class="copy" type="button" data-copy="v-host">Copy</button>
+    </div>
+    <div class="field">
+      <span class="label">Port</span>
+      <span class="value" id="v-port">4443</span>
+      <button class="copy" type="button" data-copy="v-port">Copy</button>
+    </div>
+    <div class="field">
+      <span class="label">Secure</span>
+      <span class="value tick">☑ ticked</span>
+      <span></span>
+    </div>
+  </div>
+  <p>Next time, WatchMUD is in the list on the left: click it, then <strong>Connect</strong>.</p>
+</section>
+
+<section>
+  <h2><span class="step-no">Step 3</span>Make your character</h2>
+  <p>The game greets you and asks one question. Everything you type goes in the input line at the bottom of Mudlet's window; press <kbd>Enter</kbd> to send it.</p>
+  <ol class="steps">
+    <li><strong>"By what name do you wish to be known?"</strong> Type the name you want. Names are 3 to 16 letters, A to Z only: no spaces, numbers or punctuation.</li>
+    <li><strong>"No one by the name of … Create them? (yn)"</strong> Type <code>y</code>. If it asks for a password instead, someone already has that name: disconnect, connect again, and pick another.</li>
+    <li><strong>"Which lineage?"</strong> Pick a number from the list (Human, Hill Dwarf, Wood Elf, Stout Halfling and so on). It only decides how your character is described. It gives no bonuses, so choose whatever you like the sound of.</li>
+    <li><strong>"Choose a password:"</strong> At least 8 characters, then type it again to confirm. The game may hide what you type here; that's on purpose.</li>
+  </ol>
+  <p class="note"><strong>Names are permanent.</strong> There's no renaming and no deleting, so don't make a throwaway "test" character with a name you'd want later.</p>
+  <p>Next time you connect, type your name, then your password, and you're back wherever you left off.</p>
+</section>
+
+<section>
+  <h2><span class="step-no">Step 4</span>Your first ten minutes</h2>
+  <p>You start in <strong>Temple Square</strong>, in the town of Wrathrock. Here's roughly what you'll see, with what you type in grey:</p>
+<pre class="term" aria-label="A sample session"><span class="room">Temple Square</span>
+ The main square of the town. People come and go. East is a
+ donation room, south is the marketplace.
+<span class="exits">[ Exits: North, East, South ]</span>
+<span class="hp">&lt;100/100hp&gt;</span> <span class="you">south</span>
+<span class="room">Market Square</span>
+ The center of town, where people come to trade. To the east is
+ the general store, and to the west the smithy.
+<span class="exits">[ Exits: North, East, South, West ]</span>
+<span class="hp">&lt;100/100hp&gt;</span> <span class="you">south</span>
+<span class="you">…a few rooms later, out in the Hollowfields…</span>
+<span class="room">The Millpond</span>
+ …
+<span class="mob">An angry goose lowers its neck and hisses at you.</span>
+<span class="hp">&lt;100/100hp&gt;</span> <span class="you">consider goose</span>
+Angry goose looks like a fair fight. (power 1; you are 2)
+<span class="hp">&lt;100/100hp&gt;</span> <span class="you">kill goose</span>
+Ok.
+You hit angry goose for 3 damage.
+<span class="hurt">Angry goose hits you for 2 damage.</span>
+<span class="hp">&lt;98/100hp&gt;</span></pre>
+  <p class="term-caption">The line in angle brackets is your <strong>prompt</strong>: your health, now and at most. It turns yellow, then red, as you get hurt.</p>
+
+  <p>A good first outing:</p>
+  <ol class="steps">
+    <li>Type <code>help</code> to see every command. You can't break anything by experimenting.</li>
+    <li>Type <code>equipment</code>. You start with a little gear already on.</li>
+    <li>Walk <code>south</code> through the market and out the south gate, down the trail to the <strong>Hollowfields</strong>, the farmland where beginners hunt.</li>
+    <li>Before fighting anything, <code>consider</code> it. "A fair fight" or easier is fine. "Would probably kill you" means exactly that.</li>
+    <li>After a kill, <code>get all from corpse</code> to loot it.</li>
+    <li>When you're hurt, stop and wait. Health comes back on its own when you aren't fighting.</li>
+    <li>Type <code>recall</code> to go straight back to Temple Square from anywhere, as long as you aren't in a fight.</li>
+    <li>Type <code>quit</code> when you're done. The game saves you.</li>
+  </ol>
+</section>
+
+<section>
+  <h2>Commands worth knowing</h2>
+  <p>You can always type <code>help</code> for this list in the game. Most commands have a short form; <code>n</code> is <code>north</code>, <code>i</code> is <code>inventory</code>.</p>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th scope="col">Type</th><th scope="col">What it does</th></tr></thead>
+      <tbody>
+        <tr class="group"><td colspan="2">Getting around</td></tr>
+        <tr><td><code>n s e w u d</code></td><td>Walk north, south, east, west, up or down</td></tr>
+        <tr><td><code>look</code></td><td>Describe the room again (<code>l</code> for short), or <code>look goose</code> for one thing in it</td></tr>
+        <tr><td><code>exits</code></td><td>Where you can go from here</td></tr>
+        <tr><td><code>recall</code></td><td>Straight back to Temple Square</td></tr>
+        <tr class="group"><td colspan="2">Things</td></tr>
+        <tr><td><code>get knife</code></td><td>Pick something up. <code>get all</code> takes everything; <code>get 2.knife</code> takes the second knife</td></tr>
+        <tr><td><code>get all from corpse</code></td><td>Loot what a mob dropped</td></tr>
+        <tr><td><code>drop knife</code></td><td>Put something down. Dropped things crumble after half an hour</td></tr>
+        <tr><td><code>wear</code>, <code>wield</code></td><td>Put on armor, take up a weapon</td></tr>
+        <tr><td><code>remove</code></td><td>Take something off</td></tr>
+        <tr><td><code>inventory</code>, <code>equipment</code></td><td>What you're carrying (<code>i</code>), what you have on (<code>eq</code>)</td></tr>
+        <tr><td><code>repair all</code></td><td>Mend worn-out gear, at the smithy west of Market Square. Free</td></tr>
+        <tr class="group"><td colspan="2">Fighting</td></tr>
+        <tr><td><code>consider goose</code></td><td>How a fight would go, before you start it</td></tr>
+        <tr><td><code>kill goose</code></td><td>Start a fight. It carries on by itself until someone dies</td></tr>
+        <tr><td><code>flee</code></td><td>Try to run. It doesn't always work</td></tr>
+        <tr class="group"><td colspan="2">You</td></tr>
+        <tr><td><code>stat</code></td><td>Your health and power</td></tr>
+        <tr><td><code>role</code></td><td>Whether your gear makes you a Tank, Healer or Striker, and why</td></tr>
+        <tr><td><code>color off</code></td><td>Turn the game's colors off, or back <code>on</code></td></tr>
+        <tr class="group"><td colspan="2">Other people</td></tr>
+        <tr><td><code>who</code></td><td>Who's playing, and where</td></tr>
+        <tr><td><code>say hello</code></td><td>Speak to everyone in the room. <code>'hello</code> works too</td></tr>
+        <tr><td><code>tell Ana hello</code></td><td>Speak to one player, wherever they are</td></tr>
+        <tr><td><code>shout hello</code></td><td>Speak to everyone in the game</td></tr>
+        <tr><td><code>quit</code></td><td>Save and leave</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <h2>Things that surprise people</h2>
+  <dl>
+    <div>
+      <dt>Your gear decides what you are.</dt>
+      <dd>There are no classes. Heavy armor makes you a Tank; trade it for a censer and you're a Healer before the next prompt. Type <code>role</code> to see the reasoning.</dd>
+    </div>
+    <div>
+      <dt>Dying isn't the end.</dt>
+      <dd>You wake up in Temple Square with 1 health, keeping everything you carried. Your gear takes some wear, though, and broken gear stops protecting you until the smith mends it.</dd>
+    </div>
+    <div>
+      <dt>Some characters are programs.</dt>
+      <dd>Anyone marked <code>[bot]</code> in <code>who</code> is a bot that hunts and gives its loot to the donation room, east of Temple Square. They step aside when you arrive, and they can't chat. Type <code>help bots</code> for more.</dd>
+    </div>
+    <div>
+      <dt>Text keeps arriving while you type.</dt>
+      <dd>The world doesn't wait for you, so a fight or someone's shout can scroll past mid-sentence. Keep typing; Mudlet keeps your half-written line safe.</dd>
+    </div>
+    <div>
+      <dt>Sitting idle logs you out.</dt>
+      <dd>After 30 minutes with nothing typed, the game saves you and disconnects. Connect again and you're right where you were.</dd>
+    </div>
+  </dl>
+</section>
+
+<section>
+  <h2>If it doesn't work</h2>
+  <dl>
+    <div>
+      <dt>Nothing happens when I click Connect, or I get gibberish.</dt>
+      <dd>Check that <strong>Secure</strong> is ticked and the port is <strong>4443</strong>. Mudlet won't let you change these while a connection is open: click <strong>Disconnect</strong> on the toolbar first, then edit the profile.</dd>
+    </div>
+    <div>
+      <dt>"Too many connections from your address."</dt>
+      <dd>Each household can have five connections at once. Close an extra Mudlet window, or wait a minute and try again.</dd>
+    </div>
+    <div>
+      <dt>"Unknown request."</dt>
+      <dd>The game didn't recognise the command. Check the spelling, or type <code>help</code>.</dd>
+    </div>
+    <div>
+      <dt>I forgot my password.</dt>
+      <dd>There's no reset button yet. Ask the person who sent you this page.</dd>
+    </div>
+  </dl>
+</section>
+
+<footer>
+  <p>Once you've walked around and know how the world feels, the next step is building more of it: rooms, creatures and treasure are written as plain text files, and no programming is needed. The person who sent you this will show you how.</p>
+</footer>
+
+</div>
+
+<script>
+document.querySelectorAll(".copy").forEach(function (btn) {
+  btn.addEventListener("click", function () {
+    var el = document.getElementById(btn.dataset.copy);
+    var text = el.textContent.trim();
+    function selectIt() {
+      var range = document.createRange();
+      range.selectNodeContents(el);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      btn.textContent = "Selected";
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        btn.textContent = "Copied";
+      }, selectIt);
+    } catch (e) {
+      selectIt();
+    }
+    setTimeout(function () { btn.textContent = "Copy"; }, 1800);
+  });
+});
+</script>
+</body>
+</html>
