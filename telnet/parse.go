@@ -64,6 +64,9 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "drop":
 		return command.Drop{Target: rest}, nil
 
+	case "repair":
+		return command.Repair{Target: rest}, nil
+
 	case "remove", "rem", "unwear", "unwield":
 		return command.Remove{Target: rest}, nil
 

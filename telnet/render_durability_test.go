@@ -38,3 +38,8 @@ func TestRenderGearDamaged(t *testing.T) {
 	assert.Equal(t, "Dying has taken its toll on your equipment (3 pieces).\n",
 		render(event.GearDamaged{Items: 3}, "testdood"))
 }
+
+func TestRenderRepaired(t *testing.T) {
+	assert.Equal(t, "The smith works on a chain shirt until it's as good as new.\n",
+		render(event.Repaired{Item: "a chain shirt"}, "testdood"))
+}

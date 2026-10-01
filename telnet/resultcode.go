@@ -42,10 +42,11 @@ func failureText(verb, code string) string {
 }
 
 var failureByVerb = map[string]string{
-	"color/BAD_REQUEST":      "Color on, color off, or just color to switch it.",
-	"drop/TARGET_NOT_FOUND":  "You aren't carrying that.",
-	"wear/TARGET_NOT_FOUND":  "You aren't carrying that.",
-	"equip/TARGET_NOT_FOUND": "You aren't carrying that.",
+	"color/BAD_REQUEST":       "Color on, color off, or just color to switch it.",
+	"drop/TARGET_NOT_FOUND":   "You aren't carrying that.",
+	"repair/TARGET_NOT_FOUND": "You aren't carrying that.",
+	"wear/TARGET_NOT_FOUND":   "You aren't carrying that.",
+	"equip/TARGET_NOT_FOUND":  "You aren't carrying that.",
 	// remove searches the slots, not the inventory: not finding it means it
 	// isn't equipped, which is a different sentence from not carrying it.
 	"remove/TARGET_NOT_FOUND": "You aren't using that.",
@@ -70,6 +71,8 @@ var failureByCode = map[string]string{
 	"TARGET_NOT_FOUND":    "You don't see that here.",
 	"TARGET_NOT_GETTABLE": "You can't pick that up.",
 	"NO_TARGET":           "You'll have to be more specific.",
+	"NO_SMITH":            "There's no one here who can repair that. Try the smithy in Wrathrock.",
+	"NOT_DAMAGED":         "That doesn't need repairing.",
 
 	// containers
 	"NOT_A_CONTAINER":  "That's not a container.",

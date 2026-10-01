@@ -37,9 +37,8 @@ func (i *Instance) Damage(points int) (justBroke bool) {
 	return i.Broken()
 }
 
-// Repair puts it back to new. Nothing calls this yet; it exists because
-// "broken, not destroyed" is only a meaningful choice if something can
-// eventually undo it.
+// Repair puts it back to new: the smithy's repair command, and the reason
+// "broken, not destroyed" was a meaningful choice.
 func (i *Instance) Repair() {
 	i.Durability = i.Definition.MaxDurability
 }

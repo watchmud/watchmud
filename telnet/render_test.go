@@ -33,6 +33,11 @@ var commandCases = []commandCase{
 		want:  "You don't see that here.\n",
 	},
 	{
+		name:  "repair away from a smithy",
+		input: "repair knife",
+		want:  "There's no one here who can repair that. Try the smithy in Wrathrock.\n",
+	},
+	{
 		name:  "color off",
 		input: "color off",
 		want:  "Color is off.\n",

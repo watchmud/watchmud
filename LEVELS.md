@@ -180,7 +180,8 @@ Another place an item's power comes from, so it slots into the same model:
 - **salvage**: break gear down into materials, at that gear's tier
 - **craft**: make gear, at the materials' tier
 - **infuse**: feed a stronger item into a favourite to raise its power (Destiny's trick)
-- **repair**: the durability sink. `object.Instance.Repair` exists and nothing calls it.
+- **repair**: the durability sink. Done 2026-10-01 as a free `repair` at Wrathrock's
+  smithy; the sink is only the trip home until there's something to pay with.
 
 ## Tabled
 

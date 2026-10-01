@@ -40,6 +40,8 @@ const (
 	CantWearThat  ResultCode = "CANT_WEAR_THAT"
 	CantWearThere ResultCode = "CANT_WEAR_THERE"
 	NoSlotGiven   ResultCode = "NO_SLOT_GIVEN"
+	NoSmith       ResultCode = "NO_SMITH"
+	NotDamaged    ResultCode = "NOT_DAMAGED"
 
 	// movement and combat
 	CantGoThatWay   ResultCode = "CANT_GO_THAT_WAY"

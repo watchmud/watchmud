@@ -113,6 +113,9 @@ func render(msg any, self string) string {
 	case event.Removed:
 		return "You stop using " + m.Item + ".\n"
 
+	case event.Repaired:
+		return "The smith works on " + m.Item + " until it's as good as new.\n"
+
 	case event.Inventory:
 		return renderInventory(m.Items)
 

@@ -91,6 +91,13 @@ type Remove struct {
 
 func (Remove) Verb() string { return "remove" }
 
+// Repair is mending worn gear, at a smithy. Target takes the usual grammar.
+type Repair struct {
+	Target string
+}
+
+func (Repair) Verb() string { return "repair" }
+
 type Wear struct {
 	Target string
 }

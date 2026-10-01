@@ -7,6 +7,8 @@ type RoomFlag string
 const (
 	RoomFlagNone    RoomFlag = ""
 	RoomFlagNoFight RoomFlag = "nofight"
+	// RoomFlagSmithy is where gear is repaired.
+	RoomFlagSmithy RoomFlag = "smithy"
 )
 
 var ErrUnknownRoomFlag = errors.New("unknown room flag")
@@ -17,6 +19,7 @@ var roomFlags = enum[RoomFlag]{
 	[]RoomFlag{
 		RoomFlagNone,
 		RoomFlagNoFight,
+		RoomFlagSmithy,
 	},
 }
 

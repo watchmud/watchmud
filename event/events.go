@@ -137,6 +137,11 @@ type Removed struct {
 	Item string
 }
 
+// Repaired is one piece of gear made as good as new. Only its owner hears it.
+type Repaired struct {
+	Item string
+}
+
 type Inventory struct {
 	Items []InventoryItem
 }

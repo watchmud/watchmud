@@ -404,8 +404,11 @@ the same reason.
 
 **Broken is not destroyed.** A broken piece stays worn and stays in inventory, and stops
 counting: `Equipment.ArmorClass` and `RoleContributions` both skip it, so a breastplate
-giving out costs the player AC and can flip their role. That leaves something for a
-repair to act on later (`Instance.Repair` exists and nothing calls it).
+giving out costs the player AC and can flip their role. That is what `repair` acts on
+(`world/h_repair.go`): in a room flagged `smithy` -- Wrathrock's, west of Market Square --
+`repair <item>` or `repair all` puts what's carried or worn back to `MaxDurability`,
+broken included. It is free, because there is no currency; the cost is the walk back to
+town. When an economy exists, this is the first thing that should charge.
 
 Two things drive wear, both from `world/durability.go` (not `combat/`: combat works in
 `Attacker`/`Defender` terms, knows nothing about equipment, and mobs have none):

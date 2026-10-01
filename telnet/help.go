@@ -41,6 +41,7 @@ var helpSections = []helpSection{
 		{"drop <item>", "put it down", []string{"drop"}},
 		{"wear <item>, wield <item>", "put it on, take up a weapon", []string{"wear", "wield"}},
 		{"remove <item>", "take it off", []string{"remove"}},
+		{"repair <item>", "mend worn gear, at the smithy; repair all", []string{"repair"}},
 		{"inventory", "what you're carrying (i)", []string{"inventory", "i"}},
 		{"equipment", "what you're wearing (eq)", []string{"equipment", "eq"}},
 	}},

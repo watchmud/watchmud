@@ -28,7 +28,7 @@
   {
     "id": "market_square",
     "name": "Market Square",
-    "description": "The center of town, where people come to trade. To the east is the general store.",
+    "description": "The center of town, where people come to trade. To the east is the general store, and to the west the smithy.",
     "exits": [
       {
         "direction": "north",
@@ -41,6 +41,22 @@
       {
         "direction": "south",
         "dest_room": "south_gate"
+      },
+      {
+        "direction": "west",
+        "dest_room": "smithy"
+      }
+    ]
+  },
+  {
+    "id": "smithy",
+    "name": "Smithy",
+    "description": "Heat rolls off a forge banked against the back wall, and the smith looks up from the anvil as you come in. Gear that has seen hard use can be mended here.",
+    "flags": [ "nofight", "smithy" ],
+    "exits": [
+      {
+        "direction": "east",
+        "dest_room": "market_square"
       }
     ]
   },
