@@ -183,8 +183,15 @@ and a restart is an outage for everyone connected. `Listen` runs both listeners 
 one `addressLimit`, and returns the first one's error, which `main` treats as fatal.
 
 **`protocol.go`** is an `io.Reader` that strips `IAC` sequences, including subnegotiation
-payloads that legitimately contain `0x00` and doubled `0xFF`. Full option negotiation is
-Phase 7.
+payloads that legitimately contain `0x00` and doubled `0xFF`; it also hands each
+WILL/WONT/DO/DONT the client sends to `conn.negotiated`.
+
+**Every prompt is marked**, the in-game one and each login question (`question`, so
+`write` can tell): `IAC GA` after it, or `IAC EOR` once the client answers the
+`WILL EOR` sent after the banner with `DO`. A prompt has no newline, so without the mark a
+MUD client can only guess from a pause whether a partial line is a prompt; tintin's
+`#action {^Password:}` depended on that guess. A prompt `frame` doesn't print gets no mark --
+a bare GA would announce a prompt that never came. The rest of Phase 7 is still to do.
 
 **Login is straight-line code, not a state machine.** `login()` blocks on an `authResult`
 channel that `Send` signals when one of `event.LoggedIn` / `PlayerCreated` / `LoginFailed` /

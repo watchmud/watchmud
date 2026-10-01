@@ -18,6 +18,8 @@ import (
 const (
 	echoOff = "\xff\xfb\x01"     // IAC WILL ECHO
 	echoOn  = "\xff\xfc\x01\r\n" // IAC WONT ECHO, and the newline their Enter didn't echo
+	ga      = "\xff\xf9"         // IAC GA, after every prompt
+	eor     = "\xff\xef"         // IAC EOR, instead, once the client says DO EOR
 )
 
 // fakeServer answers logins and creations the way GameServer does, from a
@@ -153,7 +155,7 @@ func TestLogin_passwordIsNotEchoed(t *testing.T) {
 	s.answer("Password: ", "sekrit99")
 	s.waitFor(echoOn)
 
-	assert.Contains(t, s.transcript(), echoOff+"Password: "+echoOn)
+	assert.Contains(t, s.transcript(), echoOff+"Password: "+ga+echoOn)
 	assert.Equal(t, []command.Command{
 		command.Login{Name: "bob"},
 		command.Login{Name: "bob", Password: "sekrit99"},

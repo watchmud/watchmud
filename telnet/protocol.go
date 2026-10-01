@@ -4,8 +4,10 @@ import "bufio"
 
 // Telnet protocol bytes (RFC 854).
 const (
+	EOR  = 239 // end of record (RFC 885), once the client agrees to it
 	SE   = 240 // end of subnegotiation
 	NOP  = 241
+	GA   = 249 // go ahead: the prompt ends here
 	SB   = 250 // begin subnegotiation
 	WILL = 251
 	WONT = 252
@@ -17,6 +19,7 @@ const (
 // options
 const (
 	optEcho = 1
+	optEOR  = 25
 	optNAWS = 31
 )
 
@@ -34,6 +37,11 @@ const (
 type iacFilter struct {
 	src   *bufio.Reader
 	state filterState
+	verb  byte // the WILL/WONT/DO/DONT whose option byte comes next
+
+	// negotiated, if set, hears every WILL/WONT/DO/DONT the client sends.
+	// It runs on the reading goroutine.
+	negotiated func(verb, option byte)
 }
 
 func (f *iacFilter) Read(p []byte) (int, error) {
@@ -61,6 +69,7 @@ func (f *iacFilter) Read(p []byte) (int, error) {
 				n++
 				f.state = stateData
 			case b >= WILL && b <= DONT:
+				f.verb = b
 				f.state = stateOption // one option byte follows
 			case b == SB:
 				f.state = stateSubneg
@@ -69,6 +78,9 @@ func (f *iacFilter) Read(p []byte) (int, error) {
 			}
 		case stateOption:
 			f.state = stateData
+			if f.negotiated != nil {
+				f.negotiated(f.verb, b)
+			}
 		case stateSubneg:
 			if b == IAC {
 				f.state = stateSubnegIAC

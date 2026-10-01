@@ -43,6 +43,10 @@ type conn struct {
 	atPrompt   bool
 	lastPrompt *event.Prompt
 
+	// eor is whether the client agreed to IAC EOR as the end of a prompt;
+	// until it does, a prompt ends with IAC GA. Owned by writePump.
+	eor bool
+
 	// How long a line may take to arrive before the connection is dropped,
 	// before login and after. readPump owns readTimeout and switches it
 	// from one to the other.
@@ -74,6 +78,18 @@ type inputReceived struct{}
 // prompt, and written raw by write: it is protocol, not text, and neither
 // frame nor render has any business with it.
 type echo bool
+
+// question is a prompt of the login conversation: plain text, but a prompt,
+// so it's marked as one the way the in-game prompt is.
+type question string
+
+// negotiation is telnet option bytes the server offers, written raw.
+type negotiation string
+
+// endOfRecord is the client's answer to the server's WILL EOR: true for DO,
+// false for DONT. Through the send queue, since it's read on readPump and
+// writePump is the one that marks prompts.
+type endOfRecord bool
 
 // reprompt asks writePump for the prompt again, for the input the world
 // never hears about. The connection can't build one itself: what the prompt
@@ -248,6 +264,9 @@ func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, banner, host
 	go c.writePump()
 	go c.readPump()
 	c.Send(banner)
+	// a MUD client that says DO gets EOR after each prompt instead of GA;
+	// after the banner, which is what a person reads first
+	c.Send(negotiation([]byte{IAC, WILL, optEOR}))
 }
 
 func (c *conn) Player() *player.Player {
@@ -575,7 +594,7 @@ func (c *conn) emit(cmd command.Command) {
 // than returning an empty string.
 func (c *conn) prompt(text string) (string, bool) {
 	for {
-		if err := c.send(text); err != nil {
+		if err := c.send(question(text)); err != nil {
 			return "", false // queue full; conn is being torn down
 		}
 		line, ok := c.readLine()
@@ -649,8 +668,14 @@ func (c *conn) writePump() {
 }
 
 func (c *conn) write(msg any) error {
-	if e, ok := msg.(echo); ok {
-		return c.writeRaw(echoBytes(bool(e)))
+	switch m := msg.(type) {
+	case echo:
+		return c.writeRaw(echoBytes(bool(m)))
+	case negotiation:
+		return c.writeRaw(string(m))
+	case endOfRecord:
+		c.eor = bool(m)
+		return nil
 	}
 	text := c.frame(msg)
 	if text == "" {
@@ -658,7 +683,21 @@ func (c *conn) write(msg any) error {
 	}
 	text = strings.ReplaceAll(text, "\r\n", "\n") // normalize
 	text = strings.ReplaceAll(text, "\n", "\r\n") // replace with \r\n
+	switch msg.(type) {
+	case event.Prompt, reprompt, question:
+		text += c.promptEnd()
+	}
 	return c.writeRaw(text)
+}
+
+// promptEnd marks where a prompt stops. A prompt has no newline, so without
+// it a MUD client can only guess -- from a pause -- whether the line it's
+// holding is a prompt or the first half of a packet.
+func (c *conn) promptEnd() string {
+	if c.eor {
+		return string([]byte{IAC, EOR})
+	}
+	return string([]byte{IAC, GA})
 }
 
 func (c *conn) writeRaw(text string) error {
@@ -690,6 +729,8 @@ func echoBytes(on bool) string {
 // a line of its own instead of after the "> ".
 func (c *conn) frame(msg any) string {
 	switch m := msg.(type) {
+	case question:
+		msg = string(m)
 	case inputReceived:
 		c.atPrompt = false
 		return ""
@@ -724,7 +765,7 @@ func (c *conn) frame(msg any) string {
 
 func (c *conn) readPump() {
 	defer c.Close()
-	c.scanner = bufio.NewScanner(&iacFilter{src: bufio.NewReader(c.netConn)})
+	c.scanner = bufio.NewScanner(&iacFilter{src: bufio.NewReader(c.netConn), negotiated: c.negotiated})
 	c.readTimeout = c.loginIdle
 	if c.login() {
 		c.readTimeout = c.playIdle
@@ -741,6 +782,21 @@ func (c *conn) readPump() {
 	}
 	log.Info().Msgf("telnet %s: %s", c.netConn.RemoteAddr(), cause)
 	c.gs.Logout(c, cause)
+}
+
+// negotiated hears the client's side of option negotiation. EOR is the only
+// option the server offers that it acts on; WILL ECHO is only ever offered
+// around a password, and the client's answer changes nothing.
+func (c *conn) negotiated(verb, option byte) {
+	if option != optEOR {
+		return
+	}
+	switch verb {
+	case DO:
+		c.Send(endOfRecord(true))
+	case DONT:
+		c.Send(endOfRecord(false))
+	}
 }
 
 func (c *conn) commandLoop() (quit bool) {

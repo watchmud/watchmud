@@ -77,3 +77,18 @@ func TestIACFilterWithScanner(t *testing.T) {
 	require.NoError(t, s.Err())
 	assert.Equal(t, []string{"look", "north"}, lines)
 }
+
+func TestIACFilter_reportsNegotiation(t *testing.T) {
+	type heard struct{ verb, option byte }
+	var got []heard
+	in := []byte{IAC, DO, optEOR, 'h', 'i', IAC, DONT, optEcho, IAC, SB, optNAWS, 0, 80, 0, 24, IAC, SE}
+	f := &iacFilter{
+		src:        bufio.NewReader(bytes.NewReader(in)),
+		negotiated: func(verb, option byte) { got = append(got, heard{verb, option}) },
+	}
+
+	text, err := io.ReadAll(f)
+	require.NoError(t, err)
+	assert.Equal(t, "hi", string(text))
+	assert.Equal(t, []heard{{DO, optEOR}, {DONT, optEcho}}, got, "a subnegotiation isn't a negotiation")
+}
