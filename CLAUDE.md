@@ -422,8 +422,10 @@ counting: `Equipment.ArmorClass` and `RoleContributions` both skip it, so a brea
 giving out costs the player AC and can flip their role. That is what `repair` acts on
 (`world/h_repair.go`): in a room flagged `smithy` -- Wrathrock's, west of Market Square --
 `repair <item>` or `repair all` puts what's carried or worn back to `MaxDurability`,
-broken included. It is free, because there is no currency; the cost is the walk back to
-town. When an economy exists, this is the first thing that should charge.
+broken included, for coins: `rules.Economy.RepairCost`, half the piece's price from broken
+to new and proportionally less for less wear. Each piece is paid for as it's mended, so
+`repair all` short of coins mends what it can in order and answers the rest with
+`event.TooExpensive`.
 
 Two things drive wear, both from `world/durability.go` (not `combat/`: combat works in
 `Attacker`/`Defender` terms, knows nothing about equipment, and mobs have none):

@@ -41,5 +41,9 @@ func TestRenderGearDamaged(t *testing.T) {
 
 func TestRenderRepaired(t *testing.T) {
 	assert.Equal(t, "The smith works on a chain shirt until it's as good as new.\n",
-		render(event.Repaired{Item: "a chain shirt"}, "testdood"))
+		render(event.Repaired{Item: "a chain shirt"}, "testdood"), "no economy: free")
+	assert.Equal(t, "The smith works on a chain shirt until it's as good as new, for 12 coins.\n",
+		render(event.Repaired{Item: "a chain shirt", Cost: 12}, "testdood"))
+	assert.Equal(t, "A chain shirt would cost 12 coins, and you have 1 coin.\n",
+		render(event.TooExpensive{Item: "a chain shirt", Cost: 12, Coins: 1}, "testdood"))
 }

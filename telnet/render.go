@@ -114,7 +114,13 @@ func render(msg any, self string) string {
 		return "You stop using " + m.Item + ".\n"
 
 	case event.Repaired:
-		return "The smith works on " + m.Item + " until it's as good as new.\n"
+		if m.Cost == 0 {
+			return "The smith works on " + m.Item + " until it's as good as new.\n"
+		}
+		return fmt.Sprintf("The smith works on %s until it's as good as new, for %s.\n", m.Item, coins(m.Cost))
+
+	case event.TooExpensive:
+		return fmt.Sprintf("%s would cost %s, and you have %s.\n", capitalize(m.Item), coins(m.Cost), coins(m.Coins))
 
 	case event.Inventory:
 		return renderInventory(m.Items) + renderPurse(m.Coins)
@@ -274,17 +280,22 @@ func renderInventory(items []event.InventoryItem) string {
 	return b.String()
 }
 
+// coins is an amount as a player reads it.
+func coins(n int) string {
+	if n == 1 {
+		return "1 coin"
+	}
+	return fmt.Sprintf("%d coins", n)
+}
+
 // renderPurse is the line under the inventory. Nothing at all for an empty
 // purse, which is everyone before the economy, and a player shouldn't be told
 // about a thing they've never seen.
-func renderPurse(coins int) string {
-	switch coins {
-	case 0:
+func renderPurse(n int) string {
+	if n == 0 {
 		return ""
-	case 1:
-		return "You have 1 coin.\n"
 	}
-	return fmt.Sprintf("You have %d coins.\n", coins)
+	return "You have " + coins(n) + ".\n"
 }
 
 // renderPlayerStat formats a player's stats as a string for display to a mud
@@ -488,11 +499,8 @@ func renderContainerContents(c event.ContainerContents) string {
 	}
 	var b strings.Builder
 	b.WriteString(capitalize(c.Container) + " holds:\n")
-	switch {
-	case c.Coins == 1:
-		b.WriteString("  1 coin\n")
-	case c.Coins > 1:
-		fmt.Fprintf(&b, "  %d coins\n", c.Coins)
+	if c.Coins > 0 {
+		b.WriteString("  " + coins(c.Coins) + "\n")
 	}
 	for _, item := range c.Items {
 		b.WriteString(fmt.Sprintf("  %s [power %d]\n", item.ShortDescription, item.Power))

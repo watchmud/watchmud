@@ -10,8 +10,10 @@ import (
 )
 
 // handleRepair makes worn gear as good as new, broken gear included -- that
-// is what "broken, not destroyed" was for. Only at a smithy, and free: there
-// is nothing to pay with yet, so the price is the walk back to town.
+// is what "broken, not destroyed" was for. Only at a smithy, and for coins:
+// rules.Economy.RepairCost, more for valuable gear and more for worn. Each
+// piece is paid for as it's mended, so "repair all" with too little mends
+// what it can, in order, and says what it couldn't afford.
 //
 // What's worn is searched along with what's carried, since wearing something
 // never takes it out of the inventory.
@@ -37,18 +39,31 @@ func (w *World) handleRepair(msg *gameserver.HandlerParameter, cmd command.Repai
 		return
 	}
 
-	repaired := 0
+	damaged := 0
 	for _, inst := range found {
 		if !needsRepair(inst) {
 			continue
 		}
+		damaged++
+		cost := w.repairCost(inst)
+		if !msg.Player.Spend(cost) {
+			msg.Player.Send(event.TooExpensive{Item: inst.Definition.ShortDescription, Cost: cost, Coins: msg.Player.Coins()})
+			continue
+		}
 		inst.Repair()
-		msg.Player.Send(event.Repaired{Item: inst.Definition.ShortDescription})
-		repaired++
+		msg.Player.Send(event.Repaired{Item: inst.Definition.ShortDescription, Cost: cost})
 	}
-	if repaired == 0 {
+	if damaged == 0 {
 		msg.Fail(event.NotDamaged)
 	}
+}
+
+// repairCost is what the smith charges to mend inst from where it is to new.
+func (w *World) repairCost(inst *object.Instance) int {
+	econ := w.content.Catalog.Economy
+	price := econ.Price(inst.Definition.ObjectCategory, inst.Power)
+	max := inst.Definition.MaxDurability
+	return econ.RepairCost(price, max-inst.Durability, max)
 }
 
 // needsRepair is gear that wears out and has. Gear that never wears out is

@@ -180,8 +180,8 @@ Another place an item's power comes from, so it slots into the same model:
 - **salvage**: break gear down into materials, at that gear's tier
 - **craft**: make gear, at the materials' tier
 - **infuse**: feed a stronger item into a favourite to raise its power (Destiny's trick)
-- **repair**: the durability sink. Done 2026-10-01 as a free `repair` at Wrathrock's
-  smithy; the sink is only the trip home until there's something to pay with.
+- **repair**: the durability sink. Done 2026-10-01: `repair` at Wrathrock's smithy, for
+  coins (content/rules/economy.json).
 
 ## Tabled
 

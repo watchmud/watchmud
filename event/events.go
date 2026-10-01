@@ -138,9 +138,20 @@ type Removed struct {
 	Item string
 }
 
-// Repaired is one piece of gear made as good as new. Only its owner hears it.
+// Repaired is one piece of gear made as good as new, and what it cost. Only
+// its owner hears it.
 type Repaired struct {
 	Item string
+	Cost int
+}
+
+// TooExpensive is something the player wanted and couldn't pay for: what it
+// would have cost, and what they have. A failure with numbers in it, which
+// Failed can't carry.
+type TooExpensive struct {
+	Item  string
+	Cost  int
+	Coins int
 }
 
 type Inventory struct {
