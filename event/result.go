@@ -41,6 +41,9 @@ const (
 	CantWearThere ResultCode = "CANT_WEAR_THERE"
 	NoSlotGiven   ResultCode = "NO_SLOT_GIVEN"
 	NoSmith       ResultCode = "NO_SMITH"
+	NoShop        ResultCode = "NO_SHOP"
+	NotForSale    ResultCode = "NOT_FOR_SALE"
+	Worthless     ResultCode = "WORTHLESS"
 	NotDamaged    ResultCode = "NOT_DAMAGED"
 
 	// movement and combat

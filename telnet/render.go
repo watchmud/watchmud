@@ -119,6 +119,18 @@ func render(msg any, self string) string {
 		}
 		return fmt.Sprintf("The smith works on %s until it's as good as new, for %s.\n", m.Item, coins(m.Cost))
 
+	case event.ShopList:
+		return renderShopList(m.Items)
+
+	case event.Bought:
+		return fmt.Sprintf("You buy %s for %s.\n", m.Item, coins(m.Cost))
+
+	case event.Sold:
+		return fmt.Sprintf("You sell %s for %s.\n", m.Item, coins(m.Coins))
+
+	case event.Valued:
+		return fmt.Sprintf("The shopkeeper would give you %s for %s.\n", coins(m.Coins), m.Item)
+
 	case event.TooExpensive:
 		return fmt.Sprintf("%s would cost %s, and you have %s.\n", capitalize(m.Item), coins(m.Cost), coins(m.Coins))
 
@@ -276,6 +288,23 @@ func renderInventory(items []event.InventoryItem) string {
 	b.WriteString("You are carrying:\n")
 	for _, item := range items {
 		b.WriteString("\t" + item.ShortDescription + "\n")
+	}
+	return b.String()
+}
+
+// renderShopList lines the prices up: the reader is comparing them.
+func renderShopList(items []event.ShopEntry) string {
+	if len(items) == 0 {
+		return "Nothing's for sale here, but the shopkeeper will buy.\n"
+	}
+	width := 0
+	for _, it := range items {
+		width = max(width, len(it.Item))
+	}
+	var b strings.Builder
+	b.WriteString("For sale here:\n")
+	for _, it := range items {
+		fmt.Fprintf(&b, "  %-*s  [power %d]  %s\n", width, it.Item, it.Power, coins(it.Price))
 	}
 	return b.String()
 }

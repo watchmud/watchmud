@@ -145,6 +145,33 @@ type Repaired struct {
 	Cost int
 }
 
+// ShopList is what a shop sells, and for how much.
+type ShopList struct {
+	Items []ShopEntry
+}
+
+type ShopEntry struct {
+	Item  string
+	Power int
+	Price int
+}
+
+// Bought, Sold and Valued go to the trader alone.
+type Bought struct {
+	Item string
+	Cost int
+}
+
+type Sold struct {
+	Item  string
+	Coins int
+}
+
+type Valued struct {
+	Item  string
+	Coins int
+}
+
 // TooExpensive is something the player wanted and couldn't pay for: what it
 // would have cost, and what they have. A failure with numbers in it, which
 // Failed can't carry.

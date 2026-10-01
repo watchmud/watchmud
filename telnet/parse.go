@@ -67,6 +67,18 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "repair":
 		return command.Repair{Target: rest}, nil
 
+	case "list":
+		return command.List{}, nil
+
+	case "buy":
+		return command.Buy{Target: rest}, nil
+
+	case "sell":
+		return command.Sell{Target: rest}, nil
+
+	case "value":
+		return command.Value{Target: rest}, nil
+
 	case "remove", "rem", "unwear", "unwield":
 		return command.Remove{Target: rest}, nil
 

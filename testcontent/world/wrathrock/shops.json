@@ -1,0 +1,9 @@
+[
+  {
+    "room": "general_store",
+    "sells": [
+      { "object": "iron_helmet", "power": 2 },
+      { "object": "knife", "power": 1 }
+    ]
+  }
+]

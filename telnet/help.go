@@ -42,6 +42,8 @@ var helpSections = []helpSection{
 		{"wear <item>, wield <item>", "put it on, take up a weapon", []string{"wear", "wield"}},
 		{"remove <item>", "take it off", []string{"remove"}},
 		{"repair <item>", "mend worn gear, at the smithy; repair all", []string{"repair"}},
+		{"list, buy <item>", "the General Store's stock, and buying it", []string{"list", "buy"}},
+		{"sell <item>, value <item>", "sell it there (sell all.pelt), or ask first", []string{"sell", "value"}},
 		{"inventory", "what you're carrying (i)", []string{"inventory", "i"}},
 		{"equipment", "what you're wearing (eq)", []string{"equipment", "eq"}},
 	}},

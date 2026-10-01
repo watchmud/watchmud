@@ -45,6 +45,9 @@ var failureByVerb = map[string]string{
 	"color/BAD_REQUEST":       "Color on, color off, or just color to switch it.",
 	"drop/TARGET_NOT_FOUND":   "You aren't carrying that.",
 	"repair/TARGET_NOT_FOUND": "You aren't carrying that.",
+	"sell/TARGET_NOT_FOUND":   "You aren't carrying that.",
+	"value/TARGET_NOT_FOUND":  "You aren't carrying that.",
+	"sell/TARGET_IN_USE":      "You'll have to take that off first.",
 	"wear/TARGET_NOT_FOUND":   "You aren't carrying that.",
 	"equip/TARGET_NOT_FOUND":  "You aren't carrying that.",
 	// remove searches the slots, not the inventory: not finding it means it
@@ -73,6 +76,9 @@ var failureByCode = map[string]string{
 	"NO_TARGET":           "You'll have to be more specific.",
 	"NO_SMITH":            "There's no one here who can repair that. Try the smithy in Wrathrock.",
 	"NOT_DAMAGED":         "That doesn't need repairing.",
+	"NO_SHOP":             "There's no one here to trade with. Try the General Store in Wrathrock.",
+	"NOT_FOR_SALE":        "That isn't for sale here. Type 'list' to see what is.",
+	"WORTHLESS":           "The shopkeeper isn't interested in that.",
 
 	// containers
 	"NOT_A_CONTAINER":  "That's not a container.",

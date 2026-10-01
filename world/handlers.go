@@ -58,6 +58,14 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleRecall(msg, cmd)
 	case command.Repair:
 		w.handleRepair(msg, cmd)
+	case command.List:
+		w.handleList(msg, cmd)
+	case command.Buy:
+		w.handleBuy(msg, cmd)
+	case command.Sell:
+		w.handleSell(msg, cmd)
+	case command.Value:
+		w.handleValue(msg, cmd)
 	case command.Remove:
 		w.handleRemove(msg, cmd)
 	case command.Restore:

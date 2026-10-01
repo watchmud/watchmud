@@ -38,5 +38,46 @@
     "aliases": [ "skin", "water" ],
     "short_description": "a waterskin",
     "description_on_ground": "A waterskin lies here, most of the way full."
+  },
+  {
+    "id": "short_sword",
+    "name": "short sword",
+    "category": "WEAPON",
+    "aliases": [ "sword", "short" ],
+    "short_description": "a short sword",
+    "description_on_ground": "A plain short sword, honestly made, lies here.",
+    "equipment_slot": "wield",
+    "damage": "1d6",
+    "roles": { "striker": 2 }
+  },
+  {
+    "id": "leather_cap",
+    "name": "leather cap",
+    "category": "ARMOR",
+    "aliases": [ "cap", "leather" ],
+    "short_description": "a leather cap",
+    "description_on_ground": "A boiled-leather cap sits here, still smelling of the tannery.",
+    "equipment_slot": "head",
+    "armor_type": "leather"
+  },
+  {
+    "id": "leather_boots",
+    "name": "leather boots",
+    "category": "ARMOR",
+    "aliases": [ "boots", "leather" ],
+    "short_description": "a pair of leather boots",
+    "description_on_ground": "A pair of stout leather boots stands here.",
+    "equipment_slot": "feet",
+    "armor_type": "leather"
+  },
+  {
+    "id": "work_gloves",
+    "name": "work gloves",
+    "category": "ARMOR",
+    "aliases": [ "gloves", "work" ],
+    "short_description": "a pair of work gloves",
+    "description_on_ground": "A pair of canvas work gloves has been dropped here.",
+    "equipment_slot": "hands",
+    "armor_type": "cloth"
   }
 ]

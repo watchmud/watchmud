@@ -98,6 +98,34 @@ type Repair struct {
 
 func (Repair) Verb() string { return "repair" }
 
+// ---- trading -----------------------------------------------------------------
+
+// List is what a shop has for sale.
+type List struct{}
+
+func (List) Verb() string { return "list" }
+
+// Buy takes the target grammar, matched against a shop's stock.
+type Buy struct {
+	Target string
+}
+
+func (Buy) Verb() string { return "buy" }
+
+// Sell takes the target grammar, matched against what the player carries.
+type Sell struct {
+	Target string
+}
+
+func (Sell) Verb() string { return "sell" }
+
+// Value is what a shop would pay for something, without selling it.
+type Value struct {
+	Target string
+}
+
+func (Value) Verb() string { return "value" }
+
 type Wear struct {
 	Target string
 }

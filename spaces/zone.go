@@ -24,6 +24,8 @@ type Zone struct {
 	Lifetime          time.Duration
 	// Power is the band this zone is built for. See LEVELS.md.
 	Power rules.PowerBand
+	// Shops is the rooms that trade, by room id.
+	Shops map[string]*Shop
 }
 
 func NewZone(id string, name string, resetMode rules.ZoneReset, lifetime time.Duration) *Zone {
@@ -33,6 +35,7 @@ func NewZone(id string, name string, resetMode rules.ZoneReset, lifetime time.Du
 		Rooms:             make(map[string]*Room),
 		ObjectDefinitions: make(map[string]*object.Definition),
 		MobileDefinitions: make(map[string]*mobile.Definition),
+		Shops:             make(map[string]*Shop),
 		ResetMode:         resetMode,
 		Lifetime:          lifetime,
 	}

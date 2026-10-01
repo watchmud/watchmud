@@ -63,7 +63,7 @@
   {
     "id": "general_store",
     "name": "General Store",
-    "description": "Empty shelves, empty counters. A store might be here some day, but not today.",
+    "description": "Shelves of plain, honest goods line the walls, and the shopkeeper behind the counter will buy almost anything, if not for much. Type 'list' to see what's for sale.",
     "exits": [
       {
         "direction": "west",

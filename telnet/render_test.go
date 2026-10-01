@@ -34,6 +34,16 @@ var commandCases = []commandCase{
 		want:  "You don't see that here.\n",
 	},
 	{
+		name:  "list away from a shop",
+		input: "list",
+		want:  "There's no one here to trade with. Try the General Store in Wrathrock.\n",
+	},
+	{
+		name:  "sell away from a shop",
+		input: "sell knife",
+		want:  "There's no one here to trade with. Try the General Store in Wrathrock.\n",
+	},
+	{
 		name:  "repair away from a smithy",
 		input: "repair knife",
 		want:  "There's no one here who can repair that. Try the smithy in Wrathrock.\n",
@@ -476,4 +486,17 @@ func TestRenderPurse(t *testing.T) {
 	assert.Equal(t, "You aren't carrying anything.\n", render(event.Inventory{}, "testdood"), "an empty purse says nothing")
 	assert.Equal(t, "You aren't carrying anything.\nYou have 1 coin.\n", render(event.Inventory{Coins: 1}, "testdood"))
 	assert.Equal(t, "You aren't carrying anything.\nYou have 30 coins.\n", render(event.Inventory{Coins: 30}, "testdood"))
+}
+
+func TestRenderShopList(t *testing.T) {
+	got := render(event.ShopList{Items: []event.ShopEntry{
+		{Item: "a short sword", Power: 2, Price: 40},
+		{Item: "a waterskin", Power: 1, Price: 10},
+	}}, "testdood")
+	assert.Equal(t, "For sale here:\n"+
+		"  a short sword  [power 2]  40 coins\n"+
+		"  a waterskin    [power 1]  10 coins\n", got)
+	assert.Equal(t, "You buy a short sword for 40 coins.\n", render(event.Bought{Item: "a short sword", Cost: 40}, "testdood"))
+	assert.Equal(t, "You sell a scrap of rat pelt for 4 coins.\n", render(event.Sold{Item: "a scrap of rat pelt", Coins: 4}, "testdood"))
+	assert.Equal(t, "The shopkeeper would give you 1 coin for a feather.\n", render(event.Valued{Item: "a feather", Coins: 1}, "testdood"))
 }

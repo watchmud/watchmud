@@ -1,0 +1,12 @@
+[
+  {
+    "room": "general_store",
+    "sells": [
+      { "object": "short_sword", "power": 2 },
+      { "object": "leather_cap", "power": 2 },
+      { "object": "leather_boots", "power": 2 },
+      { "object": "work_gloves", "power": 2 },
+      { "object": "waterskin", "power": 1 }
+    ]
+  }
+]

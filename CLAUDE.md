@@ -463,6 +463,25 @@ mobile pulse and removes them, contents and all, after `rules.CorpseDecay`. The 
 bots fill turns over. Zone resets and wizard `load`s never go through `drop`. `get <item> from <container>` and `look in <container>` live in
 `world/containers.go`, and only search the room's floor.
 
+### Economy
+
+**Prices are derived, not written on objects** (`rules.Economy`, from
+`content/rules/economy.json`): what a power-1 piece of a category is worth, times the
+instance's power. Repair (`RepairCost`, half the price from broken to new), what a store
+pays (`SellPercent` of the price, scaled by wear, so broken is worth nothing) and what a mob
+carries (`CoinsPerPower`) all hang off that one table, through `world/economy.go`, so they
+can't disagree. Absent is switched off, like durability. The loader refuses a
+`sell_percent` of 100 or more: a store that pays what it charges mints coins. Selling pays
+at most 40% and a full repair costs 50%, so no loop of buy, repair and sell makes money --
+`TestSell_noProfitInBuyingAndSellingBack` pins one; keep it that way when tuning.
+
+Coins are a number, not objects: `Player.coins` (on the record), and `Instance.Coins` on a
+container, which only a corpse is. `get all from corpse` takes them, `get [n] coins from
+corpse` just them; they go with the corpse when it crumbles, and a player keeps theirs on
+death. A shop is a zone's `shops.json` (room, and objects at a power, named the way loot
+names them) loaded into `spaces.Zone.Shops`; it sells new instances of its stock without
+end, buys anything worth a coin, and never resells what it bought.
+
 ### Player death
 
 A player leaves **no corpse**. `combatantDied` ends their fights (via `becomeCorpse`),

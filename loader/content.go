@@ -75,6 +75,9 @@ func LoadContent(fsys fs.FS) (*Content, error) {
 	if err := c.loadMobileDefinitions(worldFS); err != nil {
 		return nil, err
 	}
+	if err := c.loadShops(worldFS); err != nil {
+		return nil, err
+	}
 	if err := c.loadZoneInstructions(worldFS); err != nil {
 		return nil, err
 	}
