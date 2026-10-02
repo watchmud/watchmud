@@ -22,6 +22,10 @@ type Catalog struct {
 	// the economy switched off. See Economy.
 	Economy Economy
 
+	// Abilities are what gear can let a player do, keyed on id. Assigned by
+	// the loader through SetAbilities; none is a game where nobody casts.
+	Abilities map[string]*Ability
+
 	// StartingGear is what a new character is created holding. Assigned by
 	// the loader rather than passed to NewCatalog, for the same reason
 	// object.Definition.RoleWeights is: it is content that has to be checked
@@ -34,6 +38,8 @@ type Catalog struct {
 	// maps instead would shuffle both from run to run.
 	speciesOrder []*Species
 	roleOrder    []*Role
+
+	abilityOrder []*Ability
 
 	// the roles armor feeds, in declaration order
 	armorRoles []*Role
@@ -118,6 +124,29 @@ func (c *Catalog) SpeciesList() []*Species {
 // RoleList returns every role in the order the content declared them.
 func (c *Catalog) RoleList() []*Role {
 	return c.roleOrder
+}
+
+// SetAbilities checks and indexes the abilities, keeping their
+// declaration order for listings.
+func (c *Catalog) SetAbilities(all []*Ability) error {
+	byId := make(map[string]*Ability, len(all))
+	for _, a := range all {
+		if err := a.check(); err != nil {
+			return err
+		}
+		if _, dup := byId[a.Id]; dup {
+			return fmt.Errorf("duplicate ability Id %q", a.Id)
+		}
+		byId[a.Id] = a
+	}
+	c.Abilities = byId
+	c.abilityOrder = all
+	return nil
+}
+
+// AbilityList returns every ability in the order the content declared them.
+func (c *Catalog) AbilityList() []*Ability {
+	return c.abilityOrder
 }
 
 // DefaultLineage is what a character gets when nobody picked one, or when the

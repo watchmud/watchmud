@@ -61,5 +61,14 @@ func LoadCatalog(rulesFS fs.FS) (*rules.Catalog, error) {
 	}
 	c.StartingGear = gear
 
+	// Optional: absent is a game where nobody casts anything.
+	abilities, err := readOptionalJSONFile[[]*rules.Ability](rulesFS, "abilities.json")
+	if err != nil {
+		return nil, err
+	}
+	if err := c.SetAbilities(abilities); err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }

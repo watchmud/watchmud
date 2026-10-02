@@ -1,0 +1,13 @@
+[
+  {
+    "id": "heal",
+    "name": "heal",
+    "mana": 20,
+    "cooldown": "10s",
+    "target": "friend",
+    "amount" : {
+      "base": 10,
+      "per_power": 2
+    }
+  }
+]
