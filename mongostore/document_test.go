@@ -24,6 +24,7 @@ func testRecord() *player.Record {
 		Coins:        42,
 		CurHealth:    93,
 		MaxHealth:    100,
+		CurMana:      intp(55),
 		LineageId:    "hill_dwarf",
 		LastZoneId:   "wrathrock",
 		LastRoomId:   "temple_square",

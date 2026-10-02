@@ -1,6 +1,7 @@
 package player
 
 import (
+	"time"
 	"uuid"
 
 	"github.com/rs/zerolog"
@@ -35,6 +36,12 @@ type Player struct {
 	equipment *object.Equipment
 	curHealth int
 	maxHealth int
+	curMana   int
+	maxMana   int
+	// readyAt is when each ability (by id) can be cast again. In memory
+	// only: a quit resets it, and logging back in takes longer than any
+	// cooldown.
+	readyAt map[string]time.Time
 }
 
 // New player. The catalog goes to the equipment, which needs it to say what
@@ -57,6 +64,8 @@ func New(id uuid.UUID,
 		equipment:    object.NewEquipment(cat),
 		curHealth:    100, // TODO need a default here,
 		maxHealth:    100,
+		curMana:      rules.MaxMana,
+		maxMana:      rules.MaxMana,
 	}
 }
 
@@ -117,6 +126,36 @@ func (p *Player) RestoreHealth(amount int) {
 // the rest back is up to them.
 func (p *Player) Revive() {
 	p.curHealth = 1
+}
+
+func (p *Player) CurrentMana() int { return p.curMana }
+
+func (p *Player) MaxMana() int { return p.maxMana }
+
+// SpendMana takes n if there is that much, and says whether it did.
+func (p *Player) SpendMana(n int) bool {
+	if n < 0 || n > p.curMana {
+		return false
+	}
+	p.curMana -= n
+	return true
+}
+
+func (p *Player) RestoreMana(n int) {
+	p.curMana = min(p.curMana+max(n, 0), p.maxMana)
+}
+
+// ReadyAt is when this ability can next be cast; the zero time if it
+// never has been.
+func (p *Player) ReadyAt(abilityId string) time.Time {
+	return p.readyAt[abilityId]
+}
+
+func (p *Player) StartCooldown(abilityId string, until time.Time) {
+	if p.readyAt == nil {
+		p.readyAt = make(map[string]time.Time)
+	}
+	p.readyAt[abilityId] = until
 }
 
 func (p *Player) Dead() bool {

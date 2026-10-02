@@ -10,3 +10,13 @@ const RegenPercent = 5
 func RegenAmount(maxHealth int) int {
 	return max(1, maxHealth*RegenPercent/100)
 }
+
+// ManaRegenPercent is how much of their max mana everyone gets back each
+// regen pulse -- fighting or not, unlike health. A placeholder: LEVELS.md,
+// "tuning placeholders"
+const ManaRegenPercent = 5
+
+// ManaRegenAmount is one pulse's worth, at least a point.
+func ManaRegenAmount(maxMana int) int {
+	return max(1, maxMana*ManaRegenPercent/100)
+}

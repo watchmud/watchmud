@@ -1841,8 +1841,9 @@ No tests; `make check` still has to pass (the site isn't checked).
   nowhere special -- they follow "Adding a command" already.
 - [ ] **Step 2: LEVELS.md** -- move "Abilities from gear" out of Tabled into Phases as
   done-for-heal (offensive/defensive/informative/recall still to come); add rows to
-  "Tuning placeholders": heal cost/cooldown/amount (`abilities.json`), mana regen 5%
-  (`rules.ManaRegenPercent`), max mana 100 (`rules.MaxMana`).
+  "Tuning placeholders": heal cost/cooldown/amount (`abilities.json`). (Mana regen and
+  max mana rows went in with Task 3; `ManaRegenPercent` lives in `rules/regen.go`,
+  `MaxMana` in `rules/mana.go`.)
 - [ ] **Step 3: content/rules/README.md** -- a `## Abilities` section: the file's
   fields, the `target` kinds, that an object grants with `"abilities"`, and that an
   ability with no Go effect fails startup.

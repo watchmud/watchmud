@@ -29,6 +29,7 @@ type playerDoc struct {
 	Coins        int    `bson:"coins,omitempty"`
 	CurHealth    int    `bson:"cur_health"`
 	MaxHealth    int    `bson:"max_health"`
+	CurMana      *int   `bson:"cur_mana,omitempty"`
 
 	LineageId  string `bson:"lineage_id"`
 	LastZoneId string `bson:"last_zone_id"`
@@ -75,6 +76,7 @@ func newPlayerDoc(r *player.Record, now time.Time) playerDoc {
 		Coins:        r.Coins,
 		CurHealth:    r.CurHealth,
 		MaxHealth:    r.MaxHealth,
+		CurMana:      r.CurMana,
 		LineageId:    r.LineageId,
 		LastZoneId:   r.LastZoneId,
 		LastRoomId:   r.LastRoomId,
@@ -119,6 +121,7 @@ func (d playerDoc) record() (*player.Record, error) {
 		Coins:        d.Coins,
 		CurHealth:    d.CurHealth,
 		MaxHealth:    d.MaxHealth,
+		CurMana:      d.CurMana,
 		LineageId:    d.LineageId,
 		LastZoneId:   d.LastZoneId,
 		LastRoomId:   d.LastRoomId,

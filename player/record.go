@@ -10,14 +10,18 @@ import (
 )
 
 type Record struct {
-	Id                     uuid.UUID
-	Name                   string
-	PasswordHash           string
-	Wizard                 bool
-	Bot                    bool
-	NoColor                bool // inverted: a record from before the choice is color on
-	Coins                  int
-	CurHealth, MaxHealth   int
+	Id                   uuid.UUID
+	Name                 string
+	PasswordHash         string
+	Wizard               bool
+	Bot                  bool
+	NoColor              bool // inverted: a record from before the choice is color on
+	Coins                int
+	CurHealth, MaxHealth int
+	// CurMana is a pointer for the durability reason: a record from before
+	// mana existed reads as full, not empty. Max isn't saved; it's
+	// rules.MaxMana for everyone.
+	CurMana                *int
 	LineageId              string // cosmetic; there is no ClassId beside it any more
 	LastZoneId, LastRoomId string
 	Equipment              []EquipmentRecord
@@ -66,6 +70,10 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 	p := New(rec.Id, rec.Name, rec.PasswordHash, out, lineage, cat)
 	p.curHealth = rec.CurHealth
 	p.maxHealth = rec.MaxHealth
+	if rec.CurMana != nil {
+		// absent is a record from before mana, which leaves New's full pool
+		p.curMana = min(max(*rec.CurMana, 0), p.maxMana)
+	}
 	p.wizard = rec.Wizard
 	p.bot = rec.Bot
 	p.noColor = rec.NoColor
@@ -116,6 +124,7 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 }
 
 func (p *Player) Record() *Record {
+	mana := p.curMana
 	return &Record{
 		Id:           p.Id(),
 		Name:         p.Name(),
@@ -129,6 +138,7 @@ func (p *Player) Record() *Record {
 		LineageId:    p.Lineage.Id,
 		Equipment:    EquipmentToRecord(p.equipment),
 		Inventory:    inventoryRecord(p.inventory),
+		CurMana:      &mana,
 	}
 }
 

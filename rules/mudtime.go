@@ -19,7 +19,8 @@ type MudTime struct {
 	// PlayerSave is how long between we queue up save operations
 	PlayerSave time.Duration `json:"playerSave"`
 
-	// Regen is how often anyone not fighting gets some health back
+	// Regen is how often anyone not fighting gets some health back, and
+	// every player some mana
 	Regen time.Duration `json:"regen"`
 }
 

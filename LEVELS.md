@@ -50,6 +50,8 @@ move is one change.
 |---|---|---|
 | Regen interval | 5s (`mudtime.json`) | how long a grind stalls between fights |
 | Regen amount | 5% of max health, at least 1 | same |
+| Mana regen | 5% of max mana, at least 1, fighting or not (`rules.ManaRegenPercent`) | how many heals a long fight affords |
+| Max mana | 100, flat (`rules.MaxMana`) | the budget a healer walks into a fight with |
 | Dropped decay | 30m (`rules.DroppedDecay`) | how long a donation waits for a newbie |
 | Bare hands damage | 1d2 (`rules.BareHands`) | also a mob with no `"damage"` |
 | Averaging worn power | rounds down | how soon one upgrade shows in your number |
