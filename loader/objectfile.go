@@ -28,4 +28,7 @@ type objectEntry struct {
 	// keyed on rules.Role.Id: {"tank": 3}. Optional, and meaningless on
 	// anything without a wear_location.
 	Roles map[string]int `json:"roles"`
+
+	// Abilities this grants while equipped, by rules.Ability id: ["heal"]
+	Abilities []string `json:"abilities"`
 }

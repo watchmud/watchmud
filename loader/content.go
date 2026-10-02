@@ -251,6 +251,9 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 				}
 			}
 			d.RoleWeights = obj.Roles
+			if d.Abilities, err = objectAbilities(zonename, obj, c.Catalog); err != nil {
+				return err
+			}
 			d.MaxDurability, err = objectDurability(zonename, obj, c.Catalog.Durability)
 			if err != nil {
 				return err
@@ -372,4 +375,16 @@ func mobArmorClass(zoneName string, mob mobEntry) (int, error) {
 		return 0, fmt.Errorf("mob %s/%s: negative ac %d", zoneName, mob.Id, *mob.AC)
 	}
 	return *mob.AC, nil
+}
+
+// objectAbilities checks what an object grants against the catalog: an
+// unknown id is a typo, and ignoring it would leave a builder wondering why
+// their censer doesn't heal.
+func objectAbilities(zoneName string, obj objectEntry, cat *rules.Catalog) ([]string, error) {
+	for _, id := range obj.Abilities {
+		if _, known := cat.Abilities[id]; !known {
+			return nil, fmt.Errorf("object %s/%s: unknown ability %q", zoneName, obj.Id, id)
+		}
+	}
+	return obj.Abilities, nil
 }

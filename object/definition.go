@@ -47,6 +47,11 @@ type Definition struct {
 	// weapon argues for a role. Assigned by the loader rather than passed to
 	// NewDefinition, which has enough positional arguments already.
 	RoleWeights map[string]int
+
+	// Abilities are what this lets its wearer cast while equipped and
+	// unbroken, by rules.Ability id. Assigned by the loader, which refuses
+	// an id the catalog doesn't define.
+	Abilities []string
 }
 
 func NewDefinition(

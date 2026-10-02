@@ -209,3 +209,31 @@ func (eq *Equipment) RoleContributions() []RoleContribution {
 	}
 	return contributions
 }
+
+// Grant is the item an ability comes from, and the power it is cast at.
+type Grant struct {
+	Instance *Instance
+	Power    int
+}
+
+// Abilities is what the equipped, unbroken gear lets the wearer cast, keyed
+// on ability id. Where two items grant the same ability, the stronger is
+// what you cast with; on a tie, the first in slot order. Recomputed every
+// call, like role and power: nothing records what a player can do.
+//
+// A map, since only the listing cares about order, and that comes from the
+// catalog - see world.handleAbilities.
+func (eq *Equipment) Abilities() map[string]Grant {
+	grants := make(map[string]Grant)
+	for _, inst := range eq.All() {
+		if inst.Broken() {
+			continue
+		}
+		for _, id := range inst.Definition.Abilities {
+			if g, have := grants[id]; !have || inst.Power > g.Power {
+				grants[id] = Grant{Instance: inst, Power: inst.Power}
+			}
+		}
+	}
+	return grants
+}
