@@ -171,7 +171,8 @@ type Chunk struct {
 	MaxHealth int // zero: no prompt arrived before the timeout
 }
 
-var promptRe = regexp.MustCompile(`<(\d+)/(\d+)hp> `)
+// mana half is optional: bot only reads health
+var promptRe = regexp.MustCompile(`<(\d+)/(\d+)hp(?: \d+/\d+m)?> `)
 
 // ReadChunk consumes through the next prompt and returns what came before it.
 // With no prompt within timeout it returns an empty Chunk and leaves anything

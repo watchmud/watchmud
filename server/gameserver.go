@@ -90,7 +90,12 @@ func (gs *GameServer) Run(ctx context.Context) error {
 // their first prompt; one whose login failed is not, and gets none.
 func (gs *GameServer) prompt() {
 	for p := range gs.world.Players() {
-		p.Send(event.Prompt{CurrentHealth: p.CurrentHealth(), MaxHealth: p.MaxHealth()})
+		p.Send(event.Prompt{
+			CurrentHealth: p.CurrentHealth(),
+			MaxHealth:     p.MaxHealth(),
+			CurrentMana:   p.CurrentMana(),
+			MaxMana:       p.MaxMana(),
+		})
 	}
 }
 

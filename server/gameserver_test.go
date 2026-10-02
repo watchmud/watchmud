@@ -132,7 +132,7 @@ func TestPrompt_reachesPlayersInTheWorld(t *testing.T) {
 	c.Player().TakeMeleeDamage(30)
 	gs.prompt()
 
-	assert.Equal(t, event.Prompt{CurrentHealth: 70, MaxHealth: 100}, c.sent[len(c.sent)-1])
+	assert.Equal(t, event.Prompt{CurrentHealth: 70, MaxHealth: 100, CurrentMana: 100, MaxMana: 100}, c.sent[len(c.sent)-1])
 }
 
 // A failed login never joined the world, so the login conversation isn't

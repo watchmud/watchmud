@@ -27,7 +27,11 @@ func render(msg any, self string) string {
 
 	case event.Prompt:
 		hp := fmt.Sprintf("%d/%d", m.CurrentHealth, m.MaxHealth)
-		return "<" + paint(healthColor(m.CurrentHealth, m.MaxHealth), hp) + "hp> "
+		s := "<" + paint(healthColor(m.CurrentHealth, m.MaxHealth), hp) + "hp"
+		if m.MaxMana > 0 {
+			s += fmt.Sprintf(" %d/%dm", m.CurrentMana, m.MaxMana)
+		}
+		return s + "> "
 
 	case event.Failed:
 		return failureText(m.Verb, string(m.Code))

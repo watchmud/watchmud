@@ -41,6 +41,8 @@ type LoggedOut struct {
 type Prompt struct {
 	CurrentHealth int
 	MaxHealth     int
+	CurrentMana   int
+	MaxMana       int // zero: no mana pool, and the prompt doesn't mention one
 }
 
 // Welcome is said once to a brand-new character, after they've been shown the

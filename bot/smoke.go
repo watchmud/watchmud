@@ -32,12 +32,12 @@ var (
 	fightTimeout = 90 * time.Second
 )
 
+// prompt is the server's prompt, which ends every reply.
+const prompt = `<\d+/\d+hp(?: \d+/\d+m)?> `
+
 // lineStart matches the start of a line -- or just after a prompt, since the
 // bot doesn't echo what it types and the reply lands on the prompt's line.
-const lineStart = `(?m)^(?:<\d+/\d+hp> )?`
-
-// prompt is the server's prompt, which ends every reply.
-const prompt = `<\d+/\d+hp> `
+const lineStart = `(?m)^(?:` + prompt + `)?`
 
 // gooseInRoom is how a goose shows in a room description.
 const gooseInRoom = "An angry goose lowers its neck and hisses at you."
@@ -211,7 +211,7 @@ func loot(c *Client) error {
 		return err
 	}
 	// the whole answer, to the prompt: a goose leaves coins, and maybe a feather
-	m, err := c.Expect(`(?s)((?:You get |There's nothing in there\.).*?)<\d+/\d+hp> `, stepTimeout)
+	m, err := c.Expect(`(?s)((?:You get |There's nothing in there\.).*?)`+prompt, stepTimeout)
 	if err != nil {
 		return err
 	}

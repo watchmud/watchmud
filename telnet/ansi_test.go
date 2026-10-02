@@ -49,3 +49,15 @@ func TestFrame_colorOffStripsIt(t *testing.T) {
 	assert.Equal(t, "Color is "+boldCyan+"on"+reset+".\n", c.frame(event.Color{On: true, Changed: true}),
 		"the answer is in the new setting")
 }
+
+// mana follows health, uncolored = health is the warning, mana is a number
+// a prompt with no mana pool says nothing about mana.
+func TestPrompt_mana(t *testing.T) {
+	assert.Equal(t, "<"+green+"100/100"+reset+"hp 80/100m> ",
+		render(event.Prompt{CurrentHealth: 100, MaxHealth: 100, CurrentMana: 80, MaxMana: 100}, "testdood"))
+	// Review Focus 5: empty is still shown
+	assert.Equal(t, "<100/100hp 0/100m> ",
+		plain(render(event.Prompt{CurrentHealth: 100, MaxHealth: 100, CurrentMana: 0, MaxMana: 100}, "testdood")))
+	assert.Equal(t, "<100/100hp> ",
+		plain(render(event.Prompt{CurrentHealth: 100, MaxHealth: 100}, "testdood")))
+}

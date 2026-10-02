@@ -185,6 +185,15 @@ func TestReadChunk_splitsOnPrompts(t *testing.T) {
 	assert.Equal(t, Chunk{Text: "angry goose hits you for 2 damage.\n", Health: 95, MaxHealth: 100}, ch)
 }
 
+func TestReadChunk_manaPrompt(t *testing.T) {
+	c, nc := connect(t)
+	_, _ = io.WriteString(nc, "Ok.\r\n<95/100hp 80/100m> ")
+
+	ch, err := c.ReadChunk(time.Second)
+	require.NoError(t, err)
+	assert.Equal(t, Chunk{Text: "Ok.\n", Health: 95, MaxHealth: 100}, ch)
+}
+
 // Nothing happening is not a failure: a resting bot waits on a quiet world.
 func TestReadChunk_quietIsNotAnError(t *testing.T) {
 	c, nc := connect(t)
