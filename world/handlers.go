@@ -26,6 +26,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		return nil
 	}
 	switch cmd := msg.Command.(type) {
+	case command.Abilities:
+		w.handleAbilities(msg, cmd)
 	case command.Drop:
 		w.handleDrop(msg, cmd)
 	case command.Equip:

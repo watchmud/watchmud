@@ -3,6 +3,7 @@ package telnet
 import (
 	"fmt"
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 
@@ -228,6 +229,9 @@ func render(msg any, self string) string {
 	case event.Healed:
 		return renderHealed(m, self)
 
+	case event.Abilities:
+		return renderAbilities(m)
+
 	// ---- builder commands --------------------------------------------------
 
 	case event.Loaded:
@@ -321,6 +325,22 @@ func renderHealed(m event.Healed, self string) string {
 		return m.Actor + " casts heal.\n"
 	}
 	return m.Actor + " heals " + m.Target + ".\n"
+}
+
+func renderAbilities(m event.Abilities) string {
+	if len(m.Granted) == 0 {
+		return "Nothing you're wearing grants any abilities.\n"
+	}
+	var b strings.Builder
+	for _, a := range m.Granted {
+		ready := "ready"
+		if a.ReadyIn > 0 {
+			ready = fmt.Sprintf("ready in %ds", int(a.ReadyIn.Round(time.Second)/time.Second))
+		}
+		fmt.Fprintf(&b, "%-12s %2d mana  %s cooldown  %s (power %d)  %s\n",
+			a.Name, a.Mana, a.Cooldown, a.Item, a.Power, ready)
+	}
+	return b.String()
 }
 
 // renderShopList lines the prices up: the reader is comparing them.

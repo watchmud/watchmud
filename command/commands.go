@@ -201,6 +201,11 @@ type Cast struct {
 
 func (Cast) Verb() string { return "cast" }
 
+// Abilities lists what the player's gear lets them cast, right now.
+type Abilities struct{}
+
+func (Abilities) Verb() string { return "abilities" }
+
 // ---- combat ----------------------------------------------------------------
 
 type Kill struct {

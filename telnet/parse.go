@@ -128,6 +128,9 @@ func parseCommand(tokens []string) (command.Command, error) {
 		}
 		return command.Cast{Ability: tokens[1], Target: strings.Join(tokens[2:], " ")}, nil
 
+	case "abilities", "abil":
+		return command.Abilities{}, nil
+
 	case "consider", "con":
 		return command.Consider{Target: rest}, nil
 

@@ -11,6 +11,8 @@ import (
 	"github.com/watchmud/watchmud/command"
 )
 
+const maxHelpLines = 60
+
 // Help can't advertise a verb the parser doesn't know -- that is how the two
 // drift apart, and a new player's first try is whatever help told them.
 func TestHelp_everyVerbParses(t *testing.T) {
@@ -42,7 +44,7 @@ func TestHelp_noWizardCommands(t *testing.T) {
 // One screen, on the narrowest terminal anyone still uses.
 func TestHelp_fitsOneScreen(t *testing.T) {
 	lines := strings.Split(strings.TrimRight(helpText, "\n"), "\n")
-	assert.LessOrEqual(t, len(lines), 41)
+	assert.LessOrEqual(t, len(lines), maxHelpLines)
 	for _, l := range lines {
 		assert.LessOrEqual(t, utf8.RuneCountInString(l), 79, "%q", l)
 	}

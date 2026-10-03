@@ -55,6 +55,7 @@ var helpSections = []helpSection{
 	{"You", []helpEntry{
 		{"stat", "health and power", []string{"stat"}},
 		{"role", "what your gear makes you, and why", []string{"role"}},
+		{"abilities", "what your gear lets you cast", []string{"abilities"}},
 		{"color [on|off]", "ANSI color, on or off; just color switches it", []string{"color"}},
 	}},
 	{"Talking", []helpEntry{

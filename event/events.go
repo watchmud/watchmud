@@ -1,6 +1,8 @@
 package event
 
 import (
+	"time"
+
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -360,6 +362,18 @@ type Healed struct {
 	Amount int
 }
 
+type Abilities struct {
+	Granted []GrantedAbility
+}
+
+type GrantedAbility struct {
+	Name     string
+	Mana     int
+	Cooldown time.Duration
+	Item     string // short description of the item granting it
+	Power    int
+	ReadyIn  time.Duration // zero: ready
+}
 type Fleeing struct {
 	Who string
 }
