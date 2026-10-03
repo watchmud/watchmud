@@ -706,6 +706,10 @@ session by `World.Arrive`, and only counts alongside the wizard bit; turn it off
 aggro on your own character. It covers aggro and nothing else: a mob you attack fights
 back.
 
+`slay <mob>` (wizard) kills one outright by calling `combatantDied`, so it is a real
+death -- fights end, the corpse gets its loot and coins -- and the quickest way to test
+a loot table. Mobs only; it never finds a player.
+
 **Targeting is "whoever engaged first", and it survives a death.** `Fight` never
 overwrites a combatant's existing target, so a mob stays on whoever hit it first -- which
 is what a tank relies on. `EndAllFightsWith` (death, flee, logout) then *retargets*: anyone

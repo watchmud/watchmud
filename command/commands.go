@@ -240,6 +240,7 @@ func (Load) wizard()       {}
 func (Restore) wizard()    {}
 func (RoomStatus) wizard() {}
 func (NoHassle) wizard()   {}
+func (Slay) wizard()       {}
 
 type Load struct {
 	Type string // "mob" or "obj"
@@ -262,6 +263,14 @@ type NoHassle struct {
 }
 
 func (NoHassle) Verb() string { return "nohassle" }
+
+// Slay kills a mob in the room outright, through the ordinary death: corpse,
+// loot and all. For testing; never a player.
+type Slay struct {
+	Target string
+}
+
+func (Slay) Verb() string { return "slay" }
 
 type RoomStatus struct {
 	ZoneId string

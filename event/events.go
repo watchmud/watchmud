@@ -355,6 +355,13 @@ type NoHassle struct {
 	On bool
 }
 
+// Slain is a wizard killing a mob outright; event.Died follows it, as it
+// follows any killing blow.
+type Slain struct {
+	Actor  string
+	Target string
+}
+
 type Restored struct {
 	Target   string
 	IsPlayer bool

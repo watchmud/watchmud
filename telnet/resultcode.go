@@ -55,6 +55,7 @@ var failureByVerb = map[string]string{
 	// isn't equipped, which is a different sentence from not carrying it.
 	"remove/TARGET_NOT_FOUND": "You aren't using that.",
 	"remove/NO_TARGET":        "Remove what?",
+	"slay/NO_TARGET":          "Slay what?",
 	"consider/NO_TARGET":      "Consider what?",
 	"look/NO_TARGET":          "Look in what?",
 	"drop/NO_TARGET":          "Drop what?",

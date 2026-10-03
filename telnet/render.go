@@ -237,6 +237,12 @@ func render(msg any, self string) string {
 	case event.Loaded:
 		return "Loaded.\n"
 
+	case event.Slain:
+		if m.Actor == self {
+			return "You slay " + m.Target + ".\n"
+		}
+		return m.Actor + " slays " + m.Target + ".\n"
+
 	case event.NoHassle:
 		if m.On {
 			return "Aggressive mobs will leave you alone.\n"

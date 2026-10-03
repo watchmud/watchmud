@@ -378,6 +378,20 @@ var commandCases = []commandCase{
 		want:  "Loaded.\n",
 	},
 	{
+		name: "slay",
+		setup: func(_ *world.World, p *player.Player, _ *player.Player) {
+			p.SetWizard(true)
+		},
+		input:     "slay little",
+		want:      "You slay Little Drone.\nLittle Drone is dead!\n",
+		wantOther: "testdood slays Little Drone.\nLittle Drone is dead!\n",
+	},
+	{
+		name:  "slay is unknown to a player",
+		input: "slay little",
+		want:  "Unknown request: slay\n",
+	},
+	{
 		name:  "nohassle is unknown to a player",
 		input: "nohassle",
 		want:  "Unknown request: nohassle\n",

@@ -23,6 +23,7 @@ var wizardCommands = []command.Command{
 	command.Restore{Target: "testdood"},
 	command.RoomStatus{},
 	command.NoHassle{},
+	command.Slay{Target: "target"},
 }
 
 func (s *wizardSuite) TestTheListIsMarked() {

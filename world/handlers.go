@@ -80,6 +80,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleCast(msg, cmd)
 	case command.RoomStatus:
 		w.handleRoomStatus(msg, cmd)
+	case command.Slay:
+		w.handleSlay(msg, cmd)
 	case command.Say:
 		w.handleSay(msg, cmd)
 	case command.ShowEquipment:
