@@ -192,6 +192,15 @@ type Role struct{}
 
 func (Role) Verb() string { return "role" }
 
+// Cast uses an ability the player's gear grants: cast heal, cast heal bob.
+// Ability is the first word as typed; Target is the rest, raw.
+type Cast struct {
+	Ability string
+	Target  string
+}
+
+func (Cast) Verb() string { return "cast" }
+
 // ---- combat ----------------------------------------------------------------
 
 type Kill struct {

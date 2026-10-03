@@ -61,6 +61,8 @@ var failureByVerb = map[string]string{
 	"wear/NO_TARGET":          "Wear what?",
 	"equip/NO_TARGET":         "Wield what?",
 	"equip/NO_SLOT_GIVEN":     "Wield it where?",
+	"cast/NO_TARGET":          "Cast what?",
+	"cast/TARGET_NOT_FOUND":   "There's no one here by that name.",
 }
 
 var failureByCode = map[string]string{
@@ -79,6 +81,12 @@ var failureByCode = map[string]string{
 	"NO_SHOP":             "There's no one here to trade with. Try the General Store in Wrathrock.",
 	"NOT_FOR_SALE":        "That isn't for sale here. Type 'list' to see what is.",
 	"WORTHLESS":           "The shopkeeper isn't interested in that.",
+
+	// abilities
+	"UNKNOWN_ABILITY": "There's no such spell.",
+	"NOT_GRANTED":     "Nothing you're wearing lets you cast that.",
+	"NOT_READY":       "You can't cast that again yet.",
+	"NOT_ENOUGH_MANA": "You don't have enough mana.",
 
 	// containers
 	"NOT_A_CONTAINER":  "That's not a container.",

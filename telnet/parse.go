@@ -121,6 +121,13 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "role", "roles":
 		return command.Role{}, nil
 
+	case "cast", "c":
+		// the first word is the ability; the rest is the target, raw
+		if len(tokens) < 2 {
+			return command.Cast{}, nil
+		}
+		return command.Cast{Ability: tokens[1], Target: strings.Join(tokens[2:], " ")}, nil
+
 	case "consider", "con":
 		return command.Consider{Target: rest}, nil
 

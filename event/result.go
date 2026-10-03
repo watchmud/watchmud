@@ -46,6 +46,12 @@ const (
 	Worthless     ResultCode = "WORTHLESS"
 	NotDamaged    ResultCode = "NOT_DAMAGED"
 
+	// abilities
+	UnknownAbility ResultCode = "UNKNOWN_ABILITY"
+	NotGranted     ResultCode = "NOT_GRANTED"
+	NotReady       ResultCode = "NOT_READY"
+	NotEnoughMana  ResultCode = "NOT_ENOUGH_MANA"
+
 	// movement and combat
 	CantGoThatWay   ResultCode = "CANT_GO_THAT_WAY"
 	NoFightRoom     ResultCode = "NO_FIGHT_ROOM"

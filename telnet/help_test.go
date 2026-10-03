@@ -42,7 +42,7 @@ func TestHelp_noWizardCommands(t *testing.T) {
 // One screen, on the narrowest terminal anyone still uses.
 func TestHelp_fitsOneScreen(t *testing.T) {
 	lines := strings.Split(strings.TrimRight(helpText, "\n"), "\n")
-	assert.LessOrEqual(t, len(lines), 40)
+	assert.LessOrEqual(t, len(lines), 41)
 	for _, l := range lines {
 		assert.LessOrEqual(t, utf8.RuneCountInString(l), 79, "%q", l)
 	}

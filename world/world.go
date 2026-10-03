@@ -6,6 +6,7 @@ import (
 	"iter"
 	"maps"
 	"slices"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/combat"
@@ -36,6 +37,9 @@ type World struct {
 	// scripts runs the Lua mobs name; see world/scripts.go.
 	scripts *script.Runtime
 
+	// now is the clock cooldowns read; tests replace it rather than sleep.
+	now func() time.Time
+
 	reservedNames map[string]bool // by player.NameKey; see IsReservedName
 }
 
@@ -46,10 +50,14 @@ func New(c *loader.Content, s player.Store, roller rules.Roller) (w *World, err 
 		playerList:  player.NewList(),
 		occupancy:   spaces.NewOccupancy(),
 		fightLedger: combat.NewFightLedger(),
+		now:         time.Now,
 		roller:      roller,
 		store:       s,
 	}
 	if w.scripts, err = script.NewRuntime(c.Scripts, liveRoller{w}, w.mobSays); err != nil {
+		return nil, fmt.Errorf("building world: %w", err)
+	}
+	if err := checkEffects(c.Catalog); err != nil {
 		return nil, fmt.Errorf("building world: %w", err)
 	}
 	w.reservedNames = reservedNames(c)

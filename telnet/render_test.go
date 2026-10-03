@@ -320,6 +320,49 @@ var commandCases = []commandCase{
 		wantOther: "testdood leaves.\ntestdood enters.\n",
 	},
 	{
+		name: "cast heal on another",
+		setup: func(w *world.World, p *player.Player, o *player.Player) {
+			holdTestCenser(p)
+			o.TakeMeleeDamage(50)
+		},
+		input:     "cast heal otherdood",
+		want:      "You heal otherdood. (+12)\n",
+		wantOther: "testdood heals you. (+12)\n",
+	},
+	{
+		name: "c is cast, and heal on yourself",
+		setup: func(w *world.World, p *player.Player, _ *player.Player) {
+			holdTestCenser(p)
+			p.TakeMeleeDamage(50)
+		},
+		input:     "c heal",
+		want:      "You heal yourself. (+12)\n",
+		wantOther: "testdood casts heal.\n",
+	},
+	{
+		name:      "healing the unhurt is wasted",
+		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { holdTestCenser(p) },
+		input:     "cast heal otherdood",
+		want:      "You heal otherdood, but otherdood wasn't hurt.\n",
+		wantOther: "testdood heals you, but you weren't hurt.\n",
+	},
+	{
+		name:  "cast without the gear",
+		input: "cast heal",
+		want:  "Nothing you're wearing lets you cast that.\n",
+	},
+	{
+		name:  "cast nothing",
+		input: "cast",
+		want:  "Cast what?\n",
+	},
+	{
+		name:  "cast at someone not here",
+		setup: func(_ *world.World, p *player.Player, _ *player.Player) { holdTestCenser(p) },
+		input: "cast heal nobody",
+		want:  "There's no one here by that name.\n",
+	},
+	{
 		// a builder command refused to a player reads like a verb that
 		// doesn't exist -- the same words parse.go uses for one
 		name:  "load is unknown to a player",
@@ -410,6 +453,17 @@ func testKnife() *object.Instance {
 	)
 	d.RoleWeights = map[string]int{"striker": 2}
 	return object.NewInstance(uuid.New(), d)
+}
+
+// holdTestCenser equips something granting heal at power 1
+func holdTestCenser(p *player.Player) {
+	d := object.NewDefinition("censer", "censer", "wrathrock", rules.ObjectCategoryOther,
+		nil, "a censer", "A censer is here.", rules.SlotHold, rules.ArmorTypeNone, nil)
+	d.Abilities = []string{"heal"}
+	inst := object.NewInstance(uuid.New(), d)
+	inst.Power = 1
+	_ = p.Inventory().Add(inst)
+	p.Equipment().Equip(rules.SlotHold, inst)
 }
 
 func testHelmet() *object.Instance {

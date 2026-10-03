@@ -352,6 +352,14 @@ type Restored struct {
 	IsPlayer bool
 }
 
+// Healed goes to the whole room. Amount is what was actually restored, which
+// is 0 when the target wasn't hurt: the cast still happened.
+type Healed struct {
+	Actor  string
+	Target string
+	Amount int
+}
+
 type Fleeing struct {
 	Who string
 }

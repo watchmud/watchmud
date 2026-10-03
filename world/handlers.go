@@ -72,6 +72,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleRestore(msg, cmd)
 	case command.Role:
 		w.handleRole(msg, cmd)
+	case command.Cast:
+		w.handleCast(msg, cmd)
 	case command.RoomStatus:
 		w.handleRoomStatus(msg, cmd)
 	case command.Say:

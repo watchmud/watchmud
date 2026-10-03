@@ -50,6 +50,7 @@ var helpSections = []helpSection{
 	{"Fighting", []helpEntry{
 		{"kill <mob>", "start a fight", []string{"kill"}},
 		{"flee", "get out of one", []string{"flee"}},
+		{"cast <ability> [player]", "use what your gear grants: cast heal bob (c)", []string{"cast", "c"}},
 	}},
 	{"You", []helpEntry{
 		{"stat", "health and power", []string{"stat"}},

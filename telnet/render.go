@@ -225,6 +225,9 @@ func render(msg any, self string) string {
 	case event.Restored:
 		return m.Target + " is restored!\n"
 
+	case event.Healed:
+		return renderHealed(m, self)
+
 	// ---- builder commands --------------------------------------------------
 
 	case event.Loaded:
@@ -294,6 +297,30 @@ func renderInventory(items []event.InventoryItem) string {
 		b.WriteString("\t" + item.ShortDescription + "\n")
 	}
 	return b.String()
+}
+
+func renderHealed(m event.Healed, self string) string {
+	wasted := m.Amount == 0
+	switch {
+	case m.Actor == self && m.Target == self:
+		if wasted {
+			return "You heal yourself, but you weren't hurt.\n"
+		}
+		return fmt.Sprintf("You heal yourself. (+%d)\n", m.Amount)
+	case m.Actor == self:
+		if wasted {
+			return fmt.Sprintf("You heal %s, but %s wasn't hurt.\n", m.Target, m.Target)
+		}
+		return fmt.Sprintf("You heal %s. (+%d)\n", m.Target, m.Amount)
+	case m.Target == self:
+		if wasted {
+			return m.Actor + " heals you, but you weren't hurt.\n"
+		}
+		return fmt.Sprintf("%s heals you. (+%d)\n", m.Actor, m.Amount)
+	case m.Actor == m.Target:
+		return m.Actor + " casts heal.\n"
+	}
+	return m.Actor + " heals " + m.Target + ".\n"
 }
 
 // renderShopList lines the prices up: the reader is comparing them.

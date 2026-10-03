@@ -105,6 +105,7 @@
     "equipment_slot": "hold",
     "roles": {
       "healer": 3
-    }
+    },
+    "abilities": [ "heal" ]
   }
 ]
