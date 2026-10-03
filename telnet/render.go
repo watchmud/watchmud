@@ -335,7 +335,7 @@ func renderAbilities(m event.Abilities) string {
 	for _, a := range m.Granted {
 		ready := "ready"
 		if a.ReadyIn > 0 {
-			ready = fmt.Sprintf("ready in %ds", int(a.ReadyIn.Round(time.Second)/time.Second))
+			ready = fmt.Sprintf("ready in %ds", int((a.ReadyIn+time.Second-1)/time.Second))
 		}
 		fmt.Fprintf(&b, "%-12s %2d mana  %s cooldown  %s (power %d)  %s\n",
 			a.Name, a.Mana, a.Cooldown, a.Item, a.Power, ready)

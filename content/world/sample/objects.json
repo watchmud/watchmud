@@ -56,6 +56,7 @@
     "short_description": "brass censer",
     "description_on_ground": "A brass censer sits here, still warm.",
     "equipment_slot": "hands",
-    "roles": { "healer": 3, "tank": 1 }
+    "roles": { "healer": 3, "tank": 1 },
+    "abilities": [ "heal" ]
   }
 ]

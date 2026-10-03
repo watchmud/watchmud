@@ -23,7 +23,8 @@
     "equipment_slot": "neck",
     "roles": {
       "healer": 2
-    }
+    },
+    "abilities": [ "heal" ]
   },
   {
     "id": "barrow_helm",

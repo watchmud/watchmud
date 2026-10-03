@@ -11,7 +11,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 )
 
-const maxHelpLines = 60
+const maxHelpLines = 45
 
 // Help can't advertise a verb the parser doesn't know -- that is how the two
 // drift apart, and a new player's first try is whatever help told them.

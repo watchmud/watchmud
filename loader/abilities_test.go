@@ -33,3 +33,17 @@ func TestObjectAbilities(t *testing.T) {
 	_, err = objectAbilities("hollowfield", objectEntry{Id: "censer", Abilities: []string{"hael"}}, cat)
 	assert.ErrorContains(t, err, "hollowfield/censer")
 }
+
+// a newbie's way to a heal, and a barrow healer's better one
+func TestLoadContent_healersHeal(t *testing.T) {
+	c, err := LoadContent(os.DirFS("../content"))
+	require.NoError(t, err)
+	for _, ref := range [][2]string{
+		{"hollowfield", "sprig_censer"},
+		{"barrow", "bone_charm"},
+	} {
+		d, found := c.Zones[ref[0]].ObjectDefinitions[ref[1]]
+		require.True(t, found, ref)
+		assert.Contains(t, d.Abilities, "heal", ref)
+	}
+}
