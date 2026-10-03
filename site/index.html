@@ -285,24 +285,24 @@ footer { color: var(--muted); font-size: 0.95rem; border-top: 1px solid var(--ru
  The main square of the town. People come and go. East is a
  donation room, south is the marketplace.
 <span class="exits">[ Exits: North, East, South ]</span>
-<span class="hp">&lt;100/100hp&gt;</span> <span class="you">south</span>
+<span class="hp">&lt;100/100hp 100/100m&gt;</span> <span class="you">south</span>
 <span class="room">Market Square</span>
  The center of town, where people come to trade. To the east is
  the general store, and to the west the smithy.
 <span class="exits">[ Exits: North, East, South, West ]</span>
-<span class="hp">&lt;100/100hp&gt;</span> <span class="you">south</span>
+<span class="hp">&lt;100/100hp 100/100m&gt;</span> <span class="you">south</span>
 <span class="you">…a few rooms later, out in the Hollowfields…</span>
 <span class="room">The Millpond</span>
  …
 <span class="mob">An angry goose lowers its neck and hisses at you.</span>
-<span class="hp">&lt;100/100hp&gt;</span> <span class="you">consider goose</span>
+<span class="hp">&lt;100/100hp 100/100m&gt;</span> <span class="you">consider goose</span>
 Angry goose looks like a fair fight. (power 1; you are 2)
-<span class="hp">&lt;100/100hp&gt;</span> <span class="you">kill goose</span>
+<span class="hp">&lt;100/100hp 100/100m&gt;</span> <span class="you">kill goose</span>
 Ok.
 You hit angry goose for 3 damage.
 <span class="hurt">Angry goose hits you for 2 damage.</span>
-<span class="hp">&lt;98/100hp&gt;</span></pre>
-  <p class="term-caption">The line in angle brackets is your <strong>prompt</strong>: your health, now and at most. It turns yellow, then red, as you get hurt.</p>
+<span class="hp">&lt;98/100hp 100/100m&gt;</span></pre>
+  <p class="term-caption">The line in angle brackets is your <strong>prompt</strong>: your health, now and at most, then your mana. Health turns yellow, then red, as you get hurt.</p>
 
   <p>A good first outing:</p>
   <ol class="steps">
@@ -347,9 +347,11 @@ You hit angry goose for 3 damage.
         <tr><td><code>consider goose</code></td><td>How a fight would go, before you start it</td></tr>
         <tr><td><code>kill goose</code></td><td>Start a fight. It carries on by itself until someone dies</td></tr>
         <tr><td><code>flee</code></td><td>Try to run. It doesn't always work</td></tr>
+        <tr><td><code>cast heal Ana</code></td><td>Heal Ana, or yourself with just <code>cast heal</code>, if something you're wearing grants it. Costs mana, even if nobody was hurt</td></tr>
         <tr class="group"><td colspan="2">You</td></tr>
         <tr><td><code>stat</code></td><td>Your health, power and coins</td></tr>
         <tr><td><code>role</code></td><td>Whether your gear makes you a Tank, Healer or Striker, and why</td></tr>
+        <tr><td><code>abilities</code></td><td>What your gear lets you cast, and when you can cast it again</td></tr>
         <tr><td><code>color off</code></td><td>Turn the game's colors off, or back <code>on</code></td></tr>
         <tr class="group"><td colspan="2">Other people</td></tr>
         <tr><td><code>who</code></td><td>Who's playing, and where</td></tr>
@@ -367,7 +369,7 @@ You hit angry goose for 3 damage.
   <dl>
     <div>
       <dt>Your gear decides what you are.</dt>
-      <dd>There are no classes. Heavy armor makes you a Tank; trade it for a censer and you're a Healer before the next prompt. Type <code>role</code> to see the reasoning.</dd>
+      <dd>There are no classes. Heavy armor makes you a Tank; trade it for a censer and you're a Healer before the next prompt. Type <code>role</code> to see the reasoning. Spells come from gear too: hold a censer and you can <code>cast heal</code>; put it away and you can't.</dd>
     </div>
     <div>
       <dt>Dying isn't the end.</dt>
