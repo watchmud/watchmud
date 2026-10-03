@@ -52,6 +52,7 @@ move is one change.
 | Regen amount | 5% of max health, at least 1 | same |
 | Mana regen | 5% of max mana, at least 1, fighting or not (`rules.ManaRegenPercent`) | how many heals a long fight affords |
 | Max mana | 100, flat (`rules.MaxMana`) | the budget a healer walks into a fight with |
+| Heal | 20 mana, 10s cooldown, 10 + 2 per power (`abilities.json`) | whether one healer keeps a tank up |
 | Dropped decay | 30m (`rules.DroppedDecay`) | how long a donation waits for a newbie |
 | Bare hands damage | 1d2 (`rules.BareHands`) | also a mob with no `"damage"` |
 | Averaging worn power | rounds down | how soon one upgrade shows in your number |
@@ -167,15 +168,36 @@ barrow's band is the gear you farm *before* you try him.
 
 Needed for that fight, and not yet anywhere else on this page:
 
-- **Abilities from gear** (below, under Tabled -- no longer tabled): `cast heal`, and
-  whatever resource or cooldown limits it.
+- ~~**Abilities from gear**~~: `cast heal` is done (phase 5, below) -- mana and a
+  cooldown limit it, and it works mid-fight. Whether it's *enough* waits for a group
+  to try him.
 - ~~**Retargeting.**~~ Done. A mob keeps whoever engaged it first, and when they die or
   flee it turns on the earliest remaining attacker, so the King no longer stands still
   once the tank falls. (It used to: two newbies could beat him by taking turns dying.)
 - **Threat**, later: a way for a tank to take him *back* once he has turned on someone
   else. First-engaged-holds covers the opening; nothing covers a pull gone wrong.
 
-### 5. Crafting (later)
+### 5. Abilities from gear -- heal done
+
+Gear decides what you can *do*, as well as how strong you are: a censer lets you
+`cast heal`, and taking it off takes the heal with it. Spec:
+`docs/superpowers/specs/2026-10-01-abilities-heal-design.md`; how it works: CLAUDE.md,
+"Abilities".
+
+- **Decided**: mana *and* a cooldown limit every ability. Max mana is flat (100) --
+  gear decides what you cast, not how much -- and mana comes back fighting or not.
+  An ability is cast at the power of the strongest unbroken item granting it, so a
+  barrow charm heals more than a sprig censer. A cast that passes its checks always
+  spends, even on someone who wasn't hurt.
+- **Heal** (done 2026-10-03): yourself or a player in the room, mid-fight included.
+  The sprig censer, the brass censer and the bone charm grant it.
+- **Still to come**, each an entry in abilities.json plus a Go effect: offensive (a
+  mace of smackdown: a big hit, a stun -- the first `foe` target), defensive,
+  informative, and **recall as a trinket** -- wizards always have it, everyone else
+  needs gear that grants it. Gating `recall` touches the smoke bot and the
+  inhabitants, which both use it, so it's its own spec.
+
+### 6. Crafting (later)
 
 Another place an item's power comes from, so it slots into the same model:
 
@@ -188,9 +210,6 @@ Another place an item's power comes from, so it slots into the same model:
 ## Tabled
 
 - **Considering a player** -- their gear, role, power. PvP isn't on the board.
-- **Abilities from gear**: a ring of healing gives a healing cast, a mace of smackdown
-  gives a big hit with a stun. It's the natural next step after power: gear decides
-  what you can *do*, as well as how strong you are.
 
 ## Known risk in "average only what you wear"
 

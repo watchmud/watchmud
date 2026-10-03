@@ -24,6 +24,40 @@ A role with `"from_armor": true` is one that armor argues for on its own, using 
 table above -- that's Tank. Everything else says what it's worth by hand, with a
 `"roles"` key on the object: a knife has no armor type to derive anything from.
 
+## Abilities
+
+What gear lets a player *do*: `abilities.json`, one entry per ability.
+
+```json
+{ "id": "heal", "name": "heal", "mana": 20, "cooldown": "10s",
+  "target": "friend", "amount": { "base": 10, "per_power": 2 } }
+```
+
+- `id` is what objects grant and what players type (`cast heal`); `name` is what
+  `abilities` shows.
+- `mana` is the cost, and `cooldown` a duration ("10s", "1m") before it can be cast
+  again. Everyone has 100 mana; it comes back a little every few seconds, even in a
+  fight.
+- `target` is who it can be aimed at: `self`, `friend` (yourself, or a player in the
+  same room), `foe` (a mob in the room) or `none`.
+- The rest are the ability's own numbers. Heal's `amount` is `base + per_power x
+  power`, where power is the power of the item granting it -- a power-3 censer heals
+  16.
+
+An object grants abilities while it's worn and unbroken, with an `"abilities"` key in
+its zone's objects.json:
+
+```json
+"abilities": [ "heal" ]
+```
+
+Two items granting the same ability don't stack: the stronger one is what you cast
+with. An object naming an ability that isn't in this file fails startup, and so does an
+ability here that the engine has no code for -- what an ability *does* is Go
+(`world/abilities.go`), so a new one is a code change as well as an entry here.
+
+The file is optional: no `abilities.json` means nobody can cast anything.
+
 ## Species
 
 This is the definition of species and lineage, which replaces 'Race' and 'Class' and

@@ -227,8 +227,8 @@ a prompt sits unanswered is pushed onto its own line. When `readPump` reads a li
 `inputReceived`, so `writePump` knows the prompt was answered; it goes through the queue
 rather than a field so it lands ahead of the world's reply. The two things the world never
 hears about -- a bare Enter and a line that doesn't parse -- queue `reprompt`, which repeats
-the last `event.Prompt` the server sent. The prompt shows health (`<97/100hp> `), which is
-world state, so the connection never builds one itself: only the server fills one in.
+the last `event.Prompt` the server sent. The prompt shows health and mana
+(`<97/100hp 80/100m> `), which are world state, so the connection never builds one itself: only the server fills one in.
 `atPrompt` and `lastPrompt` belong to `writePump` alone.
 
 **`parse.go` and `render.go` are the two chokepoints**, one each way, and neither holds game
@@ -401,6 +401,63 @@ armor, which now derives its weight from its armor type. It remains for everythi
 a knife's `"roles": {"striker": 2}` is still a number a builder picks, and if weapons grow
 real damage stats it will be the same inconsistency again, in the same shape. Derive it
 from the weapon rather than keeping two numbers in step.
+
+### Abilities
+
+**What you can cast comes from what you have on**, the same way role and power do. An
+object grants abilities with `"abilities": ["heal"]` in objects.json
+(`object.Definition.Abilities`); `Equipment.Abilities()` answers what the equipped,
+**unbroken** gear grants right now, as a `map[abilityId]Grant` -- where two items grant
+the same one, the higher-power item wins (a tie goes to the first in slot order), and
+that item's power is what the ability is cast at. Nothing on `player.Player` or
+`player.Record` lists what a player can do; a censer in the pack does nothing until it's
+held. Not to be confused with the ability *scores* Phase 6 deleted (`rules.Abilities`,
+above): a `rules.Ability` is something gear lets you do, not a number about you.
+
+Two halves, each checked at startup so content can't name an ability that does nothing:
+
+- **The numbers are content**: `content/rules/abilities.json`, loaded by
+  `Catalog.SetAbilities` -- id, name, mana cost, cooldown, a `target` kind (`self`,
+  `friend`, `foe`, `none`), and each ability's own parameters (heal's `amount`: `base +
+  per_power * power`). A bad target, a negative cost, or an object granting an id the
+  catalog lacks fails the load.
+- **What it does is Go**: `effects` in `world/abilities.go`, an `effect` per ability id.
+  `world.New` fails if a catalog ability has no effect (`checkEffects`). An effect can't
+  refuse -- by the time it runs, the cast is paid for.
+
+`cast <ability> [target]` (`world/h_cast.go`) refuses in this order, spending nothing:
+no ability given, not in the catalog (`UNKNOWN_ABILITY`), not granted by anything
+equipped (`NOT_GRANTED`), on cooldown (`NOT_READY`), target not resolvable
+(`TARGET_NOT_FOUND`), not enough mana (`NOT_ENOUGH_MANA`). **A cast that passes always
+spends** its mana and starts its cooldown, even a heal on someone who isn't hurt -- wasting
+it is the player's mistake to make, and `event.Healed` carries an `Amount` of 0 so the
+renderer can say so. `castTarget` resolves the target once, by kind, so no effect parses
+a target string: `friend` is the caster when empty, otherwise a player **in the caster's
+room**. `foe` and `none` exist in the catalog but not yet in `castTarget`; the first
+ability that needs one adds it.
+
+**Mana** sits beside health: `rules.MaxMana` (100) for everyone, flat, so gear decides
+*what* you cast, not how much. `CurMana` on the record is a `*int` for the durability
+reason -- a record from before mana reads as full. It comes back on the regen pulse
+**fighting or not**, unlike health (`rules.ManaRegenPercent`): a healer with nothing left
+to cast is a spectator. **Cooldowns are never saved** (`Player.readyAt`, in memory): a quit
+resets them, and logging back in takes longer than any cooldown. They read the clock
+through `World.now`, which tests replace instead of sleeping; nothing else uses it yet.
+
+The prompt shows mana after health (`<97/100hp 80/100m> `) when `event.Prompt.MaxMana`
+is set -- always, for a real player; test fixtures that leave it zero render as they did.
+`abilities` lists what the gear grants, in catalog order, with the item, its power and
+the seconds until ready (rounded up, so it never promises a cast too early).
+
+Heal is allowed mid-fight -- that's what it's for -- and neither starts nor joins one.
+Nothing about abilities reads a role; the Healer label and the censer's heal are two
+separate consequences of the same item.
+
+**Adding an ability:** an entry in abilities.json (with any new parameter as a field on
+`rules.Ability`), an effect in `effects`, a case in `castTarget` if its target kind is
+new, its own event (`Healed` is heal's; there is no generic `Cast` event) and a render
+case for it, and `"abilities"` on the objects that grant it. Then a test in
+`world/h_cast_test.go` and a `telnet/render_test.go` case.
 
 ### Durability
 
