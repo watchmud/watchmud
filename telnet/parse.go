@@ -149,6 +149,9 @@ func parseCommand(tokens []string) (command.Command, error) {
 		}
 		return command.Restore{Target: tokens[1]}, nil
 
+	case "nohassle":
+		return command.NoHassle{Setting: strings.ToLower(rest)}, nil
+
 	case "roomstatus":
 		return command.RoomStatus{}, nil
 

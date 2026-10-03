@@ -239,6 +239,7 @@ type Wizard interface {
 func (Load) wizard()       {}
 func (Restore) wizard()    {}
 func (RoomStatus) wizard() {}
+func (NoHassle) wizard()   {}
 
 type Load struct {
 	Type string // "mob" or "obj"
@@ -253,6 +254,14 @@ type Restore struct {
 }
 
 func (Restore) Verb() string { return "restore" }
+
+// NoHassle switches aggressive mobs leaving the wizard alone: "on", "off",
+// or empty to flip it.
+type NoHassle struct {
+	Setting string
+}
+
+func (NoHassle) Verb() string { return "nohassle" }
 
 type RoomStatus struct {
 	ZoneId string

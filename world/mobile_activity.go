@@ -36,13 +36,18 @@ func (w *World) DoMobileActivity() {
 	}
 }
 
+// doMobAggro attacks the first player in the room it can see. A wizard with
+// nohassle on isn't one of them, and doesn't shield whoever is standing next
+// to them: the mob goes for the next player instead.
 func (w *World) doMobAggro(mob *mobile.Instance) {
-	room := w.mobileRoom(mob)
-	players := room.Players()
-	if len(players) > 0 {
-		if err := w.startFight(mob, players[0]); err != nil {
+	for _, p := range w.mobileRoom(mob).Players() {
+		if p.IsWizard() && p.NoHassle() {
+			continue
+		}
+		if err := w.startFight(mob, p); err != nil {
 			log.Warn().Msgf("World.doMobAggro: %s error starting fight: %s", mob.Definition.Id, err)
 		}
+		return
 	}
 }
 

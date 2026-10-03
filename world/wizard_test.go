@@ -22,6 +22,7 @@ var wizardCommands = []command.Command{
 	command.Load{Type: "mob", Id: "rabbit"},
 	command.Restore{Target: "testdood"},
 	command.RoomStatus{},
+	command.NoHassle{},
 }
 
 func (s *wizardSuite) TestTheListIsMarked() {

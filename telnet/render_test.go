@@ -378,6 +378,28 @@ var commandCases = []commandCase{
 		want:  "Loaded.\n",
 	},
 	{
+		name:  "nohassle is unknown to a player",
+		input: "nohassle",
+		want:  "Unknown request: nohassle\n",
+	},
+	{
+		// the test world never runs Arrive, so a bare nohassle flips it on
+		name: "nohassle for a wizard",
+		setup: func(_ *world.World, p *player.Player, _ *player.Player) {
+			p.SetWizard(true)
+		},
+		input: "nohassle",
+		want:  "Aggressive mobs will leave you alone.\n",
+	},
+	{
+		name: "nohassle off",
+		setup: func(_ *world.World, p *player.Player, _ *player.Player) {
+			p.SetWizard(true)
+		},
+		input: "nohassle off",
+		want:  "Aggressive mobs can see you again.\n",
+	},
+	{
 		name:  "abilities with nothing",
 		input: "abilities",
 		want:  "Nothing you're wearing grants any abilities.\n",

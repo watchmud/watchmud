@@ -237,6 +237,12 @@ func render(msg any, self string) string {
 	case event.Loaded:
 		return "Loaded.\n"
 
+	case event.NoHassle:
+		if m.On {
+			return "Aggressive mobs will leave you alone.\n"
+		}
+		return "Aggressive mobs can see you again.\n"
+
 	case event.RoomStatus:
 		return renderRoomStatus(m)
 

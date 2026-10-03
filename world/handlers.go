@@ -54,6 +54,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleMove(msg, cmd)
 	case command.Color:
 		w.handleColor(msg, cmd)
+	case command.NoHassle:
+		w.handleNoHassle(msg, cmd)
 	case command.Ping:
 		w.handlePing(msg, cmd)
 	case command.Recall:

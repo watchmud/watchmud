@@ -700,6 +700,11 @@ code from knowing which it is hitting.
 
 **Fights happen in play now.** `kill` starts one, an `"aggressive"` mob starts one on the
 mobile pulse with the first player in its room, and `DoViolence` carries it to a death.
+Aggro skips a wizard with `nohassle` on -- and goes for the next player instead, so a
+wizard shields nobody. `nohassle` is in memory only, switched on for every wizard's
+session by `World.Arrive`, and only counts alongside the wizard bit; turn it off to test
+aggro on your own character. It covers aggro and nothing else: a mob you attack fights
+back.
 
 **Targeting is "whoever engaged first", and it survives a death.** `Fight` never
 overwrites a combatant's existing target, so a mob stays on whoever hit it first -- which

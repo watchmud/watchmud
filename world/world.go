@@ -115,7 +115,11 @@ func (w *World) ReturnPlayer(p *player.Player, zoneId, roomId string) {
 // Separate from AddPlayer and ReturnPlayer so the transport's login events go
 // out first; the player's own description has to land after the login
 // conversation has ended, not in the middle of it.
+//
+// It is also where a wizard's nohassle goes on: every session starts with
+// aggressive mobs leaving them alone, and anyone else with it off.
 func (w *World) Arrive(p *player.Player) {
+	p.SetNoHassle(p.IsWizard())
 	r := w.playerRoom(p)
 	r.SendExcept(p, event.EnteredGame{Actor: p.Name()})
 	p.Send(event.Color{On: p.Color()}) // ahead of the first thing worth coloring

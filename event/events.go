@@ -349,6 +349,12 @@ type Died struct {
 	IsPlayer bool
 }
 
+// NoHassle answers the nohassle command: whether aggressive mobs now leave
+// the wizard alone.
+type NoHassle struct {
+	On bool
+}
+
 type Restored struct {
 	Target   string
 	IsPlayer bool

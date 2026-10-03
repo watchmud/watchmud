@@ -22,6 +22,10 @@ type Player struct {
 	// bot marks a character a program plays, so who can say so. Nothing in
 	// the game grants it: it is set by hand on the record (make bot NAME=...).
 	bot bool
+	// noHassle keeps aggressive mobs off a wizard. Only counts alongside
+	// wizard, and isn't saved: World.Arrive switches it on for every
+	// wizard's session, so protected is the state nobody has to remember.
+	noHassle bool
 	// noColor is the player turning ANSI color off. Inverted so the zero
 	// value, which is every record written before there was a choice, is on.
 	noColor bool
@@ -220,6 +224,8 @@ func (p *Player) IsWizard() bool        { return p.wizard }
 func (p *Player) SetWizard(wizard bool) { p.wizard = wizard }
 func (p *Player) IsBot() bool           { return p.bot }
 func (p *Player) SetBot(bot bool)       { p.bot = bot }
+func (p *Player) NoHassle() bool        { return p.noHassle }
+func (p *Player) SetNoHassle(on bool)   { p.noHassle = on }
 func (p *Player) Color() bool           { return !p.noColor }
 func (p *Player) Coins() int            { return p.coins }
 
