@@ -30,6 +30,18 @@ func (f *FightLedger) Fight(fighter, fightee Combatant) error {
 	return nil
 }
 
+// Turn points fighter at target instead of whoever it was fighting, starting a
+// one-way fight if it had none. It is the only thing that overrides "whoever
+// engaged first" -- a provoke. The fighter keeps its pulse, so being turned
+// is never a free swing.
+func (f *FightLedger) Turn(fighter, target Combatant) {
+	turned := f.newFight(fighter, target)
+	if old, ok := f.fightMap[fighter.Id()]; ok {
+		turned.LastPulse = old.LastPulse
+	}
+	f.fightMap[fighter.Id()] = turned
+}
+
 func (f *FightLedger) newFight(fighter, fightee Combatant) *Fight {
 	f.nextSeq++
 	return newFight(fighter, fightee, f.nextSeq)

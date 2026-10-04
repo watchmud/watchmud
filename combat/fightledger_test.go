@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/watchmud/watchmud/rules"
 )
 
 type FightLedgerSuite struct {
@@ -128,4 +129,32 @@ func (suite *FightLedgerSuite) TestNobodyLeftMeansNoFight() {
 
 	suite.Assert().False(suite.fightLedger.InFight(b))
 	suite.Assert().Empty(suite.fightLedger.GetFights())
+}
+
+// Turn points a fighter at someone else -- the one way a target is ever
+// replaced -- and keeps its pulse, so a turned mob gets no extra swing.
+func (suite *FightLedgerSuite) TestTurn() {
+	mob := NewTestCombatant("mob", 10, []DamageType{}, []DamageType{})
+	first := NewTestCombatant("first", 10, []DamageType{}, []DamageType{})
+	tank := NewTestCombatant("tank", 10, []DamageType{}, []DamageType{})
+	suite.Require().NoError(suite.fightLedger.Fight(first, mob))
+	suite.fightLedger.GetFight(mob).LastPulse = 7
+
+	suite.fightLedger.Turn(mob, tank)
+
+	fight := suite.fightLedger.GetFight(mob)
+	suite.Assert().Equal(tank, fight.Fightee)
+	suite.Assert().Equal(rules.PulseCount(7), fight.LastPulse, "no free swing")
+	suite.Assert().Equal(mob, suite.fightLedger.GetFight(first).Fightee, "first still swings at it")
+}
+
+// a mob that wasn't fighting just starts on the one who turned it
+func (suite *FightLedgerSuite) TestTurnIdle() {
+	mob := NewTestCombatant("mob", 10, []DamageType{}, []DamageType{})
+	tank := NewTestCombatant("tank", 10, []DamageType{}, []DamageType{})
+
+	suite.fightLedger.Turn(mob, tank)
+
+	suite.Assert().Equal(tank, suite.fightLedger.GetFight(mob).Fightee)
+	suite.Assert().False(suite.fightLedger.IsFighting(tank), "turning is one way")
 }
