@@ -149,6 +149,10 @@ func (p *Player) RestoreMana(n int) {
 	p.curMana = min(p.curMana+max(n, 0), p.maxMana)
 }
 
+func (p *Player) RestoreMaxMana() {
+	p.curMana = p.maxMana
+}
+
 // ReadyAt is when this ability can next be cast; the zero time if it
 // never has been.
 func (p *Player) ReadyAt(abilityId string) time.Time {
