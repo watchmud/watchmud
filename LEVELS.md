@@ -53,6 +53,7 @@ move is one change.
 | Mana regen | 5% of max mana, at least 1, fighting or not (`rules.ManaRegenPercent`) | how many heals a long fight affords |
 | Max mana | 100, flat (`rules.MaxMana`) | the budget a healer walks into a fight with |
 | Heal | 20 mana, 10s cooldown, 10 + 2 per power (`abilities.json`) | whether one healer keeps a tank up |
+| Smite | 25 mana, 20s cooldown, 8 + 3 per power, always lands (`abilities.json`) | how much faster a striker opens a fight than a swing does |
 | Dropped decay | 30m (`rules.DroppedDecay`) | how long a donation waits for a newbie |
 | Bare hands damage | 1d2 (`rules.BareHands`) | also a mob with no `"damage"` |
 | Averaging worn power | rounds down | how soon one upgrade shows in your number |
@@ -191,8 +192,12 @@ Gear decides what you can *do*, as well as how strong you are: a censer lets you
   spends, even on someone who wasn't hurt.
 - **Heal** (done 2026-10-03): yourself or a player in the room, mid-fight included.
   The sprig censer, the brass censer and the bone charm grant it.
-- **Still to come**, each an entry in abilities.json plus a Go effect: offensive (a
-  mace of smackdown: a big hit, a stun -- the first `foe` target), defensive,
+- **Smite** (done 2026-10-03): the first offensive ability and `foe` target -- a mob
+  here, or whoever you're fighting. It always lands, for `8 + 3 per power` of the
+  weapon, wears the weapon like a blow, and opens a fight like `kill`. The bandit
+  cudgel and the barrow blade grant it.
+- **Still to come**, each an entry in abilities.json plus a Go effect: the **stun**
+  the mace of smackdown was meant to have (a new combat mechanic: skipped swings), defensive,
   informative, and **recall as a trinket** -- wizards always have it, everyone else
   needs gear that grants it. Gating `recall` touches the smoke bot and the
   inhabitants, which both use it, so it's its own spec.

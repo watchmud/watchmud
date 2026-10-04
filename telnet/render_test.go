@@ -340,6 +340,19 @@ var commandCases = []commandCase{
 		wantOther: "testdood casts heal.\n",
 	},
 	{
+		name:      "smite a mob",
+		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { wieldTestMace(p) },
+		input:     "cast smite little",
+		want:      "You smite Little Drone! (11)\n",
+		wantOther: "testdood smites Little Drone!\n",
+	},
+	{
+		name:  "smite with no fight and no target",
+		setup: func(_ *world.World, p *player.Player, _ *player.Player) { wieldTestMace(p) },
+		input: "cast smite",
+		want:  "At what? You aren't fighting anything.\n",
+	},
+	{
 		name:      "healing the unhurt is wasted",
 		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { holdTestCenser(p) },
 		input:     "cast heal otherdood",
@@ -500,6 +513,18 @@ func testKnife() *object.Instance {
 	)
 	d.RoleWeights = map[string]int{"striker": 2}
 	return object.NewInstance(uuid.New(), d)
+}
+
+// wieldTestMace wields something granting smite at power 1
+func wieldTestMace(p *player.Player) {
+	d := object.NewDefinition("mace", "mace", "wrathrock", rules.ObjectCategoryWeapon,
+		nil, "a mace", "A mace is here.", rules.SlotWield, rules.ArmorTypeNone, nil)
+	d.Damage = "1d6"
+	d.Abilities = []string{"smite"}
+	inst := object.NewInstance(uuid.New(), d)
+	inst.Power = 1
+	_ = p.Inventory().Add(inst)
+	p.Equipment().Equip(rules.SlotWield, inst)
 }
 
 // holdTestCenser equips something granting heal at power 1

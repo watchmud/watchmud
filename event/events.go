@@ -375,6 +375,13 @@ type Healed struct {
 	Amount int
 }
 
+// Smote goes to the whole room: a smite always lands, so there's no Hit.
+type Smote struct {
+	Actor  string
+	Target string
+	Damage int
+}
+
 type Abilities struct {
 	Granted []GrantedAbility
 }

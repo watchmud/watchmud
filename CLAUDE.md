@@ -433,8 +433,11 @@ spends** its mana and starts its cooldown, even a heal on someone who isn't hurt
 it is the player's mistake to make, and `event.Healed` carries an `Amount` of 0 so the
 renderer can say so. `castTarget` resolves the target once, by kind, so no effect parses
 a target string: `friend` is the caster when empty, otherwise a player **in the caster's
-room**. `foe` and `none` exist in the catalog but not yet in `castTarget`; the first
-ability that needs one adds it.
+room**. `foe` (`castFoe`) is a mob in the room by name -- `FindMobile`, as `kill` uses --
+or, with no name, whoever the caster is fighting; no fight and no name is `NO_FOE`, not
+`NO_TARGET`, since failure text is keyed on the `cast` verb and would read "Cast what?".
+It then refuses what `kill` refuses: a no-fight room, a can't-fight mob. `none` exists in
+the catalog but not yet in `castTarget`; the first ability that needs it adds it.
 
 **Mana** sits beside health: `rules.MaxMana` (100) for everyone, flat, so gear decides
 *what* you cast, not how much. `CurMana` on the record is a `*int` for the durability
@@ -450,14 +453,24 @@ is set -- always, for a real player; test fixtures that leave it zero render as 
 the seconds until ready (rounded up, so it never promises a cast too early).
 
 Heal is allowed mid-fight -- that's what it's for -- and neither starts nor joins one.
+**Smite** (`foe`, granted by weapons) is a blow that always lands -- mana and the
+cooldown are its cost, so there's no to-hit roll -- and goes in the order a melee blow
+does: `event.Smote`, then `wearFromBlow` (a point off the weapon), then `combatantDied` if
+it killed. Otherwise it starts the fight, and how depends on the ledger, which refuses to
+start one for an attacker who's already fighting: a caster who isn't fighting opens one
+both ways, like `kill`; a caster who is gets only the mob turned on them
+(`startFight(foe, caster)`), so their own swings stay on whoever they were fighting.
+Either way a scripted mob's opener fires if it wasn't already in a fight.
 Nothing about abilities reads a role; the Healer label and the censer's heal are two
-separate consequences of the same item.
+separate consequences of the same item, as are Striker and the cudgel's smite.
 
 **Adding an ability:** an entry in abilities.json (with any new parameter as a field on
 `rules.Ability`), an effect in `effects`, a case in `castTarget` if its target kind is
-new, its own event (`Healed` is heal's; there is no generic `Cast` event) and a render
-case for it, and `"abilities"` on the objects that grant it. Then a test in
-`world/h_cast_test.go` and a `telnet/render_test.go` case.
+new, its own event (`Healed` is heal's, `Smote` smite's; there is no generic `Cast`
+event) and a render case for it, and `"abilities"` on the objects that grant it -- the
+effect before the catalog entry, or `checkEffects` refuses every world the tests build.
+Then a test suite in `world/` (`h_cast_test.go`, `h_cast_smite_test.go`) and a
+`telnet/render_test.go` case.
 
 ### Durability
 

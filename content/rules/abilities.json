@@ -9,5 +9,13 @@
       "base": 10,
       "per_power": 2
     }
+  },
+  {
+    "id": "smite",
+    "name": "smite",
+    "mana": 25,
+    "cooldown": "20s",
+    "target": "foe",
+    "amount": { "base": 8, "per_power": 3 }
   }
 ]

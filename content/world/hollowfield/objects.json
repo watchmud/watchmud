@@ -75,7 +75,8 @@
     "damage": "1d6",
     "roles": {
       "striker": 3
-    }
+    },
+    "abilities": ["smite"]
   },
   {
     "id": "ring_of_mending",

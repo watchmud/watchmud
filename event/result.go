@@ -51,6 +51,7 @@ const (
 	NotGranted     ResultCode = "NOT_GRANTED"
 	NotReady       ResultCode = "NOT_READY"
 	NotEnoughMana  ResultCode = "NOT_ENOUGH_MANA"
+	NoFoe          ResultCode = "NO_FOE"
 
 	// movement and combat
 	CantGoThatWay   ResultCode = "CANT_GO_THAT_WAY"

@@ -6,7 +6,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
-	"github.com/watchmud/watchmud/player"
+	"github.com/watchmud/watchmud/mobile"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -34,8 +34,8 @@ func (w *World) handleCast(msg *gameserver.HandlerParameter, cmd command.Cast) {
 		msg.Fail(event.NotReady)
 		return
 	}
-	target, code := w.castTarget(p, a, cmd.Target)
-	if code != "" {
+	c := cast{caster: p, ability: a, power: grant.Power}
+	if code := w.castTarget(&c, cmd.Target); code != "" {
 		msg.Fail(code)
 		return
 	}
@@ -44,24 +44,60 @@ func (w *World) handleCast(msg *gameserver.HandlerParameter, cmd command.Cast) {
 		return
 	}
 	p.StartCooldown(a.Id, now.Add(a.Cooldown))
-	effects[a.Id](w, cast{caster: p, target: target, ability: a, power: grant.Power})
+	effects[a.Id](w, c)
 }
 
-// castTarget resolves the target by the ability's kind. Only the kinds an
-// ability uses so far are here; foe arrives with the first offensive one.
-func (w *World) castTarget(caster *player.Player, a *rules.Ability, target string) (*player.Player, event.ResultCode) {
-	switch a.Target {
+// castTarget resolves the target by the ability's kind into c. Every refusal
+// here comes before anything is spent. none has no ability yet, so no case.
+func (w *World) castTarget(c *cast, target string) event.ResultCode {
+	switch c.ability.Target {
 	case rules.TargetSelf:
-		return caster, ""
+		c.target = c.caster
+		return ""
 	case rules.TargetFriend:
 		if target == "" {
-			return caster, ""
+			c.target = c.caster
+			return ""
 		}
-		if p, found := w.playerRoom(caster).FindPlayer(target); found {
-			return p, ""
+		p, found := w.playerRoom(c.caster).FindPlayer(target)
+		if !found {
+			return event.TargetNotFound
 		}
-		return nil, event.TargetNotFound
+		c.target = p
+		return ""
+	case rules.TargetFoe:
+		return w.castFoe(c, target)
 	}
-	caster.Log().Error().Msgf("cast %s: target kind %q not handled yet", a.Id, a.Target)
-	return nil, event.InternalError
+	c.caster.Log().Error().Msgf("cast %s: target kind %q not handled yet", c.ability.Id, c.ability.Target)
+	return event.InternalError
+}
+
+// castFoe finds the mob a foe ability is aimed at: the one named, or with no name,
+// whoever the caster is fighting. Then the same refusals kill makes.
+func (w *World) castFoe(c *cast, target string) event.ResultCode {
+	room := w.playerRoom(c.caster)
+	if target == "" {
+		fight := w.fightLedger.GetFight(c.caster)
+		if fight == nil {
+			return event.NoFoe
+		}
+		mob, isMob := fight.Fightee.(*mobile.Instance)
+		if !isMob {
+			return event.NoFoe
+		}
+		c.foe = mob
+	} else {
+		mob, found := room.FindMobile(target)
+		if !found {
+			return event.TargetNotFound
+		}
+		c.foe = mob
+	}
+	if room.Flag(rules.RoomFlagNoFight) {
+		return event.NoFightRoom
+	}
+	if c.foe.Definition.HasFlag(rules.MobileFlagPlayerCantFight) {
+		return event.NoFight
+	}
+	return ""
 }

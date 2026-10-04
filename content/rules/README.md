@@ -42,7 +42,8 @@ What gear lets a player *do*: `abilities.json`, one entry per ability.
   same room), `foe` (a mob in the room) or `none`.
 - The rest are the ability's own numbers. Heal's `amount` is `base + per_power x
   power`, where power is the power of the item granting it -- a power-3 censer heals
-  16.
+  16. Smite, the first `foe` ability, uses the same `amount` for its damage: a power-1
+  cudgel hits for 11, and it always lands.
 
 An object grants abilities while it's worn and unbroken, with an `"abilities"` key in
 its zone's objects.json:

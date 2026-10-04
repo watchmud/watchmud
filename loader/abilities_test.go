@@ -47,3 +47,21 @@ func TestLoadContent_healersHeal(t *testing.T) {
 		assert.Contains(t, d.Abilities, "heal", ref)
 	}
 }
+
+// smite comes from weapons: a bandit's cudgel in the Hollowfields, and the
+// barrow's blade for a better one
+func TestLoadContent_weaponsSmite(t *testing.T) {
+	c, err := LoadContent(os.DirFS("../content"))
+	require.NoError(t, err)
+	smite, found := c.Catalog.Abilities["smite"]
+	require.True(t, found)
+	assert.Equal(t, "foe", string(smite.Target))
+	for _, ref := range [][2]string{
+		{"hollowfield", "bandit_cudgel"},
+		{"barrow", "barrow_blade"},
+	} {
+		d, found := c.Zones[ref[0]].ObjectDefinitions[ref[1]]
+		require.True(t, found, ref)
+		assert.Contains(t, d.Abilities, "smite", ref)
+	}
+}

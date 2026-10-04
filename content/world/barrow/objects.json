@@ -68,7 +68,8 @@
     "damage": "2d6",
     "roles": {
       "striker": 5
-    }
+    },
+    "abilities": ["smite"]
   },
   {
     "id": "black_iron_crown",

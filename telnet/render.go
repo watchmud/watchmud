@@ -229,6 +229,12 @@ func render(msg any, self string) string {
 	case event.Healed:
 		return renderHealed(m, self)
 
+	case event.Smote:
+		if m.Actor == self {
+			return fmt.Sprintf("You smite %s! (%d)\n", m.Target, m.Damage)
+		}
+		return m.Actor + " smites " + m.Target + "!\n"
+
 	case event.Abilities:
 		return renderAbilities(m)
 

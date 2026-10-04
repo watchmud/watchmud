@@ -89,6 +89,7 @@ var failureByCode = map[string]string{
 	"NOT_GRANTED":     "Nothing you're wearing lets you cast that.",
 	"NOT_READY":       "You can't cast that again yet.",
 	"NOT_ENOUGH_MANA": "You don't have enough mana.",
+	"NO_FOE":          "At what? You aren't fighting anything.",
 
 	// containers
 	"NOT_A_CONTAINER":  "That's not a container.",
