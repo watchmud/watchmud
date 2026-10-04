@@ -179,7 +179,7 @@ Needed for that fight, and not yet anywhere else on this page:
   on someone else, every 15s at most. No threat table: damage and heals never pull him,
   so a pull gone wrong is the tank's to fix, not the healer's to avoid.
 
-### 5. Abilities from gear -- heal, smite, provoke done
+### 5. Abilities from gear -- heal, smite, provoke, stun done
 
 Gear decides what you can *do*, as well as how strong you are: a censer lets you
 `cast heal`, and taking it off takes the heal with it. Spec:
@@ -200,8 +200,14 @@ Gear decides what you can *do*, as well as how strong you are: a censer lets you
 - **Provoke** (done 2026-10-03): the tank's ability -- the mob turns on the caster, the
   one override of whoever-engaged-first. No damage; 15 mana, 15s. The barrow plate and
   helm grant it, and the boar-hide jerkin so it's learned before the barrow.
-- **Still to come**, each an entry in abilities.json plus a Go effect: the **stun**
-  the mace of smackdown was meant to have (a new combat mechanic: skipped swings), defensive,
+- **Stun** (done 2026-10-03): the mob skips its next 2 swings; no damage. 20 mana, 30s
+  -- room to save a healer the King has turned on, not a lockdown, and a second stun
+  refreshes rather than stacks. The mace of smackdown grants it (10% from barrow
+  skeletons). No boss is immune yet; add a flag if the King turns out trivial.
+- **Kept apart, on purpose** (decided 2026-10-03): smite doesn't stun, and no item yet
+  grants both. An item granting two abilities is a higher tier -- something to strive
+  for -- so save the combination for gear above the barrow.
+- **Still to come**, each an entry in abilities.json plus a Go effect: defensive,
   informative, and **recall as a trinket** -- wizards always have it, everyone else
   needs gear that grants it. Gating `recall` touches the smoke bot and the
   inhabitants, which both use it, so it's its own spec.

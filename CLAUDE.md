@@ -466,6 +466,15 @@ damage: it turns the mob on the caster with `FightLedger.Turn`, the one thing th
 overrides whoever-engaged-first. It opens a fight the way smite does, and `Turn` keeps
 the mob's `LastPulse`, so being provoked is never a free swing. A mob already on the
 caster is a wasted cast (`event.Provoked.Already`), paid for like an unneeded heal.
+**Stun** (`foe`, granted by the mace of smackdown) does no damage: its `amount` is
+rounds, and the mob skips that many swings. The count is on the ledger
+(`FightLedger.Stun`), by combatant rather than by fight, so a provoke or a retarget
+doesn't shake it off; a second stun refreshes to the longer, never stacks, and
+`EndAllFightsWith` clears it. `DoViolence` spends one per round (`SpendStun`): the
+round is used -- `LastPulse` moves -- with an `event.Staggered` and no swing, wear or
+script pulse. Rounds rather than seconds because the world only knows the pulse
+inside `DoViolence`, while cooldowns run on `w.now`.
+Smite, provoke and stun all draw the mob in through `World.openFight`.
 Nothing about abilities reads a role; the Healer label and the censer's heal are two
 separate consequences of the same item, as are Striker and the cudgel's smite.
 
