@@ -390,6 +390,18 @@ type Provoked struct {
 	Already bool
 }
 
+// Stunned goes to the whole room: Target will skip its next Rounds swings.
+type Stunned struct {
+	Actor  string
+	Target string
+	Rounds int
+}
+
+// Staggered is a stunned combatant's round going by without a swing.
+type Staggered struct {
+	Name string
+}
+
 type Abilities struct {
 	Granted []GrantedAbility
 }

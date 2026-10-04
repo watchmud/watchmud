@@ -27,6 +27,7 @@ var effects = map[string]effect{
 	"heal":    healEffect,
 	"smite":   smiteEffect,
 	"provoke": provokeEffect,
+	"stun":    stunEffect,
 }
 
 // checkEffects refuses a catalog naming an ability the engine cant do -
@@ -64,9 +65,14 @@ func smiteEffect(w *World, c cast) {
 		w.combatantDied(c.foe, room)
 		return
 	}
-	// The ledger won't start a fight for someone already in one, so: not
-	// fighting, it opens one both ways, like kill. Already fighting, only the
-	// mob turns on you, and your swings stay on whoever you were fighting.
+	w.openFight(c)
+}
+
+// openFight is how a foe ability draws its mob in. The ledger won't start a
+// fight for someone already in one, so: a caster not fighting opens one both
+// ways, like kill. One already fighting gets only the mob turned on them, and
+// their swings stay on whoever they were fighting.
+func (w *World) openFight(c cast) {
 	var err error
 	switch {
 	case !w.fightLedger.IsFighting(c.caster):
@@ -75,14 +81,12 @@ func smiteEffect(w *World, c cast) {
 		err = w.startFight(c.foe, c.caster)
 	}
 	if err != nil {
-		c.caster.Log().Error().Err(err).Msg("smite: starting the fight")
+		c.caster.Log().Error().Err(err).Msgf("%s: starting the fight", c.ability.Id)
 	}
 }
 
 // provokeEffect turns the mob on the caster: the one thing that overrides
-// "whoever engaged first", so a tank can take a mob back. Like smite, a caster
-// who isn't fighting opens a fight both ways; one who is keeps swinging at
-// whoever they were.
+// "whoever engaged first", so a tank can take a mob back.
 func provokeEffect(w *World, c cast) {
 	room := w.playerRoom(c.caster)
 	if fight := w.fightLedger.GetFight(c.foe); fight != nil && fight.Fightee == c.caster {
@@ -90,17 +94,17 @@ func provokeEffect(w *World, c cast) {
 		return
 	}
 	room.Send(event.Provoked{Actor: c.caster.Name(), Target: c.foe.Name()})
-	var err error
-	switch {
-	case !w.fightLedger.IsFighting(c.caster):
-		err = w.startFight(c.caster, c.foe)
-	case !w.fightLedger.IsFighting(c.foe):
-		err = w.startFight(c.foe, c.caster)
-	}
-	if err != nil {
-		c.caster.Log().Error().Err(err).Msg("provoke: starting the fight")
-	}
+	w.openFight(c)
 	if fight := w.fightLedger.GetFight(c.foe); fight == nil || fight.Fightee != c.caster {
 		w.fightLedger.Turn(c.foe, c.caster)
 	}
+}
+
+// stunEffect makes the mob skip its next swings -- amount is rounds, not
+// damage -- and draws it into the fight like smite. DoViolence spends them.
+func stunEffect(w *World, c cast) {
+	rounds := c.ability.Amount.For(c.power)
+	w.fightLedger.Stun(c.foe, rounds)
+	w.playerRoom(c.caster).Send(event.Stunned{Actor: c.caster.Name(), Target: c.foe.Name(), Rounds: rounds})
+	w.openFight(c)
 }

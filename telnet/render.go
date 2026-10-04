@@ -244,6 +244,15 @@ func render(msg any, self string) string {
 		}
 		return m.Actor + " provokes " + m.Target + "!\n"
 
+	case event.Stunned:
+		if m.Actor == self {
+			return "You stun " + m.Target + "!\n"
+		}
+		return m.Actor + " stuns " + m.Target + "!\n"
+
+	case event.Staggered:
+		return m.Name + " staggers, stunned.\n"
+
 	case event.Abilities:
 		return renderAbilities(m)
 

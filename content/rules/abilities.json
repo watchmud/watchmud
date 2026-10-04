@@ -24,5 +24,13 @@
     "mana": 15,
     "cooldown": "15s",
     "target": "foe"
+  },
+  {
+    "id": "stun",
+    "name": "stun",
+    "mana": 20,
+    "cooldown": "30s",
+    "target": "foe",
+    "amount": { "base": 2, "per_power": 0 }
   }
 ]

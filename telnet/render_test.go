@@ -360,6 +360,13 @@ var commandCases = []commandCase{
 		wantOther: "testdood provokes Little Drone!\n",
 	},
 	{
+		name:      "stun a mob",
+		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { wieldTestStunMace(p) },
+		input:     "cast stun little",
+		want:      "You stun Little Drone!\n",
+		wantOther: "testdood stuns Little Drone!\n",
+	},
+	{
 		name:      "healing the unhurt is wasted",
 		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { holdTestCenser(p) },
 		input:     "cast heal otherdood",
@@ -545,6 +552,18 @@ func wearTestPlate(p *player.Player) {
 	p.Equipment().Equip(rules.SlotBody, inst)
 }
 
+// wieldTestStunMace wields something granting stun
+func wieldTestStunMace(p *player.Player) {
+	d := object.NewDefinition("mace", "mace", "wrathrock", rules.ObjectCategoryWeapon,
+		nil, "a mace", "A mace is here.", rules.SlotWield, rules.ArmorTypeNone, nil)
+	d.Damage = "1d8"
+	d.Abilities = []string{"stun"}
+	inst := object.NewInstance(uuid.New(), d)
+	inst.Power = 1
+	_ = p.Inventory().Add(inst)
+	p.Equipment().Equip(rules.SlotWield, inst)
+}
+
 // holdTestCenser equips something granting heal at power 1
 func holdTestCenser(p *player.Player) {
 	d := object.NewDefinition("censer", "censer", "wrathrock", rules.ObjectCategoryOther,
@@ -650,4 +669,9 @@ func TestRender_provokeAlready(t *testing.T) {
 	m := event.Provoked{Actor: "testdood", Target: "Little Drone", Already: true}
 	assert.Equal(t, "Little Drone is already fighting you.\n", plain(render(m, "testdood")))
 	assert.Equal(t, "testdood provokes Little Drone!\n", plain(render(m, "otherdood")))
+}
+
+// a stunned mob's lost round
+func TestRender_staggered(t *testing.T) {
+	assert.Equal(t, "Little Drone staggers, stunned.\n", plain(render(event.Staggered{Name: "Little Drone"}, "testdood")))
 }

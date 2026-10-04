@@ -29,6 +29,13 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 		// headache to tune these settings.
 		if fight.CanDoViolence(w.content.Catalog.MudTime.Violence, pulse) {
 			fight.LastPulse = pulse
+			// A stunned round is a spent round: no swing, no wear, no script.
+			if w.fightLedger.SpendStun(fight.Fighter) {
+				if room := w.roomOf(fight.Fighter); room != nil {
+					room.Notify(event.Staggered{Name: fight.Fighter.Name()})
+				}
+				continue
+			}
 			fightResult, err := combat.AttemptMeleeAttack(w.roller, fight.Fighter, fight.Fightee)
 			if err != nil {
 				log.Error().Err(err).Msg("failed to attempt melee attack")
