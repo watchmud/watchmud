@@ -253,6 +253,12 @@ func render(msg any, self string) string {
 	case event.Staggered:
 		return m.Name + " staggers, stunned.\n"
 
+	case event.Summoned:
+		if m.Count == 1 {
+			return m.Summoner + " calls up one " + m.Name + "!\n"
+		}
+		return fmt.Sprintf("%s calls up %d %ss!\n", m.Summoner, m.Count, m.Name)
+
 	case event.Abilities:
 		return renderAbilities(m)
 

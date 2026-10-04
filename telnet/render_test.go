@@ -675,3 +675,10 @@ func TestRender_provokeAlready(t *testing.T) {
 func TestRender_staggered(t *testing.T) {
 	assert.Equal(t, "Little Drone staggers, stunned.\n", plain(render(event.Staggered{Name: "Little Drone"}, "testdood")))
 }
+
+func TestRender_summoned(t *testing.T) {
+	assert.Equal(t, "Barrow-King calls up 2 barrow skeletons!\n",
+		plain(render(event.Summoned{Summoner: "Barrow-King", Name: "barrow skeleton", Count: 2}, "testdood")))
+	assert.Equal(t, "Warlock calls up one imp!\n",
+		plain(render(event.Summoned{Summoner: "Warlock", Name: "imp", Count: 1}, "testdood")))
+}

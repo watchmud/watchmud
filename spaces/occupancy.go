@@ -117,7 +117,9 @@ func (o *Occupancy) Mobiles() []*mobile.Instance {
 func (o *Occupancy) MobileCount(defId string) int {
 	count := 0
 	for mob := range o.mobiles.All() {
-		if mob.Definition.Id == defId {
+		// A summon is its summoner's, not the zone's: counting it would keep a
+		// reset from refilling the room that it was called away from.
+		if mob.Definition.Id == defId && mob.Summoner == nil {
 			count++
 		}
 	}

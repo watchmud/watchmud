@@ -20,6 +20,10 @@ type Instance struct {
 	LastWanderingTime time.Time // when was the last time this mob went wandering?
 	WanderingForward  bool      // do you wander forward on the path or backwards?
 	CurHealth         int
+	// Summoner is the mob whose script called this one up; nil for one a zone
+	// reset or a wizard put here. A summon lives as long as its summoner's
+	// fight -- see world/summons.go.
+	Summoner *Instance
 }
 
 func NewInstance(d *Definition) *Instance {

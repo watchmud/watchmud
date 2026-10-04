@@ -425,6 +425,13 @@ type Fled struct {
 	Who string
 }
 
+// Summoned goes to the room: Summoner called up a Count of Name, who arrive fighting.
+type Summoned struct {
+	Summoner string
+	Name     string
+	Count    int
+}
+
 // ---- builder commands ------------------------------------------------------
 
 type Loaded struct{}
