@@ -158,3 +158,39 @@ func (suite *FightLedgerSuite) TestTurnIdle() {
 	suite.Assert().Equal(tank, suite.fightLedger.GetFight(mob).Fightee)
 	suite.Assert().False(suite.fightLedger.IsFighting(tank), "turning is one way")
 }
+
+// a stun is a count of swings to skip, spent one round at a time
+func (suite *FightLedgerSuite) TestStun() {
+	mob := NewTestCombatant("mob", 10, []DamageType{}, []DamageType{})
+
+	suite.fightLedger.Stun(mob, 2)
+
+	suite.Assert().True(suite.fightLedger.SpendStun(mob))
+	suite.Assert().True(suite.fightLedger.SpendStun(mob))
+	suite.Assert().False(suite.fightLedger.SpendStun(mob), "two rounds, then it swings")
+}
+
+// a second stun refreshes, never stacks: alternating stuns can't lock a mob down
+func (suite *FightLedgerSuite) TestStunRefreshes() {
+	mob := NewTestCombatant("mob", 10, []DamageType{}, []DamageType{})
+	suite.fightLedger.Stun(mob, 2)
+	suite.fightLedger.SpendStun(mob)
+
+	suite.fightLedger.Stun(mob, 2)
+
+	suite.Assert().Equal(2, suite.fightLedger.Stunned(mob))
+	suite.fightLedger.Stun(mob, 1)
+	suite.Assert().Equal(2, suite.fightLedger.Stunned(mob), "a shorter stun doesn't cut one short")
+}
+
+// leaving every fight -- death, flee, logout -- ends a stun
+func (suite *FightLedgerSuite) TestStunEndsWithTheFight() {
+	mob := NewTestCombatant("mob", 10, []DamageType{}, []DamageType{})
+	player := NewTestCombatant("player", 10, []DamageType{}, []DamageType{})
+	suite.Require().NoError(suite.fightLedger.Fight(player, mob))
+	suite.fightLedger.Stun(mob, 2)
+
+	suite.fightLedger.EndAllFightsWith(mob.Id())
+
+	suite.Assert().Equal(0, suite.fightLedger.Stunned(mob))
+}

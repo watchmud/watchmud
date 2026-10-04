@@ -8,11 +8,16 @@ import (
 type FightLedger struct {
 	fightMap map[uuid.UUID]*Fight
 	nextSeq  uint64
+
+	// stuns is swings left to skip, by combatant rather than by fight, so a
+	// stunned mob that is provoked or retargeted stays stunned.
+	stuns map[uuid.UUID]int
 }
 
 func NewFightLedger() *FightLedger {
 	return &FightLedger{
 		fightMap: make(map[uuid.UUID]*Fight),
+		stuns:    make(map[uuid.UUID]int),
 	}
 }
 
@@ -40,6 +45,33 @@ func (f *FightLedger) Turn(fighter, target Combatant) {
 		turned.LastPulse = old.LastPulse
 	}
 	f.fightMap[fighter.Id()] = turned
+}
+
+// Stun makes c skip its next `rounds` swings. A stun refreshes rather than
+// stacks -- the longer of what's left and what's new -- so two players taking
+// turns can't hold a mob still forever.
+func (f *FightLedger) Stun(c Combatant, rounds int) {
+	f.stuns[c.Id()] = max(f.stuns[c.Id()], rounds)
+}
+
+// Stunned is how many swings c has left to skip.
+func (f *FightLedger) Stunned(c Combatant) int {
+	return f.stuns[c.Id()]
+}
+
+// SpendStun uses up one stunned round, answering whether c had one to spend:
+// true means c doesn't swing this round.
+func (f *FightLedger) SpendStun(c Combatant) bool {
+	left, stunned := f.stuns[c.Id()]
+	if !stunned {
+		return false
+	}
+	if left <= 1 {
+		delete(f.stuns, c.Id())
+	} else {
+		f.stuns[c.Id()] = left - 1
+	}
+	return true
 }
 
 func (f *FightLedger) newFight(fighter, fightee Combatant) *Fight {
@@ -81,13 +113,15 @@ func (f *FightLedger) EndFight(fighter Combatant) {
 }
 
 // EndAllFightsWith takes someone out of every fight, both ways -- they died,
-// fled or left -- and then retargets anyone that leaves still under attack.
+// fled or left -- ends any stun on them, and then retargets anyone that leaves
+// still under attack.
 func (f *FightLedger) EndAllFightsWith(id uuid.UUID) {
 	for k, v := range f.fightMap {
 		if v.Fighter.Id() == id || v.Fightee.Id() == id {
 			delete(f.fightMap, k)
 		}
 	}
+	delete(f.stuns, id)
 	f.retarget()
 }
 
