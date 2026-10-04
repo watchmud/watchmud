@@ -461,6 +461,11 @@ start one for an attacker who's already fighting: a caster who isn't fighting op
 both ways, like `kill`; a caster who is gets only the mob turned on them
 (`startFight(foe, caster)`), so their own swings stay on whoever they were fighting.
 Either way a scripted mob's opener fires if it wasn't already in a fight.
+**Provoke** (`foe`, granted by the barrow plate and helm and the boar-hide jerkin) does no
+damage: it turns the mob on the caster with `FightLedger.Turn`, the one thing that
+overrides whoever-engaged-first. It opens a fight the way smite does, and `Turn` keeps
+the mob's `LastPulse`, so being provoked is never a free swing. A mob already on the
+caster is a wasted cast (`event.Provoked.Already`), paid for like an unneeded heal.
 Nothing about abilities reads a role; the Healer label and the censer's heal are two
 separate consequences of the same item, as are Striker and the cudgel's smite.
 
@@ -728,8 +733,10 @@ overwrites a combatant's existing target, so a mob stays on whoever hit it first
 is what a tank relies on. `EndAllFightsWith` (death, flee, logout) then *retargets*: anyone
 left being fought but no longer fighting turns on their earliest remaining attacker,
 by the ledger's `seq`, since a map has no order. Without that the Barrow-King kills the
-tank and stands there, still "in a fight" so aggro skips him, never swinging again. There
-is no threat yet -- nothing lets a tank take a mob back.
+tank and stands there, still "in a fight" so aggro skips him, never swinging again. The
+one override is `cast provoke` (`FightLedger.Turn`): a tank takes the mob back, and it
+holds them by the same first-engaged rule until they die or flee. There is no threat
+table -- damage and healing never pull a mob.
 
 ## Conventions
 

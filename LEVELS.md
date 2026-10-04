@@ -175,10 +175,11 @@ Needed for that fight, and not yet anywhere else on this page:
 - ~~**Retargeting.**~~ Done. A mob keeps whoever engaged it first, and when they die or
   flee it turns on the earliest remaining attacker, so the King no longer stands still
   once the tank falls. (It used to: two newbies could beat him by taking turns dying.)
-- **Threat**, later: a way for a tank to take him *back* once he has turned on someone
-  else. First-engaged-holds covers the opening; nothing covers a pull gone wrong.
+- ~~**Threat**~~: `cast provoke` (done 2026-10-03) takes him *back* once he has turned
+  on someone else, every 15s at most. No threat table: damage and heals never pull him,
+  so a pull gone wrong is the tank's to fix, not the healer's to avoid.
 
-### 5. Abilities from gear -- heal done
+### 5. Abilities from gear -- heal, smite, provoke done
 
 Gear decides what you can *do*, as well as how strong you are: a censer lets you
 `cast heal`, and taking it off takes the heal with it. Spec:
@@ -196,6 +197,9 @@ Gear decides what you can *do*, as well as how strong you are: a censer lets you
   here, or whoever you're fighting. It always lands, for `8 + 3 per power` of the
   weapon, wears the weapon like a blow, and opens a fight like `kill`. The bandit
   cudgel and the barrow blade grant it.
+- **Provoke** (done 2026-10-03): the tank's ability -- the mob turns on the caster, the
+  one override of whoever-engaged-first. No damage; 15 mana, 15s. The barrow plate and
+  helm grant it, and the boar-hide jerkin so it's learned before the barrow.
 - **Still to come**, each an entry in abilities.json plus a Go effect: the **stun**
   the mace of smackdown was meant to have (a new combat mechanic: skipped swings), defensive,
   informative, and **recall as a trinket** -- wizards always have it, everyone else
