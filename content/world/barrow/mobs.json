@@ -101,6 +101,7 @@
     "power": 15,
     "aggressive": true,
     "script": "barrow_king",
+    "summons": ["barrow_skeleton"],
     "loot": [
       {
         "object": "barrow_blade",

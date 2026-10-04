@@ -34,6 +34,10 @@ type Definition struct {
 	// none. A name only: the compiled program lives in loader.Content.Scripts,
 	// and mobile knows nothing about Lua.
 	Script string
+	// Summons is every mob this script may call up with me:summon.
+	// Content, resolved at load like Loot, so a script can't name the wrong
+	// thing and a reviewer can see everything a boss can bring in.
+	Summons []*Definition
 }
 
 func NewDefinition(definitionId string,

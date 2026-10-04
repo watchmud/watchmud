@@ -271,6 +271,15 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 }
 
 func (c *Content) loadMobileDefinitions(fsys fs.FS) error {
+	// Summons name mobs, which may be in a zone not loaded yet: held for a
+	// second pass, like room exits.
+	type summoner struct {
+		zone  string
+		entry mobEntry
+		defn  *mobile.Definition
+	}
+	var summoners []summoner
+
 	for _, zonename := range c.zoneNames() {
 		mobEntries, err := readOptionalJSONFile[[]mobEntry](fsys, path.Join(zonename, "mobs.json"))
 		if err != nil {
@@ -322,7 +331,17 @@ func (c *Content) loadMobileDefinitions(fsys fs.FS) error {
 			defn.Loot = loot
 			defn.Script = scriptRef
 			c.Zones[zonename].AddMobileDefinition(defn)
+			if len(mob.Summons) > 0 {
+				summoners = append(summoners, summoner{zonename, mob, defn})
+			}
 		}
+	}
+	for _, s := range summoners {
+		summons, err := c.mobSummons(s.zone, s.entry)
+		if err != nil {
+			return err
+		}
+		s.defn.Summons = summons
 	}
 	return nil
 }

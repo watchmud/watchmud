@@ -48,5 +48,15 @@
     "ac": 10,
     "aggressive": false,
     "script": "heckler"
+  },
+  {
+    "id": "imp",
+    "name": "imp",
+    "short_description": "An imp.",
+    "description_in_room": "An imp capers here.",
+    "aliases": [ "imp" ],
+    "max_health": 5,
+    "wandering_definition": { "can_wander": false },
+    "ac": 10
   }
 ]

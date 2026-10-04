@@ -35,6 +35,9 @@ type mobEntry struct {
 	// Script names the Lua this mob runs: a bare name is this zone's
 	// scripts/<name>.lua, "zone/name" any other zone's. See script.go.
 	Script string `json:"script"`
+	// Summons names the mobs this one's script may summon: a bare id is this
+	// zone's, "zone/id" any other's. See summons.go.
+	Summons []string `json:"summons"`
 }
 
 type WanderingEntry struct {
