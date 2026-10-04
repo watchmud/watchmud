@@ -37,7 +37,8 @@
     "short_description": "a barrow helm",
     "description_on_ground": "A dented helm of old dark iron lies here.",
     "equipment_slot": "head",
-    "armor_type": "plate"
+    "armor_type": "plate",
+    "abilities": ["provoke"]
   },
   {
     "id": "barrow_plate",
@@ -51,7 +52,8 @@
     "short_description": "a barrow breastplate",
     "description_on_ground": "A breastplate of black iron, cold to the touch, lies here.",
     "equipment_slot": "body",
-    "armor_type": "plate"
+    "armor_type": "plate",
+    "abilities": ["provoke"]
   },
   {
     "id": "barrow_blade",

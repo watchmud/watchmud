@@ -45,7 +45,8 @@
     "short_description": "a boar-hide jerkin",
     "description_on_ground": "A stiff jerkin of boar hide, bristles and all, lies here.",
     "equipment_slot": "body",
-    "armor_type": "leather"
+    "armor_type": "leather",
+    "abilities": ["provoke"]
   },
   {
     "id": "bandit_hood",
