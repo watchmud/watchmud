@@ -48,6 +48,10 @@
       {
         "object": "barrow_plate",
         "chance": 10
+      },
+      {
+        "object": "mace_of_smackdown",
+        "chance": 10
       }
     ]
   },

@@ -74,6 +74,25 @@
     "abilities": ["smite"]
   },
   {
+    "id": "mace_of_smackdown",
+    "name": "mace of smackdown",
+    "category": "WEAPON",
+    "aliases": [
+      "mace",
+      "smackdown"
+    ],
+    "short_description": "the mace of smackdown",
+    "description_on_ground": "A barrow-iron mace with a head like a fist lies here, daring someone to swing it.",
+    "equipment_slot": "wield",
+    "damage": "1d8",
+    "roles": {
+      "striker": 3
+    },
+    "abilities": [
+      "stun"
+    ]
+  },
+  {
     "id": "black_iron_crown",
     "name": "black iron crown",
     "category": "TREASURE",
