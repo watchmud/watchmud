@@ -382,6 +382,14 @@ type Smote struct {
 	Damage int
 }
 
+// Provoked goes to the whole room: Target has turned on Actor. Already means
+// it was fighting them anyway, and the cast was wasted.
+type Provoked struct {
+	Actor   string
+	Target  string
+	Already bool
+}
+
 type Abilities struct {
 	Granted []GrantedAbility
 }

@@ -24,8 +24,9 @@ type effect func(w *World, c cast)
 
 // effects is every ability the engine knows how to do, by rules.Ability id.
 var effects = map[string]effect{
-	"heal":  healEffect,
-	"smite": smiteEffect,
+	"heal":    healEffect,
+	"smite":   smiteEffect,
+	"provoke": provokeEffect,
 }
 
 // checkEffects refuses a catalog naming an ability the engine cant do -
@@ -75,5 +76,31 @@ func smiteEffect(w *World, c cast) {
 	}
 	if err != nil {
 		c.caster.Log().Error().Err(err).Msg("smite: starting the fight")
+	}
+}
+
+// provokeEffect turns the mob on the caster: the one thing that overrides
+// "whoever engaged first", so a tank can take a mob back. Like smite, a caster
+// who isn't fighting opens a fight both ways; one who is keeps swinging at
+// whoever they were.
+func provokeEffect(w *World, c cast) {
+	room := w.playerRoom(c.caster)
+	if fight := w.fightLedger.GetFight(c.foe); fight != nil && fight.Fightee == c.caster {
+		room.Send(event.Provoked{Actor: c.caster.Name(), Target: c.foe.Name(), Already: true})
+		return
+	}
+	room.Send(event.Provoked{Actor: c.caster.Name(), Target: c.foe.Name()})
+	var err error
+	switch {
+	case !w.fightLedger.IsFighting(c.caster):
+		err = w.startFight(c.caster, c.foe)
+	case !w.fightLedger.IsFighting(c.foe):
+		err = w.startFight(c.foe, c.caster)
+	}
+	if err != nil {
+		c.caster.Log().Error().Err(err).Msg("provoke: starting the fight")
+	}
+	if fight := w.fightLedger.GetFight(c.foe); fight == nil || fight.Fightee != c.caster {
+		w.fightLedger.Turn(c.foe, c.caster)
 	}
 }

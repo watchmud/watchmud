@@ -353,6 +353,13 @@ var commandCases = []commandCase{
 		want:  "At what? You aren't fighting anything.\n",
 	},
 	{
+		name:      "provoke a mob",
+		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { wearTestPlate(p) },
+		input:     "cast provoke little",
+		want:      "You provoke Little Drone, and it turns on you!\n",
+		wantOther: "testdood provokes Little Drone!\n",
+	},
+	{
 		name:      "healing the unhurt is wasted",
 		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { holdTestCenser(p) },
 		input:     "cast heal otherdood",
@@ -527,6 +534,17 @@ func wieldTestMace(p *player.Player) {
 	p.Equipment().Equip(rules.SlotWield, inst)
 }
 
+// wearTestPlate wears something granting provoke
+func wearTestPlate(p *player.Player) {
+	d := object.NewDefinition("breastplate", "breastplate", "wrathrock", rules.ObjectCategoryArmor,
+		nil, "a breastplate", "A breastplate is here.", rules.SlotBody, rules.ArmorTypePlate, nil)
+	d.Abilities = []string{"provoke"}
+	inst := object.NewInstance(uuid.New(), d)
+	inst.Power = 1
+	_ = p.Inventory().Add(inst)
+	p.Equipment().Equip(rules.SlotBody, inst)
+}
+
 // holdTestCenser equips something granting heal at power 1
 func holdTestCenser(p *player.Player) {
 	d := object.NewDefinition("censer", "censer", "wrathrock", rules.ObjectCategoryOther,
@@ -625,4 +643,11 @@ func TestRenderShopList(t *testing.T) {
 	assert.Equal(t, "You buy a short sword for 40 coins.\n", render(event.Bought{Item: "a short sword", Cost: 40}, "testdood"))
 	assert.Equal(t, "You sell a scrap of rat pelt for 4 coins.\n", render(event.Sold{Item: "a scrap of rat pelt", Coins: 4}, "testdood"))
 	assert.Equal(t, "The shopkeeper would give you 1 coin for a feather.\n", render(event.Valued{Item: "a feather", Coins: 1}, "testdood"))
+}
+
+// a provoke on what's already fighting you is wasted, and says so
+func TestRender_provokeAlready(t *testing.T) {
+	m := event.Provoked{Actor: "testdood", Target: "Little Drone", Already: true}
+	assert.Equal(t, "Little Drone is already fighting you.\n", plain(render(m, "testdood")))
+	assert.Equal(t, "testdood provokes Little Drone!\n", plain(render(m, "otherdood")))
 }

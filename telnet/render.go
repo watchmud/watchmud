@@ -235,6 +235,15 @@ func render(msg any, self string) string {
 		}
 		return m.Actor + " smites " + m.Target + "!\n"
 
+	case event.Provoked:
+		switch {
+		case m.Actor == self && m.Already:
+			return m.Target + " is already fighting you.\n"
+		case m.Actor == self:
+			return "You provoke " + m.Target + ", and it turns on you!\n"
+		}
+		return m.Actor + " provokes " + m.Target + "!\n"
+
 	case event.Abilities:
 		return renderAbilities(m)
 

@@ -17,5 +17,12 @@
     "cooldown": "20s",
     "target": "foe",
     "amount": { "base": 8, "per_power": 3 }
+  },
+  {
+    "id": "provoke",
+    "name": "provoke",
+    "mana": 15,
+    "cooldown": "15s",
+    "target": "foe"
   }
 ]
