@@ -66,5 +66,16 @@
     "equipment_slot": "hands",
     "roles": { "healer": 3, "tank": 1 },
     "abilities": [ "heal" ]
+  },
+  {
+    "id": "temple_token",
+    "name": "temple token",
+    "category": "OTHER",
+    "aliases": [ "token", "temple" ],
+    "short_description": "a temple token",
+    "description_on_ground": "A small brass token stamped with the temple's sigil lies here.",
+    "equipment_slot": "neck",
+    "durability": 0,
+    "abilities": [ "recall" ]
   }
 ]

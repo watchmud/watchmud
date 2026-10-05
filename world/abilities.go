@@ -28,6 +28,7 @@ var effects = map[string]effect{
 	"smite":   smiteEffect,
 	"provoke": provokeEffect,
 	"stun":    stunEffect,
+	"recall":  recallEffect,
 }
 
 // checkEffects refuses a catalog naming an ability the engine cant do -
@@ -107,4 +108,12 @@ func stunEffect(w *World, c cast) {
 	w.fightLedger.Stun(c.foe, rounds)
 	w.playerRoom(c.caster).Send(event.Stunned{Actor: c.caster.Name(), Target: c.foe.Name(), Rounds: rounds})
 	w.openFight(c)
+}
+
+// recallEffect takes the caster back to the start room -- what the recall
+// command always did, now that a temple token (or being a wizard) is what
+// lets you.
+func recallEffect(w *World, c cast) {
+	w.movePlayerMagically(c.caster, w.StartRoom)
+	c.caster.Send(w.StartRoom.DescriptionExcept(c.caster))
 }

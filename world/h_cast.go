@@ -48,9 +48,11 @@ func (w *World) handleCast(msg *gameserver.HandlerParameter, cmd command.Cast) {
 }
 
 // castTarget resolves the target by the ability's kind into c. Every refusal
-// here comes before anything is spent. none has no ability yet, so no case.
+// here comes before anything is spent.
 func (w *World) castTarget(c *cast, target string) event.ResultCode {
 	switch c.ability.Target {
+	case rules.TargetNone:
+		return ""
 	case rules.TargetSelf:
 		c.target = c.caster
 		return ""

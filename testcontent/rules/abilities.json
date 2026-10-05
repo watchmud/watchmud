@@ -32,5 +32,14 @@
     "cooldown": "30s",
     "target": "foe",
     "amount": { "base": 2, "per_power": 0 }
+  },
+  {
+    "id": "recall",
+    "name": "recall",
+    "mana": 0,
+    "cooldown": "60s",
+    "target": "none",
+    "not_in_fight": true,
+    "wizards": true
   }
 ]

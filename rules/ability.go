@@ -14,26 +14,36 @@ type Ability struct {
 	Cooldown time.Duration
 	Target   AbilityTarget
 	Amount   AbilityAmount
+	// NotInFight refuses a cast mid-fight, before anything is spent: recall,
+	// which would otherwise be a free, certain escape and make flee pointless.
+	NotInFight bool
+	// Wizards is an ability a wizard always has: no gear granting it and no
+	// cooldown. Recall, which a builder needs to get about.
+	Wizards bool
 }
 
 func (a *Ability) UnmarshalJSON(data []byte) error {
 	var raw struct {
-		Id       string        `json:"id"`
-		Name     string        `json:"name"`
-		Mana     int           `json:"mana"`
-		Cooldown string        `json:"cooldown"`
-		Target   AbilityTarget `json:"target"`
-		Amount   AbilityAmount `json:"amount"`
+		Id         string        `json:"id"`
+		Name       string        `json:"name"`
+		Mana       int           `json:"mana"`
+		Cooldown   string        `json:"cooldown"`
+		Target     AbilityTarget `json:"target"`
+		Amount     AbilityAmount `json:"amount"`
+		NotInFight bool          `json:"not_in_fight"`
+		Wizards    bool          `json:"wizards"`
 	}
 	if err := json.Unmarshal(data, &raw); err != nil {
 		return err
 	}
 	*a = Ability{
-		Id:     raw.Id,
-		Name:   raw.Name,
-		Mana:   raw.Mana,
-		Target: raw.Target,
-		Amount: raw.Amount,
+		Id:         raw.Id,
+		Name:       raw.Name,
+		Mana:       raw.Mana,
+		Target:     raw.Target,
+		Amount:     raw.Amount,
+		NotInFight: raw.NotInFight,
+		Wizards:    raw.Wizards,
 	}
 	if raw.Cooldown != "" {
 		d, err := time.ParseDuration(raw.Cooldown)

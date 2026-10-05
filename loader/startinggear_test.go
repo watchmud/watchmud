@@ -19,6 +19,7 @@ func TestLoadContent_startingGear(t *testing.T) {
 		{ZoneId: "wrathrock", DefinitionId: "knife", Equip: true},
 		{ZoneId: "wrathrock", DefinitionId: "iron_helmet", Equip: true},
 		{ZoneId: "wrathrock", DefinitionId: "rope"},
+		{ZoneId: "wrathrock", DefinitionId: "temple_token", Equip: true, Power: 1, Backfill: true},
 	}, c.Catalog.StartingGear)
 }
 

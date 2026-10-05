@@ -79,5 +79,16 @@
     "description_on_ground": "A pair of canvas work gloves has been dropped here.",
     "equipment_slot": "hands",
     "armor_type": "cloth"
+  },
+  {
+    "id": "temple_token",
+    "name": "temple token",
+    "category": "OTHER",
+    "aliases": [ "token", "temple" ],
+    "short_description": "a temple token",
+    "description_on_ground": "A small brass token stamped with the temple's sigil lies here.",
+    "equipment_slot": "neck",
+    "durability": 0,
+    "abilities": [ "recall" ]
   }
 ]

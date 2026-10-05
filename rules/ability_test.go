@@ -90,3 +90,13 @@ func TestCatalog_setAbilitiesRefusesDuplicates(t *testing.T) {
 	require.NoError(t, err)
 	assert.Error(t, c.SetAbilities([]*Ability{testHeal(), testHeal()}))
 }
+
+// recall's two flags: refused mid-fight, and a wizard's without gear or cooldown
+func TestAbility_flags(t *testing.T) {
+	var a Ability
+	require.NoError(t, json.Unmarshal([]byte(`{"id": "recall", "name": "recall", "target": "none",
+		"cooldown": "60s", "not_in_fight": true, "wizards": true}`), &a))
+	assert.True(t, a.NotInFight)
+	assert.True(t, a.Wizards)
+	assert.Equal(t, TargetNone, a.Target)
+}

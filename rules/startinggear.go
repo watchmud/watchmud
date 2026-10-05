@@ -32,4 +32,8 @@ type StartingGearItem struct {
 	// the newbie zone's band so a new character starts level with the
 	// weakest thing out there, not below it.
 	Power int `json:"power"`
+	// Backfill hands the item, once, to a character created before it was
+	// in the kit: at their next login (World.Arrive), worn if its slot is
+	// free. The record's Backfilled list is what makes it once.
+	Backfill bool `json:"backfill"`
 }

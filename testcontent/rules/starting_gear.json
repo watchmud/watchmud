@@ -1,5 +1,6 @@
 [
   { "zone": "wrathrock", "object": "knife", "equip": true },
   { "zone": "wrathrock", "object": "iron_helmet", "equip": true },
-  { "zone": "wrathrock", "object": "rope" }
+  { "zone": "wrathrock", "object": "rope" },
+  { "zone": "wrathrock", "object": "temple_token", "equip": true, "power": 1, "backfill": true }
 ]

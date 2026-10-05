@@ -106,8 +106,9 @@ func TestCreatePlayer_startingGear(t *testing.T) {
 	assert.IsType(t, event.RoomDescription{}, c.sent[2])
 	assert.Equal(t, event.Welcome{Text: "Welcome! The fighting is south."}, c.sent[3])
 
-	// testcontent's kit: a knife, a helmet, and a rope that is only carried.
-	assert.Equal(t, 3, p.Inventory().Len())
+	// testcontent's kit: a knife, a helmet, a rope that is only carried,
+	// and the temple token worn on the neck.
+	assert.Equal(t, 4, p.Inventory().Len())
 
 	knife := p.Equipment().At(rules.SlotWield)
 	require.NotNil(t, knife)
@@ -117,13 +118,13 @@ func TestCreatePlayer_startingGear(t *testing.T) {
 	rec, found, err := store.Load("Newbie")
 	require.NoError(t, err)
 	require.True(t, found)
-	assert.Len(t, rec.Inventory, 3)
-	assert.Len(t, rec.Equipment, 2)
+	assert.Len(t, rec.Inventory, 4)
+	assert.Len(t, rec.Equipment, 3)
 
 	// and it comes back the same way it went in
 	restored, err := player.FromRecord(rec, &player.Recorder{}, gs.catalog, gs.world)
 	require.NoError(t, err)
-	assert.Equal(t, 3, restored.Inventory().Len())
+	assert.Equal(t, 4, restored.Inventory().Len())
 	require.NotNil(t, restored.Equipment().At(rules.SlotWield))
 	require.NotNil(t, restored.Equipment().At(rules.SlotHead))
 }

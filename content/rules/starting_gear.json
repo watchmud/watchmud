@@ -2,5 +2,6 @@
   { "zone": "wrathrock", "object": "training_dagger", "equip": true, "power": 1 },
   { "zone": "wrathrock", "object": "novice_tunic", "equip": true, "power": 1 },
   { "zone": "wrathrock", "object": "travelers_cloak", "equip": true, "power": 1 },
-  { "zone": "wrathrock", "object": "waterskin" }
+  { "zone": "wrathrock", "object": "waterskin" },
+  { "zone": "wrathrock", "object": "temple_token", "equip": true, "power": 1, "backfill": true }
 ]
