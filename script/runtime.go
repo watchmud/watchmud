@@ -72,6 +72,18 @@ type loaded struct {
 	failures int
 }
 
+// hookRun is one hook running on one mob, from its start to its end, across
+// any waits: its own coroutine, the call its caps and its me belonging to.
+type hookRun struct {
+	mob  *mobile.Instance
+	lp   *loaded
+	hook string
+	fn   *lua.LFunction
+	th   *lua.LState
+	call *hookCall
+	me   *lua.LTable
+}
+
 // NewRuntime loads each program into one Lua state. The programs were proved
 // by Compile, so an error here means the content changed underneath us.
 func NewRuntime(programs map[string]*Program, roller Roller, actions Actions) (*Runtime, error) {
@@ -125,13 +137,31 @@ func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe) {
 		roller: r.roller,
 		say:    func(text string) { r.actions.Say(mob, text) },
 	}
-	err := r.sb.call(fn, call, r.me(mob, call), r.foe(foe))
-	if err == nil {
-		return
+	th, _ := r.sb.L.NewThread()
+	run := &hookRun{mob: mob, lp: lp, hook: hook, fn: fn, th: th, call: call,
+		me: r.me(mob, call)}
+	r.run(run, run.me, r.foe(foe))
+}
+
+// run starts or carries on a hook run -- args start it -- and deals with
+// how it ended.
+func (r *Runtime) run(run *hookRun, args ...lua.LValue) {
+	if _, err := r.sb.resume(run.th, run.fn, run.call, args...); err != nil {
+		r.fail(run, err)
 	}
+}
+
+// fail counts a failed run against its program, switching the program off at MaxFailures.
+func (r *Runtime) fail(run *hookRun, err error) {
+	lp := run.lp
 	lp.failures++
 	r.logFailure(fmt.Errorf("script %s, mob %s, %s (failure %d of %d): %w",
-		lp.program.name, mob.Definition.Id, hook, lp.failures, MaxFailures, err))
+		lp.program.name,
+		run.mob.Definition.Id,
+		run.hook,
+		lp.failures,
+		MaxFailures,
+		err))
 	if lp.failures == MaxFailures {
 		log.Warn().Str("script", lp.program.name).Msg("script disabled until restart")
 	}

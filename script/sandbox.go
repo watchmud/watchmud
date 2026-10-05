@@ -200,6 +200,33 @@ func (s *sandbox) call(fn *lua.LFunction, h *hookCall, args ...lua.LValue) (err 
 	return s.L.CallByParam(lua.P{Fn: fn, NRet: 0, Protect: true}, args...)
 }
 
+// resume runs th -- starting fn with args the first time, carrying on where
+// it yielded after that -- under a fresh CallTimeout, with h as the hook in
+// progress. done is false when the hook yielded (wait) rather than
+// finished. An error, a timeout, a stack overflow or a panic come back as an
+// error; none of them escape.
+func (s *sandbox) resume(th *lua.LState, fn *lua.LFunction, h *hookCall, args ...lua.LValue) (done bool, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	defer cancel()
+	th.SetContext(ctx)
+	s.current = h
+	defer func() {
+		s.current = nil
+		th.RemoveContext()
+		if r := recover(); r != nil {
+			err = fmt.Errorf("panic: %v", r)
+		}
+	}()
+	state, err, _ := s.L.Resume(th, fn, args...)
+	switch state {
+	case lua.ResumeError:
+		return false, err
+	case lua.ResumeYield:
+		return false, nil
+	}
+	return true, nil
+}
+
 // load runs p's top level in a fresh environment table and returns that
 // table: the program's own globals, which is where its hooks end up. The
 // table starts as a copy of the globals, with its own copies of the library
