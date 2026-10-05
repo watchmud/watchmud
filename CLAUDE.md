@@ -308,6 +308,13 @@ out in `handleCreatePlayer`, before the first `store.Save`, so it is on the reco
 start. It is creation-only -- a returning player's gear comes back from their record, and
 calling it on a login would hand out a second copy of everything.
 
+The one exception is an item marked `"backfill": true` (the temple token): one that joined
+the kit after characters existed. `World.backfill`, from `Arrive`, hands each one a
+character hasn't had -- worn if its slot is free, otherwise packed, with an
+`event.Received` line saying which -- and `player.Record.Backfilled` ("zone/object")
+makes it once. `GiveStartingGear` marks them at creation, so a new character is never
+handed a second.
+
 Room loading is deliberately two-pass (all rooms constructed, then exits connected) because
 exits cross zones. Zone iteration is always over `slices.Sorted(maps.Keys(...))` so load
 order and error messages are reproducible -- keep that when adding loaders, and prefer
@@ -436,8 +443,21 @@ a target string: `friend` is the caster when empty, otherwise a player **in the 
 room**. `foe` (`castFoe`) is a mob in the room by name -- `FindMobile`, as `kill` uses --
 or, with no name, whoever the caster is fighting; no fight and no name is `NO_FOE`, not
 `NO_TARGET`, since failure text is keyed on the `cast` verb and would read "Cast what?".
-It then refuses what `kill` refuses: a no-fight room, a can't-fight mob. `none` exists in
-the catalog but not yet in `castTarget`; the first ability that needs it adds it.
+It then refuses what `kill` refuses: a no-fight room, a can't-fight mob. `none` resolves
+nothing; recall is the first to use it.
+
+**Recall is an ability** (`recall`: `none`, no mana, 60s), granted by the **temple
+token** -- worn on the neck, in every new character's kit, sold at the General Store, and
+`"durability": 0`, since dying wears everything worn and the one thing that gets a dead
+player home mustn't be what breaks. The `recall` command is `World.cast(msg, "recall", "")`
+-- every check `cast` makes, failing under the verb `recall`, which has its own
+`NOT_GRANTED`/`NOT_READY` wording. Two ability flags, data rather than special cases:
+`not_in_fight` refuses a cast mid-fight before anything is spent (a free, certain escape
+would make flee pointless), and `wizards` gives a wizard the ability with no gear and no
+cooldown. **The world clock keeps the server's pace** (`World.SetPace`, from
+`SetTickInterval`): cooldowns read `World.now`, so a test world ticking a hundred times
+fast has cooldowns a hundred times short. The bots retry a recall refused as not ready,
+once a second, past the cooldown.
 
 **Mana** sits beside health: `rules.MaxMana` (100) for everyone, flat, so gear decides
 *what* you cast, not how much. `CurMana` on the record is a `*int` for the durability

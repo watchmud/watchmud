@@ -185,7 +185,7 @@ Needed for that fight, and not yet anywhere else on this page:
   on someone else, every 15s at most. No threat table: damage and heals never pull him,
   so a pull gone wrong is the tank's to fix, not the healer's to avoid.
 
-### 5. Abilities from gear -- heal, smite, provoke, stun done
+### 5. Abilities from gear -- heal, smite, provoke, stun, recall done
 
 Gear decides what you can *do*, as well as how strong you are: a censer lets you
 `cast heal`, and taking it off takes the heal with it. Spec:
@@ -213,10 +213,12 @@ Gear decides what you can *do*, as well as how strong you are: a censer lets you
 - **Kept apart, on purpose** (decided 2026-10-03): smite doesn't stun, and no item yet
   grants both. An item granting two abilities is a higher tier -- something to strive
   for -- so save the combination for gear above the barrow.
-- **Still to come**, each an entry in abilities.json plus a Go effect: defensive,
-  informative, and **recall as a trinket** -- wizards always have it, everyone else
-  needs gear that grants it. Gating `recall` touches the smoke bot and the
-  inhabitants, which both use it, so it's its own spec.
+- **Recall** (done 2026-10-05): the temple token, worn on the neck, grants it -- a slot
+  spent, against a bone charm -- with a 60s cooldown and never mid-fight; wizards always
+  have it. Every character made before it was handed one at their next login, and the
+  bots wait out the cooldown rather than walk.
+- **Still to come**, each an entry in abilities.json plus a Go effect: defensive and
+  informative.
 
 ### 6. Crafting (later)
 
