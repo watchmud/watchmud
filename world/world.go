@@ -54,7 +54,11 @@ func New(c *loader.Content, s player.Store, roller rules.Roller) (w *World, err 
 		roller:      roller,
 		store:       s,
 	}
-	if w.scripts, err = script.NewRuntime(c.Scripts, liveRoller{w}, w.mobSays); err != nil {
+	if w.scripts, err = script.NewRuntime(c.Scripts, liveRoller{w}, script.Actions{
+		Say:     w.mobSays,
+		Summon:  w.summon,
+		Summons: w.liveSummons,
+	}); err != nil {
 		return nil, fmt.Errorf("building world: %w", err)
 	}
 	if err := checkEffects(c.Catalog); err != nil {

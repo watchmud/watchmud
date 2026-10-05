@@ -58,5 +58,17 @@
     "max_health": 5,
     "wandering_definition": { "can_wander": false },
     "ac": 10
+  },
+  {
+    "id": "warlock",
+    "name": "Warlock",
+    "short_description": "A warlock.",
+    "description_in_room": "A warlock mutters over a smoking bowl.",
+    "aliases": [ "warlock" ],
+    "max_health": 25,
+    "wandering_definition": { "can_wander": false },
+    "ac": 10,
+    "script": "warlock",
+    "summons": [ "imp" ]
   }
 ]

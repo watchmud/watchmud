@@ -25,14 +25,32 @@ const (
 	MaxSayLength   = 300
 )
 
+// MaxSummonsPerCall and MaxLiveSummons bound what a script can bring into the
+// world: per hook call, across every me:summon in it, and alive at once per
+// summoner. Over either, fewer arrive -- a limit, not an error -- so a boss
+// that summons every round simply stops getting more.
+const (
+	MaxSummonsPerCall = 4
+	MaxLiveSummons    = 4
+)
+
 // Foe is who a scripted mob is fighting, as its script sees them.
 type Foe struct {
 	Name     string
 	IsPlayer bool
 }
 
-// Say is how me:say reaches the world: the mob's room hears it.
-type Say func(mob *mobile.Instance, text string)
+// Actions is the engine as a script reaches it - what me's methods call.
+// The world fills it in; a test fills it with recorders.
+type Actions struct {
+	// Say is me:say: the mob's room hears it
+	Say func(mob *mobile.Instance, text string)
+	// Summon is me:summon, already checked against the mob's Summons and
+	// cut to the caps: put count of def in the world and answer how many came.
+	Summon func(summoner *mobile.Instance, def *mobile.Definition, count int) int
+	// Summons is me.summons: how many of the mob's summons are alive.
+	Summons func(summoner *mobile.Instance) int
+}
 
 // Runtime is the world's one Lua state, every program loaded into it, and
 // each scripted mob's memory. It runs on the world goroutine and holds no
@@ -41,7 +59,7 @@ type Say func(mob *mobile.Instance, text string)
 type Runtime struct {
 	sb       *sandbox
 	roller   Roller
-	say      Say
+	actions  Actions
 	programs map[string]*loaded
 	memory   map[uuid.UUID]*lua.LTable
 	// logFailure reports one failed call; a field so a test can see them.
@@ -56,11 +74,11 @@ type loaded struct {
 
 // NewRuntime loads each program into one Lua state. The programs were proved
 // by Compile, so an error here means the content changed underneath us.
-func NewRuntime(programs map[string]*Program, roller Roller, say Say) (*Runtime, error) {
+func NewRuntime(programs map[string]*Program, roller Roller, actions Actions) (*Runtime, error) {
 	r := &Runtime{
 		sb:       newSandbox(),
 		roller:   roller,
-		say:      say,
+		actions:  actions,
 		programs: make(map[string]*loaded),
 		memory:   make(map[uuid.UUID]*lua.LTable),
 	}
@@ -105,7 +123,7 @@ func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe) {
 	}
 	call := &hookCall{
 		roller: r.roller,
-		say:    func(text string) { r.say(mob, text) },
+		say:    func(text string) { r.actions.Say(mob, text) },
 	}
 	err := r.sb.call(fn, call, r.me(mob, call), r.foe(foe))
 	if err == nil {
@@ -147,6 +165,32 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		call.say(text)
 		return 0
 	}))
+	me.RawSetString("summons", lua.LNumber(r.actions.Summons(mob)))
+	me.RawSetString("summon", L.NewFunction(func(L *lua.LState) int {
+		if _, isMe := L.Get(1).(*lua.LTable); !isMe {
+			L.RaiseError("summon: call it as me:summon(id, count), with a colon")
+		}
+		id := L.CheckString(2)
+		count := L.CheckInt(3)
+		if r.sb.current != call {
+			L.RaiseError("summon: this me belongs to an earlier call")
+		}
+		def := summonable(mob, id)
+		if def == nil {
+			L.RaiseError("summon: %s may not summon %q -- see \"summons\" in mobs.json", mob.Definition.Id, id)
+		}
+		if count < 1 {
+			L.RaiseError("summon: a count of %d", count)
+		}
+		count = min(count, MaxSummonsPerCall-call.summoned, MaxLiveSummons-r.actions.Summons(mob))
+		got := 0
+		if count > 0 {
+			got = r.actions.Summon(mob, def, count)
+			call.summoned += got
+		}
+		L.Push(lua.LNumber(got))
+		return 1
+	}))
 	return me
 }
 
@@ -164,4 +208,15 @@ func (r *Runtime) memoryOf(mob *mobile.Instance) *lua.LTable {
 		r.memory[mob.Id()] = m
 	}
 	return m
+}
+
+// summonable is the definition id names among those mob may summon: its bare
+// id, or "zone/id", either way mobs.json may have named it.
+func summonable(mob *mobile.Instance, id string) *mobile.Definition {
+	for _, d := range mob.Definition.Summons {
+		if id == d.Id || id == d.ZoneId+"/"+d.Id {
+			return d
+		}
+	}
+	return nil
 }

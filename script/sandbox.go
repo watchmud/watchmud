@@ -65,6 +65,8 @@ type hookCall struct {
 	say    func(text string)
 	// says counts this call's says against MaxSaysPerCall.
 	says int
+	// summoned counts this call's summons against MaxSummonsPerCall.
+	summoned int
 }
 
 // sandbox is one Lua state with only the safe libraries open, plus chance and

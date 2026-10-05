@@ -14,29 +14,59 @@ import (
 
 type line struct{ mob, text string }
 
-type harness struct {
-	t    *testing.T
-	rt   *Runtime
-	dice *testdice.LoadedDice
-	said []line
+type summonCall struct {
+	mob, def string
+	count    int
 }
 
-// newHarness compiles each script (keyed "zone/name") into one runtime.
+type harness struct {
+	t        *testing.T
+	rt       *Runtime
+	dice     *testdice.LoadedDice
+	said     []line
+	summoned []summonCall
+	live     map[*mobile.Instance]int // what me.summons and the live cap read
+}
+
 func newHarness(t *testing.T, scripts map[string]string) *harness {
 	t.Helper()
-	h := &harness{t: t, dice: testdice.New()}
+	h := &harness{t: t, dice: testdice.New(), live: map[*mobile.Instance]int{}}
 	programs := map[string]*Program{}
 	for name, src := range scripts {
 		p, err := Compile(name, src)
 		require.NoError(t, err)
 		programs[name] = p
 	}
-	rt, err := NewRuntime(programs, h.dice, func(mob *mobile.Instance, text string) {
-		h.said = append(h.said, line{mob.Name(), text})
+	rt, err := NewRuntime(programs, h.dice, Actions{
+		Say: func(mob *mobile.Instance, text string) {
+			h.said = append(h.said, line{mob.Name(), text})
+		},
+		Summon: func(mob *mobile.Instance, def *mobile.Definition, count int) int {
+			h.summoned = append(h.summoned, summonCall{mob.Name(), def.Id, count})
+			return count
+		},
+		Summons: func(mob *mobile.Instance) int { return h.live[mob] },
 	})
 	require.NoError(t, err)
 	h.rt = rt
 	return h
+}
+
+// summoner is a mob running script that may summon an imp
+func summoner(script string) *mobile.Instance {
+	m := mob("Warlock", script)
+	m.Definition.Summons = []*mobile.Definition{
+		mobile.NewDefinition("imp", "imp", "wrathrock", nil, "an imp", "An imp is here.",
+			5, rules.WanderDefinition{}, 10, false),
+	}
+	return m
+}
+
+// failures collects what a harness logs
+func (h *harness) failures() *[]string {
+	var logged []string
+	h.rt.logFailure = func(err error) { logged = append(logged, err.Error()) }
+	return &logged
 }
 
 func (h *harness) texts() []string {
@@ -331,4 +361,107 @@ func TestProgramsCantPoisonEachOther(t *testing.T) {
 	h.rt.FightStart(mob("A", "z/a"), bob)
 	h.rt.FightStart(mob("B", "z/b"), bob)
 	assert.Equal(t, []string{"done", "okXY"}, h.texts())
+}
+
+func TestSummon(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:say(tostring(me:summon("imp", 2))) end`})
+
+	h.rt.FightStart(summoner("z/w"), bob)
+
+	assert.Equal(t, []summonCall{{"Warlock", "imp", 2}}, h.summoned)
+	assert.Equal(t, []string{"2"}, h.texts(), "it answers how many came")
+}
+
+// named the way mobs.json may name it: "zone/id"
+func TestSummonByZoneAndId(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:summon("wrathrock/imp", 1) end`})
+	h.rt.FightStart(summoner("z/w"), bob)
+	assert.Equal(t, []summonCall{{"Warlock", "imp", 1}}, h.summoned)
+}
+
+func TestSummonUndeclaredFails(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:summon("dragon", 1) end`})
+	logged := h.failures()
+
+	h.rt.FightStart(summoner("z/w"), bob)
+
+	assert.Empty(t, h.summoned)
+	require.Len(t, *logged, 1)
+	assert.Contains(t, (*logged)[0], "may not summon")
+}
+
+func TestSummonCountUnderOneFails(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:summon("imp", 0) end`})
+	logged := h.failures()
+
+	h.rt.FightStart(summoner("z/w"), bob)
+
+	assert.Empty(t, h.summoned)
+	require.Len(t, *logged, 1)
+}
+
+// Review focus 4: a loop gets MaxSummonsPerCall across the whole call, and
+// no error -- the cap is a limit, not a mistake
+func TestSummonPerCallCap(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe)
+			for i = 1, 10 do me:summon("imp", 3) end
+		end`})
+	logged := h.failures()
+
+	h.rt.FightStart(summoner("z/w"), bob)
+
+	assert.Equal(t, []summonCall{{"Warlock", "imp", 3}, {"Warlock", "imp", 1}}, h.summoned)
+	assert.Empty(t, *logged)
+}
+
+// and MaxLiveSummons alive at once: three standing leaves room for one
+func TestSummonLiveCap(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:say(tostring(me:summon("imp", 2))) end`})
+	m := summoner("z/w")
+	h.live[m] = 3
+
+	h.rt.FightStart(m, bob)
+
+	assert.Equal(t, []summonCall{{"Warlock", "imp", 1}}, h.summoned)
+	assert.Equal(t, []string{"1"}, h.texts())
+}
+
+func TestSummonsReadsTheLiveCount(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:say(tostring(me.summons)) end`})
+	m := summoner("z/w")
+	h.live[m] = 2
+
+	h.rt.FightStart(m, bob)
+
+	assert.Equal(t, []string{"2"}, h.texts())
+}
+
+func TestStashedMeCantSummonLater(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me.memory.old = me end
+		function on_fight_pulse(me, foe) me.memory.old:summon("imp", 1) end`})
+	m := summoner("z/w")
+
+	h.rt.FightStart(m, bob)
+	h.rt.FightPulse(m, bob)
+
+	assert.Empty(t, h.summoned)
+}
+
+func TestSummonWithADotFails(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me.summon("imp", 1) end`})
+	logged := h.failures()
+
+	h.rt.FightStart(summoner("z/w"), bob)
+
+	require.Len(t, *logged, 1)
+	assert.Contains(t, (*logged)[0], "colon")
 }

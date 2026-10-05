@@ -84,7 +84,7 @@ func (w *World) crumbleSummonsOf(summoner *mobile.Instance) {
 	}
 }
 
-// sweepSummons crumbles every summon who's summoner's fight is over:
+// sweepSummons crumbles every summon whose summoner's fight is over:
 // the summoner gone from the world, or here and fighting nobody. One check,
 // run every round, covers every way a fight ends - fled, wiped, ways not written yet.
 // A death doesn't wait for it: combatantDied crumbles them on the spot.

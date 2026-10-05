@@ -147,3 +147,22 @@ func (s *scriptsSuite) TestNoTauntOverTheBody() {
 	s.Require().True(s.p.CurrentHealth() == 1 && s.w.occupancy.RoomOfPlayer(s.p) == s.w.DeathRoom, "the player died and revived")
 	s.Assert().Empty(s.said())
 }
+
+// The warlock (testcontent) summons two imps when a fight starts: through
+// kill, the runtime, the world's summon and on to their fights.
+func (s *scriptsSuite) TestScriptSummons() {
+	gate := s.w.Zone("wrathrock").Rooms["south_gate"]
+	s.w.movePlayer(s.p, rules.DirectionNone, gate)
+	s.dice.Load([]int{0, 0}) // each imp picks the one player
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Kill{Target: "warlock"})))
+
+	imps := 0
+	for _, m := range gate.Mobiles() {
+		if m.Definition.Id == "imp" {
+			imps++
+			s.Assert().Same(s.p, s.w.fightLedger.GetFight(m).Fightee)
+		}
+	}
+	s.Assert().Equal(2, imps)
+}

@@ -34,5 +34,6 @@
     "mobile_id": "heckler",
     "room_id": "general_store",
     "instance_max": 1
-  }
+  },
+  {"type":"CreateMobile","mobile_id":"warlock","room_id":"south_gate","instance_max":1}
 ]
