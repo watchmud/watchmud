@@ -21,10 +21,10 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 			continue
 		}
 
-		// The fights are a snapshot: one whose fighter left the world earlier
-		// this round - a summon crumbling with its summoner - is still in it,
-		// and must not swing from nowhere.
-		if w.roomOf(fight.Fighter) == nil {
+		// The fights are a snapshot: one with a side that left the world
+		// earlier this round - a summon crumbling with its summoner - is
+		// still in it, and nobody swings from nowhere or at nothing.
+		if w.roomOf(fight.Fighter) == nil || w.roomOf(fight.Fightee) == nil {
 			continue
 		}
 		// each fighter should have a speed, like fast medium slow,

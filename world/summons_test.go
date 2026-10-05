@@ -212,3 +212,21 @@ func (s *summonsSuite) TestRemovedFighterDoesntSwing() {
 
 	s.Assert().Equal(before, s.p.CurrentHealth()+s.other.CurrentHealth())
 }
+
+// The other side of the snapshot: a player whose fight is against a summon
+// that crumbled earlier in the round mustn't swing at the dust -- no blow
+// after "crumbles to dust", no wear on their weapon.
+func (s *summonsSuite) TestNoSwingAtARemovedFightee() {
+	s.dice.Load([]int{0})
+	s.w.summon(s.drone, s.imp, 1)
+	imp := s.imps()[0]
+	s.Require().Same(imp, s.w.fightLedger.GetFight(s.p).Fightee, "the summon drew testdood in")
+	s.w.fightLedger.EndFight(imp)   // only the player's side is left: testdood at the imp
+	s.w.occupancy.RemoveMobile(imp) // gone, its fight left behind
+	s.r.Clear()
+	s.dice.Load([]int{20, 4}) // a hit, for 4
+
+	s.w.DoViolence(10)
+
+	s.Assert().False(heardStruck(s.r, "testdood"), "no swing at what isn't there")
+}
