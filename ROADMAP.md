@@ -787,8 +787,8 @@ Named so they don't get rediscovered as surprises:
   "Scripts (Lua)"). **The King's half-health script is done** (2026-10-04, spec in
   `docs/superpowers/specs/`): `me:summon`, with what a mob may summon declared in
   mobs.json, and summons that crumble with the fight. It needed no "health crossed a
-  line" hook -- `on_fight_pulse` reads `me.health` every round. Still open: `wait()` over
-  coroutines, whose first use is a beat between his line and the rising.
+  line" hook -- `on_fight_pulse` reads `me.health` every round. `wait()` over coroutines
+  is done too (2026-10-04): a beat between his line and the rising.
 - ~~**`Fight` snapshots `ZoneId`/`RoomId`** at the moment it starts, so a fight that somehow
   outlives its room notifies the wrong one.~~ Fixed 2026-09-26: a fight has no location;
   `DoViolence` asks `Occupancy` where the fighter is standing.

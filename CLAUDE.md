@@ -618,6 +618,31 @@ and `me:say` and `me:summon`, bound to that one call. `foe` is
 `name` and `is_player`. `chance(pct)` and `pick(list)` roll through `w.roller`, only
 inside a hook; `math.random` is gone so tests can load the dice.
 
+**`wait(seconds)` pauses a hook**: the rest of it runs that many pulses later (a pulse is
+`rules.PulseInterval`, one second). Whole seconds, 1 to `script.MaxWait` (10), only inside
+a hook -- so a top-level `wait` fails `Compile` -- and at most `script.MaxWaitPerCall` (30)
+in one hook run. Every hook runs as its own gopher-lua coroutine (`NewThread`, then
+`Resume` from the main state); `wait` is a Go function that returns `L.Yield()`, and the
+suspended `hookRun` -- thread, `hookCall`, `me`, mob -- goes on `Runtime.waiting`, a
+slice so they resume in the order they began. `World.ResumeScripts` calls
+`Runtime.Tick` **every pulse, before violence** (a hook that resumes into `me:summon` has
+its summons in for that round), with the world's answer to "is this mob still fighting?".
+Rules that hold across a wait:
+
+- **One hook at a time per mob.** While one waits, that mob's hooks are skipped, not
+  queued -- it swings, its script is quiet.
+- **A run is one call.** The say and summon caps and the stale-`me` check span the waits;
+  `me.health` and `me.summons` are re-read in place (`Runtime.refresh`) before it carries on.
+- **Each resume gets a fresh `CallTimeout`, set on the thread** -- `SetContext` is what
+  switches a state onto the loop that checks the deadline, and a coroutine runs its own.
+- **What ends a wait early, silently** (none is a failure): the mob leaving the world
+  (`Forget`), its fight being over when the wait comes due, its program being switched off.
+  "In a fight" is checked at resume, not tracked, so a fight that ends and another that
+  starts inside one wait carries on into the new one.
+- **Not inside `pcall` or `xpcall`.** gopher-lua's `pcall` takes a yield for a return, so
+  the hook would carry on at once; the sandbox wraps both to count protected calls in
+  progress, and `wait` refuses inside one -- the script gets `false` and the error.
+
 **A bad script mustn't hurt the server.** Every call runs under `script.CallTimeout`
 (10ms), a capped call stack and registry, gopher-lua's protected call and a `recover`.
 A failure is logged and the mob carries on; after `script.MaxFailures` (3) the program is

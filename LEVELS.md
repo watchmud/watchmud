@@ -160,7 +160,8 @@ Targets to check him against once power modifiers, heals and threat all exist:
 
 Until then he is unbeatable, and that's fine: he's the reason heals get built.
 
-**At half health he calls his guard** (2026-10-04): "Rise, my guard!", and two barrow
+**At half health he calls his guard** (2026-10-04): "Rise, my guard!", two seconds'
+pause -- long enough to kill him first, if the group has it in them -- and two barrow
 skeletons rise, each going for a random player in the room -- the healer as likely as the
 tank, which is what provoke and stun are for. Once a fight; they crumble with it and drop
 nothing. Two is a tuning placeholder, like the rest of his numbers.

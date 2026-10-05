@@ -16,11 +16,12 @@ function on_fight_start(me, foe)
 end
 
 function on_fight_pulse(me, foe)
-  -- at half health, once a fight, his guard rises. No taunt that round:
-  -- the line and the rising are the moment.
+  -- at half health, once a fight, his guard rises -- two seconds after his
+  -- line, a beat for it to land. No taunt that round: this is the moment.
   if not me.memory.risen and me.health <= me.max_health / 2 then
     me.memory.risen = true
     me:say("Rise, my guard! Rise and defend your king!")
+    wait(2)
     me:summon("barrow_skeleton", 2)
     return
   end
