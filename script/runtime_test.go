@@ -737,3 +737,26 @@ func TestWaitAfterAPcall(t *testing.T) {
 		})
 	}
 }
+
+// A hook that summons a scripted mob starts that mob's opener from inside
+// itself. Lua can't run a second hook in the middle of the first -- the
+// first would come back to find its call gone -- so the summon's opener runs
+// once the summoner's hook has finished or paused.
+func TestSummoningAScriptedMob(t *testing.T) {
+	h := newHarness(t, map[string]string{
+		"z/boss": `function on_fight_start(me, foe) me:summon("imp", 1) me:say("after") end`,
+		"z/imp":  `function on_fight_start(me, foe) me:say("imp opener") end`,
+	})
+	boss := summoner("z/boss")
+	boss.Definition.Summons[0].Script = "z/imp"
+	h.rt.actions.Summon = func(_ *mobile.Instance, def *mobile.Definition, n int) int {
+		h.rt.FightStart(mobile.NewInstance(def), bob) // what World.summon's startFight does
+		return n
+	}
+	logged := h.failures()
+
+	h.rt.FightStart(boss, bob)
+
+	assert.Equal(t, []string{"after", "imp opener"}, h.texts())
+	assert.Empty(t, *logged)
+}

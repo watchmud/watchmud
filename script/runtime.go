@@ -63,6 +63,10 @@ type Runtime struct {
 	programs map[string]*loaded
 	memory   map[uuid.UUID]*lua.LTable
 	waiting  []*hookRun // in the order they began waiting
+	// pending is hooks fired while another was running -- a summoned
+	// scripted mob's opener. One coroutine can't start another from inside
+	// itself and get its own call back, so they run once it ends or pauses.
+	pending []func()
 	// logFailure reports one failed call; a field so a test can see them.
 	logFailure func(err error)
 }
@@ -128,6 +132,10 @@ func (r *Runtime) Forget(mob *mobile.Instance) {
 }
 
 func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe) {
+	if r.sb.current != nil {
+		r.pending = append(r.pending, func() { r.fire(mob, hook, foe) })
+		return
+	}
 	lp := r.programs[mob.Definition.Script]
 	if lp == nil || lp.failures >= MaxFailures {
 		return
@@ -160,6 +168,12 @@ func (r *Runtime) run(run *hookRun, args ...lua.LValue) {
 	case !done:
 		run.pulses = run.call.wait
 		r.waiting = append(r.waiting, run)
+	}
+	// It has ended or paused: whatever it set off can run now.
+	for len(r.pending) > 0 {
+		next := r.pending[0]
+		r.pending = r.pending[1:]
+		next()
 	}
 }
 
