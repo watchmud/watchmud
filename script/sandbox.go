@@ -86,6 +86,9 @@ type hookCall struct {
 type sandbox struct {
 	L       *lua.LState
 	current *hookCall
+	// protected counts the pcalls and xpcalls in progress; wait refuses
+	// inside one.
+	protected int
 }
 
 func newSandbox() *sandbox {
@@ -136,6 +139,18 @@ func newSandbox() *sandbox {
 	// every program's method calls go through.
 	strLib.RawSetString("__metatable", lua.LString("locked"))
 
+	// wait can't pause through pcall: gopher-lua's pcall takes a yield for a
+	// return, and the hook would carry on at once. Count the protected calls
+	// in progress; wait refuses inside one.
+	for _, name := range []string{"pcall", "xpcall"} {
+		protect := g.RawGetString(name).(*lua.LFunction).GFunction
+		g.RawSetString(name, s.L.NewFunction(func(L *lua.LState) int {
+			s.protected++
+			defer func() { s.protected-- }()
+			return protect(L)
+		}))
+	}
+
 	g.RawSetString("chance", s.L.NewFunction(s.chance))
 	g.RawSetString("pick", s.L.NewFunction(s.pick))
 	g.RawSetString("wait", s.L.NewFunction(s.wait))
@@ -185,6 +200,9 @@ func (s *sandbox) pick(L *lua.LState) int {
 func (s *sandbox) wait(L *lua.LState) int {
 	n := L.CheckNumber(1)
 	h := s.running(L, "wait")
+	if s.protected > 0 {
+		L.RaiseError("wait: can't pause inside pcall or xpcall")
+	}
 	secs := int(n)
 	if lua.LNumber(secs) != n || secs < 1 || secs > MaxWait {
 		L.RaiseError("wait: %v is not a whole number of seconds from 1 to %d", n, MaxWait)

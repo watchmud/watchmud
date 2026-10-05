@@ -616,18 +616,124 @@ func TestErrorAfterAWaitIsAStrike(t *testing.T) {
 	assert.Len(t, h.said, MaxFailures, "switched off after the third")
 }
 
-// Review focus 3: a script author's reflex. Whatever pcall makes of a yield,
-// nothing panics and the mob isn't stuck: two pulses on, its hooks fire again.
+// Review focus 3: a script author's reflex. gopher-lua's pcall treats a
+// yield as a return, so wait would silently not wait; it refuses instead,
+// and pcall hands the script the error.
 func TestWaitInsidePcall(t *testing.T) {
 	h := newHarness(t, map[string]string{"z/w": `
-		function on_fight_start(me, foe) pcall(wait, 1) end
-		function on_fight_pulse(me, foe) me:say("free") end`})
+		function on_fight_start(me, foe)
+			local ok, err = pcall(wait, 1)
+			me:say(tostring(ok))
+			me:say(err)
+		end`})
+
+	h.rt.FightStart(mob("M", "z/w"), bob)
+
+	require.Len(t, h.said, 2)
+	assert.Equal(t, "false", h.said[0].text)
+	assert.Contains(t, h.said[1].text, "pcall")
+}
+
+// one thing at a time: while a hook waits, the mob's hooks don't fire --
+// those calls are skipped, not queued
+func TestNoHooksWhileWaiting(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:say("start") wait(2) me:say("end") end
+		function on_fight_pulse(me, foe) me:say("pulse") end`})
 	m := mob("M", "z/w")
 
+	h.rt.FightStart(m, bob)
+	h.rt.FightPulse(m, bob)
 	h.rt.FightStart(m, bob)
 	h.tick()
 	h.tick()
 	h.rt.FightPulse(m, bob)
 
-	assert.Equal(t, []string{"free"}, h.texts())
+	assert.Equal(t, []string{"start", "end", "pulse"}, h.texts())
+}
+
+// the fight is over when the wait comes due: dropped, not failed, and the
+// mob's hooks fire again
+func TestFightOverDropsTheWait(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:say("one") wait(1) me:say("two") end
+		function on_fight_pulse(me, foe) me:say("again") end`})
+	m := mob("M", "z/w")
+	logged := h.failures()
+
+	h.rt.FightStart(m, bob)
+	h.out[m] = true
+	h.tick()
+	h.out[m] = false
+	h.rt.FightPulse(m, bob)
+
+	assert.Equal(t, []string{"one", "again"}, h.texts())
+	assert.Empty(t, *logged)
+}
+
+// the mob leaves the world: its wait goes with its memory
+func TestForgetDropsTheWait(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:say("one") wait(1) me:say("two") end`})
+	m := mob("M", "z/w")
+
+	h.rt.FightStart(m, bob)
+	h.rt.Forget(m)
+	h.tick()
+
+	assert.Equal(t, []string{"one"}, h.texts())
+}
+
+// Review focus 4: another mob's errors switch the program off, and the
+// waiting run of it never carries on
+func TestDisabledProgramDropsItsWaits(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) wait(1) me:say("after") end
+		function on_fight_pulse(me, foe) error("boom") end`})
+	waiter, breaker := mob("W", "z/w"), mob("B", "z/w")
+
+	h.rt.FightStart(waiter, bob)
+	for range MaxFailures {
+		h.rt.FightPulse(breaker, bob)
+	}
+	h.tick()
+
+	assert.Empty(t, h.said)
+}
+
+// xpcall is protected the same way
+func TestWaitInsideXpcall(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe)
+			local ok = xpcall(function() wait(1) end, function(e) return e end)
+			me:say(tostring(ok))
+		end`})
+
+	h.rt.FightStart(mob("M", "z/w"), bob)
+
+	assert.Equal(t, []string{"false"}, h.texts())
+}
+
+// once a pcall has returned -- normally or with an error caught -- wait
+// waits again: the guard is only for the inside of one
+func TestWaitAfterAPcall(t *testing.T) {
+	for name, inner := range map[string]string{
+		"returned": `function() end`,
+		"errored":  `function() error("boom") end`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			h := newHarness(t, map[string]string{"z/w": `
+				function on_fight_start(me, foe)
+					pcall(` + inner + `)
+					wait(1)
+					me:say("after")
+				end`})
+
+			h.rt.FightStart(mob("M", "z/w"), bob)
+			assert.Empty(t, h.said, "still waiting")
+			h.tick()
+
+			assert.Equal(t, []string{"after"}, h.texts())
+		})
+	}
 }

@@ -124,11 +124,16 @@ func (r *Runtime) FightPulse(mob *mobile.Instance, foe Foe) {
 // world, so memory lives exactly as long as the mob.
 func (r *Runtime) Forget(mob *mobile.Instance) {
 	delete(r.memory, mob.Id())
+	r.drop(func(run *hookRun) bool { return run.mob == mob })
 }
 
 func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe) {
 	lp := r.programs[mob.Definition.Script]
 	if lp == nil || lp.failures >= MaxFailures {
+		return
+	}
+	// One thing at a time: a mob partway through a hook gets no other.
+	if r.isWaiting(mob) {
 		return
 	}
 	fn, ok := lp.env.RawGetString(hook).(*lua.LFunction)
@@ -160,7 +165,8 @@ func (r *Runtime) run(run *hookRun, args ...lua.LValue) {
 
 // Tick is one pulse for every hook run waiting on wait(), in the order they
 // began waiting. One that comes due carries on, with me's health and summons
-// read fresh. inFight is the world's answer to "is this mob still in a fight?" (See Task 3)
+// read fresh -- unless the fight it was about is over (inFight, the world's
+// answer) or its program has been switched off, and then it simply ends.
 func (r *Runtime) Tick(inFight func(*mobile.Instance) bool) {
 	var due, still []*hookRun
 	for _, run := range r.waiting {
@@ -173,12 +179,17 @@ func (r *Runtime) Tick(inFight func(*mobile.Instance) bool) {
 	}
 	r.waiting = still
 	for _, run := range due {
+		// the fight it was about is over, or another mob's errors switched
+		// its program off: it simply ends.
+		if run.lp.failures >= MaxFailures || !inFight(run.mob) {
+			continue
+		}
 		r.refresh(run.mob, run.me)
 		r.run(run)
 	}
 }
 
-// refresh re-reads what me compies that can change while a hook waits.
+// refresh re-reads what me copies that can change while a hook waits.
 func (r *Runtime) refresh(mob *mobile.Instance, me *lua.LTable) {
 	me.RawSetString("health", lua.LNumber(mob.CurHealth))
 	me.RawSetString("summons", lua.LNumber(r.actions.Summons(mob)))
@@ -197,7 +208,18 @@ func (r *Runtime) fail(run *hookRun, err error) {
 		err))
 	if lp.failures == MaxFailures {
 		log.Warn().Str("script", lp.program.name).Msg("script disabled until restart")
+		r.drop(func(w *hookRun) bool { return w.lp == lp })
 	}
+}
+
+// isWaiting is whether mob has a hook run waiting on wait
+func (r *Runtime) isWaiting(mob *mobile.Instance) bool {
+	return slices.ContainsFunc(r.waiting, func(run *hookRun) bool { return run.mob == mob })
+}
+
+// drop forgets every waiting run that matches: the rest of it never runs.
+func (r *Runtime) drop(match func(*hookRun) bool) {
+	r.waiting = slices.DeleteFunc(r.waiting, match)
 }
 
 // me is the mob as its script sees it: copies of what it may read, its
@@ -207,7 +229,6 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 	L := r.sb.L
 	me := L.NewTable()
 	me.RawSetString("name", lua.LString(mob.Name()))
-	me.RawSetString("health", lua.LNumber(mob.CurHealth))
 	me.RawSetString("max_health", lua.LNumber(mob.Definition.MaxHealth))
 	me.RawSetString("memory", r.memoryOf(mob))
 	me.RawSetString("say", L.NewFunction(func(L *lua.LState) int {
@@ -228,7 +249,7 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		call.say(text)
 		return 0
 	}))
-	me.RawSetString("summons", lua.LNumber(r.actions.Summons(mob)))
+	r.refresh(mob, me)
 	me.RawSetString("summon", L.NewFunction(func(L *lua.LState) int {
 		if _, isMe := L.Get(1).(*lua.LTable); !isMe {
 			L.RaiseError("summon: call it as me:summon(id, count), with a colon")
