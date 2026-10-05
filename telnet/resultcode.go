@@ -45,6 +45,8 @@ var failureByVerb = map[string]string{
 	"color/BAD_REQUEST":       "Color on, color off, or just color to switch it.",
 	"nohassle/BAD_REQUEST":    "Nohassle on, nohassle off, or just nohassle to switch it.",
 	"drop/TARGET_NOT_FOUND":   "You aren't carrying that.",
+	"recall/NOT_GRANTED":      "Nothing you're wearing lets you recall -- a temple token does; the General Store sells them.",
+	"recall/NOT_READY":        "You can't recall again yet.",
 	"repair/TARGET_NOT_FOUND": "You aren't carrying that.",
 	"sell/TARGET_NOT_FOUND":   "You aren't carrying that.",
 	"value/TARGET_NOT_FOUND":  "You aren't carrying that.",

@@ -14,28 +14,41 @@ import (
 // refusal comes before anything is spent; once the checks pass the cast happens
 // and is paid for, even if it turns out to do nothing (healing someone who isn't hurt).
 func (w *World) handleCast(msg *gameserver.HandlerParameter, cmd command.Cast) {
-	p := msg.Player
 	if cmd.Ability == "" {
 		msg.Fail(event.NoTarget)
 		return
 	}
-	a, known := w.content.Catalog.Abilities[strings.ToLower(cmd.Ability)]
+	w.cast(msg, strings.ToLower(cmd.Ability), cmd.Target)
+}
+
+// cast is every check a cast makes and then the cast, for cast and for the
+// commands that are an ability under their own name (recall). Failing through
+// msg, so the verb on a refusal is the one the player typed.
+func (w *World) cast(msg *gameserver.HandlerParameter, abilityId, target string) {
+	p := msg.Player
+	a, known := w.content.Catalog.Abilities[abilityId]
 	if !known {
 		msg.Fail(event.UnknownAbility)
 		return
 	}
+	// a wizard always has a Wizards ability: no gear, no cooldown
+	wizard := a.Wizards && p.IsWizard()
 	grant, granted := p.Equipment().Abilities()[a.Id]
-	if !granted {
+	if !granted && !wizard {
 		msg.Fail(event.NotGranted)
 		return
 	}
 	now := w.now()
-	if now.Before(p.ReadyAt(a.Id)) {
+	if !wizard && now.Before(p.ReadyAt(a.Id)) {
 		msg.Fail(event.NotReady)
 		return
 	}
+	if a.NotInFight && w.fightLedger.InFight(p) {
+		msg.Fail(event.InAFight)
+		return
+	}
 	c := cast{caster: p, ability: a, power: grant.Power}
-	if code := w.castTarget(&c, cmd.Target); code != "" {
+	if code := w.castTarget(&c, target); code != "" {
 		msg.Fail(code)
 		return
 	}
@@ -43,7 +56,9 @@ func (w *World) handleCast(msg *gameserver.HandlerParameter, cmd command.Cast) {
 		msg.Fail(event.NotEnoughMana)
 		return
 	}
-	p.StartCooldown(a.Id, now.Add(a.Cooldown))
+	if !wizard {
+		p.StartCooldown(a.Id, now.Add(a.Cooldown))
+	}
 	effects[a.Id](w, c)
 }
 

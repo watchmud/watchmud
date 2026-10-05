@@ -315,6 +315,7 @@ var commandCases = []commandCase{
 	{
 		// recall moves with direction.None, which must not render as "none!"
 		name:      "recall leaves in no direction",
+		setup:     func(w *world.World, p *player.Player, _ *player.Player) { wearTestToken(w, p) },
 		input:     "recall",
 		want:      startRoomBlock,
 		wantOther: "testdood leaves.\ntestdood enters.\n",
@@ -351,6 +352,11 @@ var commandCases = []commandCase{
 		setup: func(_ *world.World, p *player.Player, _ *player.Player) { wieldTestMace(p) },
 		input: "cast smite",
 		want:  "At what? You aren't fighting anything.\n",
+	},
+	{
+		name:  "recall without a token",
+		input: "recall",
+		want:  "Nothing you're wearing lets you recall -- a temple token does; the General Store sells them.\n",
 	},
 	{
 		name:      "provoke a mob",
@@ -564,6 +570,14 @@ func wieldTestStunMace(p *player.Player) {
 	p.Equipment().Equip(rules.SlotWield, inst)
 }
 
+// wearTestToken puts testcontent's temple token, which grants recall, on p's neck
+func wearTestToken(w *world.World, p *player.Player) {
+	d, _ := w.ObjectDefinition("wrathrock", "temple_token")
+	inst := object.NewInstance(uuid.New(), d)
+	_ = p.Inventory().Add(inst)
+	p.Equipment().Equip(d.EquipmentSlot, inst)
+}
+
 // holdTestCenser equips something granting heal at power 1
 func holdTestCenser(p *player.Player) {
 	d := object.NewDefinition("censer", "censer", "wrathrock", rules.ObjectCategoryOther,
@@ -686,4 +700,12 @@ func TestRender_summoned(t *testing.T) {
 func TestRender_crumbled(t *testing.T) {
 	assert.Equal(t, "barrow skeleton crumbles to dust.\n",
 		plain(render(event.Crumbled{Name: "barrow skeleton"}, "testdood")))
+}
+
+// recall's refusals in its own words, not cast's
+func TestFailure_recall(t *testing.T) {
+	assert.Equal(t, "Nothing you're wearing lets you recall -- a temple token does; the General Store sells them.\n",
+		plain(render(event.Failed{Verb: "recall", Code: event.NotGranted}, "testdood")))
+	assert.Equal(t, "You can't recall again yet.\n",
+		plain(render(event.Failed{Verb: "recall", Code: event.NotReady}, "testdood")))
 }
