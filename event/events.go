@@ -121,6 +121,12 @@ type ContainerContents struct {
 	Coins     int
 }
 
+// Crumbled goes to the room: a summon going back to where it came from, at the
+// end of its summoner's fight or its own. It leaves nothing behind.
+type Crumbled struct {
+	Name string
+}
+
 // Decayed is something on the floor crumbling away: a corpse, so far.
 type Decayed struct {
 	Item string

@@ -64,3 +64,38 @@ func (w *World) liveSummons(summoner *mobile.Instance) int {
 	}
 	return n
 }
+
+// crumble takes a summon out of the world: no corpse, no loot, no coins. Its
+// fights end the way a death's do, so whatever it was holding retargets.
+func (w *World) crumble(mob *mobile.Instance) {
+	if room := w.roomOf(mob); room != nil {
+		room.Notify(event.Crumbled{Name: mob.Name()})
+	}
+	w.fightLedger.EndAllFightsWith(mob.Id())
+	w.RemoveMobile(mob)
+}
+
+// crumbleSummonsOf crumbles everything summoner called up.
+func (w *World) crumbleSummonsOf(summoner *mobile.Instance) {
+	for _, mob := range w.Mobiles() {
+		if mob.Summoner == summoner {
+			w.crumble(mob)
+		}
+	}
+}
+
+// sweepSummons crumbles every summon who's summoner's fight is over:
+// the summoner gone from the world, or here and fighting nobody. One check,
+// run every round, covers every way a fight ends - fled, wiped, ways not written yet.
+// A death doesn't wait for it: combatantDied crumbles them on the spot.
+func (w *World) sweepSummons() {
+	for _, mob := range w.Mobiles() {
+		s := mob.Summoner
+		if s == nil {
+			continue
+		}
+		if w.roomOf(s) == nil || !w.fightLedger.InFight(s) {
+			w.crumble(mob)
+		}
+	}
+}

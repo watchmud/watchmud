@@ -682,3 +682,8 @@ func TestRender_summoned(t *testing.T) {
 	assert.Equal(t, "Warlock calls up one imp!\n",
 		plain(render(event.Summoned{Summoner: "Warlock", Name: "imp", Count: 1}, "testdood")))
 }
+
+func TestRender_crumbled(t *testing.T) {
+	assert.Equal(t, "barrow skeleton crumbles to dust.\n",
+		plain(render(event.Crumbled{Name: "barrow skeleton"}, "testdood")))
+}

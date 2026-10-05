@@ -21,6 +21,12 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 			continue
 		}
 
+		// The fights are a snapshot: one whose fighter left the world earlier
+		// this round - a summon crumbling with its summoner - is still in it,
+		// and must not swing from nowhere.
+		if w.roomOf(fight.Fighter) == nil {
+			continue
+		}
 		// each fighter should have a speed, like fast medium slow,
 		// and then we can take that into account vs the last time
 		// that Violence happened - comparing it to PulseCount.
@@ -77,6 +83,7 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 			}
 		}
 	}
+	w.sweepSummons()
 }
 
 // combatantDied cleans up after the one who died and tells the room.
@@ -87,6 +94,15 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 // attacker could never happen. becomeCorpse already ends the dead one's
 // fights, in both directions, which is the whole of what should end here.
 func (w *World) combatantDied(dead combat.Combatant, room *spaces.Room) {
+	// a summon dies like anything else, and then leaves no body
+	if mob, ok := dead.(*mobile.Instance); ok && mob.Summoner != nil {
+		if room != nil {
+			room.Notify(event.Died{Target: mob.Name()})
+		}
+		w.crumble(mob)
+		return
+	}
+
 	w.becomeCorpse(dead)
 	if room != nil {
 		_, isPlayer := dead.(*player.Player)
@@ -94,6 +110,10 @@ func (w *World) combatantDied(dead combat.Combatant, room *spaces.Room) {
 			Target:   dead.Name(),
 			IsPlayer: isPlayer,
 		})
+	}
+
+	if mob, ok := dead.(*mobile.Instance); ok {
+		w.crumbleSummonsOf(mob)
 	}
 
 	// Dying is hard on your kit. After the room has been told, so the toll
