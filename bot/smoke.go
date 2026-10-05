@@ -149,13 +149,43 @@ func login(c *Client, cfg Config) error {
 	}
 }
 
-// recall goes back to Temple Square.
+// recallRetry is how long a bot waits to try again a recall that wasn't
+// ready, and recallTries how many times it tries: past recall's 60s
+// cooldown. A var so a test can shorten it.
+var recallRetry = time.Second
+
+const recallTries = 70
+
+// Recall's two refusals, as the game words them.
+const (
+	notReadyText  = "You can't recall again yet."
+	noRecallText  = "Nothing you're wearing lets you recall"
+	noRecallError = "can't recall: no temple token worn"
+)
+
+// recallRe is Temple Square, or one of recall's refusals.
+var recallRe = `(?m)(?:^(?:` + prompt + `)?Temple Square\n(?s:.*?)` + prompt + `)|` +
+	regexp.QuoteMeta(notReadyText) + `|` + regexp.QuoteMeta(noRecallText)
+
+// recall goes back to Temple Square, waiting out the cooldown if it has to.
 func recall(c *Client) error {
-	if err := c.Send("recall"); err != nil {
-		return err
+	for range recallTries {
+		if err := c.Send("recall"); err != nil {
+			return err
+		}
+		m, err := c.Expect(recallRe, stepTimeout)
+		switch {
+		case err != nil:
+			return err
+		case strings.Contains(m[0], noRecallText):
+			return errors.New(noRecallError)
+		case strings.Contains(m[0], notReadyText):
+			time.Sleep(recallRetry)
+			continue
+		}
+		return nil
 	}
-	_, err := room(c, "Temple Square")
-	return err
+	return fmt.Errorf("recall still not ready after %d tries", recallTries)
 }
 
 // room waits for the description of the named room and returns what follows

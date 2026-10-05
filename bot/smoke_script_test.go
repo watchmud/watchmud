@@ -194,3 +194,32 @@ func TestSmoke_botDies(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "the goose won")
 }
+
+// A recall inside the cooldown is tried again, a second later, rather than
+// failing the deploy: in production a quick run can reach its final recall
+// within a minute of its first.
+func TestSmoke_recallWaitsOutTheCooldown(t *testing.T) {
+	retry := recallRetry
+	recallRetry = 10 * time.Millisecond
+	t.Cleanup(func() { recallRetry = retry })
+	c := fakeGame(t, greeting, script(
+		exchange{"west", fakeRoom("The Millpond")},
+		exchange{"recall", "You can't recall again yet.\r\n<100/100hp> "},
+		exchange{"recall", fakeRoom("Temple Square")},
+		exchange{"quit", ""},
+	)...)
+
+	_, err := Smoke(c, cfg, io.Discard)
+	require.NoError(t, err, c.Transcript())
+}
+
+// A character with no temple token can't get home: that's a broken
+// character, said plainly, not a minute of retrying.
+func TestSmoke_noToken(t *testing.T) {
+	c := fakeGame(t, greeting, loggedIn[0], loggedIn[1],
+		exchange{"recall", "Nothing you're wearing lets you recall -- a temple token does; the General Store sells them.\r\n<100/100hp> "},
+	)
+
+	_, err := Smoke(c, cfg, io.Discard)
+	require.ErrorContains(t, err, "temple token")
+}

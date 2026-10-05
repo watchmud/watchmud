@@ -198,3 +198,22 @@ func TestPickGround_spreadsOut(t *testing.T) {
 	}
 	assert.Nil(t, a.pickGround(99), "nothing suits power 99")
 }
+
+// A recall inside the cooldown waits a moment and tries again: dying twice
+// within a minute shouldn't leave a bot standing in the death room.
+func TestRecall_waitsOutTheCooldown(t *testing.T) {
+	retry := recallRetry
+	recallRetry = 10 * time.Millisecond
+	t.Cleanup(func() { recallRetry = retry })
+	a, g := adventurer(t)
+	done := make(chan error, 1)
+	go func() { done <- a.recall() }()
+
+	assert.Equal(t, "recall", g.heard())
+	g.say("You can't recall again yet.\r\n<100/100hp 100/100m> ")
+	assert.Equal(t, "recall", g.heard(), "again")
+	g.say("Temple Square\r\n A square.\r\n[ Exits: n e s ]\r\n<100/100hp 100/100m> ")
+
+	require.NoError(t, <-done)
+	assert.Equal(t, home, a.here)
+}

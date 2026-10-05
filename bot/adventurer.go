@@ -424,14 +424,29 @@ func (a *Adventurer) walk(ctx context.Context, s step) (string, error) {
 	return text, err
 }
 
-// recall goes home, the one way back that works from anywhere.
+// recall goes home, the one way back that works from anywhere -- once its
+// cooldown allows: a bot that died twice in a minute waits it out.
 func (a *Adventurer) recall() error {
-	if _, _, err := a.ask("recall", roomRe(home)); err != nil {
-		return err
+	for range recallTries {
+		text, _, err := a.ask("recall", adventurerRecallRe)
+		switch {
+		case err != nil:
+			return err
+		case strings.Contains(text, noRecallText):
+			return errors.New(noRecallError)
+		case strings.Contains(text, notReadyText):
+			time.Sleep(recallRetry)
+			continue
+		}
+		a.here = home
+		return nil
 	}
-	a.here = home
-	return nil
+	return fmt.Errorf("recall still not ready after %d tries", recallTries)
 }
+
+// adventurerRecallRe is home, or one of recall's refusals.
+var adventurerRecallRe = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(home) + `$|` +
+	regexp.QuoteMeta(notReadyText) + `|` + regexp.QuoteMeta(noRecallText))
 
 // engage considers one kind of prey and fights it if it's a fair fight or
 // easier: "a real challenge" is for a group, and a bot hasn't got one.
