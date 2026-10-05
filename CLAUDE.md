@@ -642,6 +642,10 @@ Rules that hold across a wait:
 - **Not inside `pcall` or `xpcall`.** gopher-lua's `pcall` takes a yield for a return, so
   the hook would carry on at once; the sandbox wraps both to count protected calls in
   progress, and `wait` refuses inside one -- the script gets `false` and the error.
+- **A hook fired during another waits its turn.** `me:summon` of a scripted mob fires the
+  summon's `on_fight_start` from inside the summoner's coroutine, which would come back to
+  find its call gone. `fire` queues it on `Runtime.pending` while a hook is running
+  (`sb.current` set), and `run` drains the queue once that hook ends or pauses.
 
 **A bad script mustn't hurt the server.** Every call runs under `script.CallTimeout`
 (10ms), a capped call stack and registry, gopher-lua's protected call and a `recover`.
