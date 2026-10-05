@@ -241,6 +241,7 @@ func (Restore) wizard()    {}
 func (RoomStatus) wizard() {}
 func (NoHassle) wizard()   {}
 func (Slay) wizard()       {}
+func (Gold) wizard()       {}
 
 type Load struct {
 	Type string // "mob" or "obj"
@@ -271,6 +272,13 @@ type Slay struct {
 }
 
 func (Slay) Verb() string { return "slay" }
+
+// Gold puts coins in the wizard's own purse, for testing what coins buy.
+type Gold struct {
+	Amount string
+}
+
+func (Gold) Verb() string { return "gold" }
 
 type RoomStatus struct {
 	ZoneId string

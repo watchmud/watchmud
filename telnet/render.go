@@ -116,7 +116,10 @@ func render(msg any, self string) string {
 		return "Equipped.\n"
 
 	case event.Worn:
-		return "Done.\n"
+		return "You wear " + m.Item + ".\n"
+
+	case event.GoldGiven:
+		return fmt.Sprintf("%d coins appear in your purse. You have %d.\n", m.Amount, m.Coins)
 
 	case event.Removed:
 		return "You stop using " + m.Item + ".\n"

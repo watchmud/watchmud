@@ -44,6 +44,7 @@ func failureText(verb, code string) string {
 var failureByVerb = map[string]string{
 	"color/BAD_REQUEST":       "Color on, color off, or just color to switch it.",
 	"nohassle/BAD_REQUEST":    "Nohassle on, nohassle off, or just nohassle to switch it.",
+	"gold/BAD_REQUEST":        "Gold how much? A number from 1 to a million.",
 	"drop/TARGET_NOT_FOUND":   "You aren't carrying that.",
 	"recall/NOT_GRANTED":      "Nothing you're wearing lets you recall -- a temple token does; the General Store sells them.",
 	"recall/NOT_READY":        "You can't recall again yet.",

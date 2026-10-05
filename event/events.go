@@ -140,7 +140,16 @@ type ContainedItem struct {
 // Equipped and Worn have no bystander text today, so they carry no Actor.
 type Equipped struct{}
 
-type Worn struct{}
+// Worn names what went on, since "wear leather" might mean a cap or boots.
+type Worn struct {
+	Item string
+}
+
+// GoldGiven is a wizard's gold: how many coins appeared, and the purse after.
+type GoldGiven struct {
+	Amount int
+	Coins  int
+}
 
 // Removed names the item so "Removed." doesn't leave the player guessing
 // which of two similarly named things came off.

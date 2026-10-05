@@ -155,6 +155,9 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "slay":
 		return command.Slay{Target: rest}, nil
 
+	case "gold":
+		return command.Gold{Amount: rest}, nil
+
 	case "roomstatus":
 		return command.RoomStatus{}, nil
 

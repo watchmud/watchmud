@@ -24,6 +24,7 @@ var wizardCommands = []command.Command{
 	command.RoomStatus{},
 	command.NoHassle{},
 	command.Slay{Target: "target"},
+	command.Gold{Amount: "100"},
 }
 
 func (s *wizardSuite) TestTheListIsMarked() {

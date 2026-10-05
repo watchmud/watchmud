@@ -717,3 +717,16 @@ func TestRender_received(t *testing.T) {
 	assert.Equal(t, "You find a temple token in your pack. Wear it to recall.\n",
 		plain(render(event.Received{Item: "a temple token", Worn: false}, "testdood")))
 }
+
+// wear names what went on: "wear leather" could be a cap or boots
+func TestRender_worn(t *testing.T) {
+	assert.Equal(t, "You wear a pair of leather boots.\n",
+		plain(render(event.Worn{Item: "a pair of leather boots"}, "testdood")))
+}
+
+func TestRender_gold(t *testing.T) {
+	assert.Equal(t, "250 coins appear in your purse. You have 750.\n",
+		plain(render(event.GoldGiven{Amount: 250, Coins: 750}, "testdood")))
+	assert.Equal(t, "Gold how much? A number from 1 to a million.\n",
+		plain(render(event.Failed{Verb: "gold", Code: event.BadRequest}, "testdood")))
+}

@@ -82,6 +82,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleRoomStatus(msg, cmd)
 	case command.Slay:
 		w.handleSlay(msg, cmd)
+	case command.Gold:
+		w.handleGold(msg, cmd)
 	case command.Say:
 		w.handleSay(msg, cmd)
 	case command.ShowEquipment:
