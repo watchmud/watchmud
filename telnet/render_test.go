@@ -709,3 +709,11 @@ func TestFailure_recall(t *testing.T) {
 	assert.Equal(t, "You can't recall again yet.\n",
 		plain(render(event.Failed{Verb: "recall", Code: event.NotReady}, "testdood")))
 }
+
+// the temple token handed to a character from before it
+func TestRender_received(t *testing.T) {
+	assert.Equal(t, "You find a temple token around your neck.\n",
+		plain(render(event.Received{Item: "a temple token", Worn: true}, "testdood")))
+	assert.Equal(t, "You find a temple token in your pack. Wear it to recall.\n",
+		plain(render(event.Received{Item: "a temple token", Worn: false}, "testdood")))
+}

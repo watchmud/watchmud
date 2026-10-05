@@ -130,3 +130,33 @@ func TestGiveStartingGear_power(t *testing.T) {
 	assert.Equal(t, 1, p.Equipment().At(rules.SlotWield).Power)
 	assert.Equal(t, 1, p.Power())
 }
+
+// A backfill item handed out at creation is marked received, so the login
+// that follows doesn't hand out a second.
+func TestGiveStartingGear_marksBackfill(t *testing.T) {
+	p := NewTestPlayer(uuid.New(), "newbie", nil)
+	defs := newTestDefs(t)
+	defs.add(t, "token", rules.EquipmentSlot("neck"))
+
+	GiveStartingGear(p, rules.StartingGear{
+		{ZoneId: "wrathrock", DefinitionId: "knife", Equip: true},
+		{ZoneId: "wrathrock", DefinitionId: "token", Equip: true, Backfill: true},
+	}, defs)
+
+	assert.Equal(t, []string{"wrathrock/token"}, p.Backfilled())
+	assert.True(t, p.HasBackfilled("wrathrock/token"))
+	assert.False(t, p.HasBackfilled("wrathrock/knife"), "only the backfill items")
+}
+
+// and it survives a save
+func TestBackfilled_roundTrip(t *testing.T) {
+	p := NewTestPlayer(uuid.New(), "newbie", nil)
+	p.MarkBackfilled("wrathrock/token")
+	cat, err := rules.NewTestCatalog()
+	require.NoError(t, err)
+
+	restored, err := FromRecord(p.Record(), nil, cat, newTestDefs(t))
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"wrathrock/token"}, restored.Backfilled())
+}

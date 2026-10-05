@@ -2,6 +2,7 @@ package player
 
 import (
 	"errors"
+	"slices"
 	"uuid"
 
 	"github.com/rs/zerolog/log"
@@ -26,6 +27,10 @@ type Record struct {
 	LastZoneId, LastRoomId string
 	Equipment              []EquipmentRecord
 	Inventory              []InventoryRecord
+	// Backfilled is every starting-gear item marked backfill this character
+	// has been handed, as "zone/object": once each, at creation or at the
+	// first login after the item joined the kit.
+	Backfilled []string
 }
 
 type EquipmentRecord struct {
@@ -78,6 +83,7 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 	p.bot = rec.Bot
 	p.noColor = rec.NoColor
 	p.coins = max(rec.Coins, 0)
+	p.backfilled = slices.Clone(rec.Backfilled)
 
 	for _, ir := range rec.Inventory {
 		//Missing definitions. A saved InventoryRecord can reference a zone or object id that content no longer defines — you edit content/, and last week's save now points at nothing. Erroring means an unlucky
@@ -139,6 +145,7 @@ func (p *Player) Record() *Record {
 		Equipment:    EquipmentToRecord(p.equipment),
 		Inventory:    inventoryRecord(p.inventory),
 		CurMana:      &mana,
+		Backfilled:   slices.Clone(p.backfilled),
 	}
 }
 

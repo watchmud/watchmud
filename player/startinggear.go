@@ -34,6 +34,10 @@ func GiveStartingGear(p *Player, gear rules.StartingGear, defs DefinitionSource)
 		inst := object.NewInstance(uuid.New(), d)
 		inst.Power = item.Power
 		p.inventory.Add(inst)
+		if item.Backfill {
+			// handed out now, so the login that follows doesn't again
+			p.MarkBackfilled(item.Ref())
+		}
 
 		if !item.Equip {
 			continue

@@ -431,6 +431,13 @@ type Fled struct {
 	Who string
 }
 
+// Received is starting gear handed to a character from before it was in the
+// kit, at their login: worn if its slot was free, otherwise in their pack.
+type Received struct {
+	Item string
+	Worn bool
+}
+
 // Summoned goes to the room: Summoner called up a Count of Name, who arrive fighting.
 type Summoned struct {
 	Summoner string

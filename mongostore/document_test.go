@@ -35,6 +35,7 @@ func testRecord() *player.Record {
 			{InstanceId: knifeId, ZoneId: "wrathrock", DefinitionId: "training_dagger", Durability: intp(17), Power: intp(5)},
 			{InstanceId: uuid.New(), ZoneId: "wrathrock", DefinitionId: "waterskin"},
 		},
+		Backfilled: []string{"wrathrock/temple_token"},
 	}
 }
 

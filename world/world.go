@@ -131,6 +131,7 @@ func (w *World) Arrive(p *player.Player) {
 	r.SendExcept(p, event.EnteredGame{Actor: p.Name()})
 	p.Send(event.Color{On: p.Color()}) // ahead of the first thing worth coloring
 	p.Send(r.DescriptionExcept(p))
+	w.backfill(p)
 }
 
 // Welcome tells a brand-new character where to go first. After Arrive, so it

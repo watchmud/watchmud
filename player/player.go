@@ -1,6 +1,7 @@
 package player
 
 import (
+	"slices"
 	"time"
 	"uuid"
 
@@ -31,6 +32,9 @@ type Player struct {
 	noColor bool
 	// coins is the purse. Never negative: Spend refuses what it can't pay.
 	coins int
+	// backfilled is the backfill starting gear this character has been
+	// handed, "zone/object" -- see Record.Backfilled.
+	backfilled []string
 
 	// Lineage is cosmetic and nothing reads it but the renderer. There is no
 	// Class beside it and no Role in its place: a role is read off
@@ -245,3 +249,16 @@ func (p *Player) Spend(n int) bool {
 	return true
 }
 func (p *Player) SetColor(on bool) { p.noColor = !on }
+
+// Backfilled is the backfill starting gear this character has been handed.
+func (p *Player) Backfilled() []string { return p.backfilled }
+
+// HasBackfilled is whether they've been handed ref ("zone/object").
+func (p *Player) HasBackfilled(ref string) bool { return slices.Contains(p.backfilled, ref) }
+
+// MarkBackfilled records that they've been handed ref, so they never are again.
+func (p *Player) MarkBackfilled(ref string) {
+	if !p.HasBackfilled(ref) {
+		p.backfilled = append(p.backfilled, ref)
+	}
+}

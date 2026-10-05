@@ -37,3 +37,6 @@ type StartingGearItem struct {
 	// free. The record's Backfilled list is what makes it once.
 	Backfill bool `json:"backfill"`
 }
+
+// Ref is the item as a record names it: "zone/object".
+func (i StartingGearItem) Ref() string { return i.ZoneId + "/" + i.DefinitionId }

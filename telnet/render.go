@@ -256,6 +256,14 @@ func render(msg any, self string) string {
 	case event.Staggered:
 		return m.Name + " staggers, stunned.\n"
 
+	case event.Received:
+		// The only backfill so far is the temple token, so the reason to
+		// wear it is recall's; a second backfill item would want its own.
+		if m.Worn {
+			return "You find " + m.Item + " around your neck.\n"
+		}
+		return "You find " + m.Item + " in your pack. Wear it to recall.\n"
+
 	case event.Summoned:
 		if m.Count == 1 {
 			return m.Summoner + " calls up one " + m.Name + "!\n"

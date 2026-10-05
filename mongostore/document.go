@@ -31,9 +31,10 @@ type playerDoc struct {
 	MaxHealth    int    `bson:"max_health"`
 	CurMana      *int   `bson:"cur_mana,omitempty"`
 
-	LineageId  string `bson:"lineage_id"`
-	LastZoneId string `bson:"last_zone_id"`
-	LastRoomId string `bson:"last_room_id"`
+	LineageId  string   `bson:"lineage_id"`
+	LastZoneId string   `bson:"last_zone_id"`
+	LastRoomId string   `bson:"last_room_id"`
+	Backfilled []string `bson:"backfilled,omitempty"`
 
 	Equipment []equipmentDoc `bson:"equipment"`
 	Inventory []inventoryDoc `bson:"inventory"`
@@ -80,6 +81,7 @@ func newPlayerDoc(r *player.Record, now time.Time) playerDoc {
 		LineageId:    r.LineageId,
 		LastZoneId:   r.LastZoneId,
 		LastRoomId:   r.LastRoomId,
+		Backfilled:   r.Backfilled,
 		UpdatedAt:    now.UTC(),
 	}
 	for _, e := range r.Equipment {
@@ -125,6 +127,7 @@ func (d playerDoc) record() (*player.Record, error) {
 		LineageId:    d.LineageId,
 		LastZoneId:   d.LastZoneId,
 		LastRoomId:   d.LastRoomId,
+		Backfilled:   d.Backfilled,
 	}
 	for _, e := range d.Equipment {
 		instanceId, err := uuid.Parse(e.InstanceId)
