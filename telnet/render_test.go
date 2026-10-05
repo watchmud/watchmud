@@ -730,3 +730,7 @@ func TestRender_gold(t *testing.T) {
 	assert.Equal(t, "Gold how much? A number from 1 to a million.\n",
 		plain(render(event.Failed{Verb: "gold", Code: event.BadRequest}, "testdood")))
 }
+
+func TestRender_equipped(t *testing.T) {
+	assert.Equal(t, "You wield a knife.\n", plain(render(event.Equipped{Item: "a knife"}, "testdood")))
+}

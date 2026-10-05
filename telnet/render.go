@@ -113,7 +113,8 @@ func render(msg any, self string) string {
 		return capitalize(m.Item) + " crumbles to dust.\n"
 
 	case event.Equipped:
-		return "Equipped.\n"
+		// wield is the only command that equips into a named slot
+		return "You wield " + m.Item + ".\n"
 
 	case event.Worn:
 		return "You wear " + m.Item + ".\n"

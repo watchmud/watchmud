@@ -138,7 +138,10 @@ type ContainedItem struct {
 }
 
 // Equipped and Worn have no bystander text today, so they carry no Actor.
-type Equipped struct{}
+// Equipped names what went into the slot -- the hand, for wield.
+type Equipped struct {
+	Item string
+}
 
 // Worn names what went on, since "wear leather" might mean a cap or boots.
 type Worn struct {
