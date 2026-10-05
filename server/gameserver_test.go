@@ -35,12 +35,18 @@ func (c *testConn) Close()                     {}
 
 func newTestGameServer(t *testing.T) (*GameServer, *memstore.Store) {
 	t.Helper()
+	return newTestGameServerRolling(t, testdice.New())
+}
+
+// newTestGameServerRolling is newTestGameServer with dice the test loads.
+func newTestGameServerRolling(t *testing.T, dice *testdice.LoadedDice) (*GameServer, *memstore.Store) {
+	t.Helper()
 
 	content, err := loader.LoadContent(os.DirFS("../testcontent"))
 	require.NoError(t, err)
 
 	store := memstore.New()
-	w, err := world.New(content, store, testdice.New())
+	w, err := world.New(content, store, dice)
 	require.NoError(t, err)
 
 	gs := New(w, content.Catalog, store)
@@ -343,4 +349,32 @@ func TestRun_tickIntervalSetsThePace(t *testing.T) {
 	_ = gs.Run(ctx) // returns when ctx expires; the world is ours again after
 
 	assert.Greater(t, c.Player().CurrentHealth(), 70)
+}
+
+// Scripts carry on every pulse, before violence: the chanter's imp arrives
+// and swings in the same heartbeat.
+func TestHeartbeat_resumesScriptsBeforeViolence(t *testing.T) {
+	dice := testdice.New()
+	gs, _ := newTestGameServerRolling(t, dice)
+	c := &testConn{}
+	create(t, gs, c, "newbie", "sekrit")
+	for range 3 { // temple square to the road outside the south gate
+		require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Move{Direction: rules.DirectionSouth})))
+	}
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Kill{Target: "chanter"})))
+	c.sent = nil
+	dice.Load([]int{0, 1, 1, 1, 1, 1}) // the imp's pick, then a miss for every swing
+
+	gs.heartbeat(1001, rules.PulseInterval) // a pulse on no other interval
+
+	assert.True(t, swung(c.sent, "imp"), "the imp swung the round it arrived")
+}
+
+func swung(sent []any, attacker string) bool {
+	for _, m := range sent {
+		if s, ok := m.(event.Struck); ok && s.Attacker == attacker {
+			return true
+		}
+	}
+	return false
 }

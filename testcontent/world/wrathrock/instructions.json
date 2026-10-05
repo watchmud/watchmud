@@ -35,5 +35,6 @@
     "room_id": "general_store",
     "instance_max": 1
   },
-  {"type":"CreateMobile","mobile_id":"warlock","room_id":"south_gate","instance_max":1}
+  {"type":"CreateMobile","mobile_id":"warlock","room_id":"south_gate","instance_max":1},
+  {"type":"CreateMobile","mobile_id":"chanter","room_id":"out_south_gate","instance_max":1}
 ]

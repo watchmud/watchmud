@@ -8,6 +8,14 @@ import (
 	"github.com/watchmud/watchmud/script"
 )
 
+// ResumeScripts carries on every script that's done waiting, if the mob
+// running it is still in a fight -- see script.Runtime.Tick.
+func (w *World) ResumeScripts() {
+	w.scripts.Tick(func(mob *mobile.Instance) bool {
+		return w.roomOf(mob) != nil && w.fightLedger.InFight(mob)
+	})
+}
+
 // startFight begins a fight between attacker and defender, then gives each
 // mob in it that wasn't already fighting its on_fight_start. Everything that
 // starts a fight -- kill and aggro -- comes through here, so no opener is

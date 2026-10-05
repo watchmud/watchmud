@@ -122,6 +122,10 @@ func (gs *GameServer) heartbeat(pulse rules.PulseCount, delta time.Duration) {
 		recoverPulse("floors", gs.world.DecayFloors)
 	}
 
+	// scripts paused on wait(): every pulse, and before violence, so a hook
+	// that carries on into me:summon has its summons in for this round
+	recoverPulse("scripts", gs.world.ResumeScripts)
+
 	// perform violence
 	// do the attacking (players and mobs and everybody)
 	violencePulse := gs.catalog.MudTime.Violence

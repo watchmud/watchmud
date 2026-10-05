@@ -166,3 +166,32 @@ func (s *scriptsSuite) TestScriptSummons() {
 	}
 	s.Assert().Equal(2, imps)
 }
+
+// The chanter (testcontent) waits a pulse after a fight starts, then calls an imp.
+func (s *scriptsSuite) TestScriptWaits() {
+	room := s.w.Zone("wrathrock").Rooms["out_south_gate"]
+	s.w.movePlayer(s.p, rules.DirectionNone, room)
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Kill{Target: "chanter"})))
+	_, found := room.FindMobile("imp")
+	s.Require().False(found, "not yet")
+
+	s.dice.Load([]int{0})
+	s.w.ResumeScripts()
+
+	imp, found := room.FindMobile("imp")
+	s.Require().True(found)
+	s.Assert().Same(s.p, s.w.fightLedger.GetFight(imp).Fightee)
+}
+
+// the fight over before the pulse comes: no imp
+func (s *scriptsSuite) TestScriptWaitEndsWithTheFight() {
+	room := s.w.Zone("wrathrock").Rooms["out_south_gate"]
+	s.w.movePlayer(s.p, rules.DirectionNone, room)
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Kill{Target: "chanter"})))
+	s.w.fightLedger.EndAllFightsWith(s.p.Id())
+
+	s.w.ResumeScripts()
+
+	_, found := room.FindMobile("imp")
+	s.Assert().False(found)
+}

@@ -70,5 +70,17 @@
     "ac": 10,
     "script": "warlock",
     "summons": [ "imp" ]
+  },
+  {
+    "id": "chanter",
+    "name": "Chanter",
+    "short_description": "A chanter.",
+    "description_in_room": "A chanter drones a slow verse, one word at a time.",
+    "aliases": [ "chanter" ],
+    "max_health": 25,
+    "wandering_definition": { "can_wander": false },
+    "ac": 10,
+    "script": "chanter",
+    "summons": [ "imp" ]
   }
 ]
