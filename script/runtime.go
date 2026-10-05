@@ -62,6 +62,7 @@ type Runtime struct {
 	actions  Actions
 	programs map[string]*loaded
 	memory   map[uuid.UUID]*lua.LTable
+	waiting  []*hookRun // in the order they began waiting
 	// logFailure reports one failed call; a field so a test can see them.
 	logFailure func(err error)
 }
@@ -75,13 +76,14 @@ type loaded struct {
 // hookRun is one hook running on one mob, from its start to its end, across
 // any waits: its own coroutine, the call its caps and its me belonging to.
 type hookRun struct {
-	mob  *mobile.Instance
-	lp   *loaded
-	hook string
-	fn   *lua.LFunction
-	th   *lua.LState
-	call *hookCall
-	me   *lua.LTable
+	mob    *mobile.Instance
+	lp     *loaded
+	hook   string
+	fn     *lua.LFunction
+	th     *lua.LState
+	call   *hookCall
+	me     *lua.LTable
+	pulses int // left to wait
 }
 
 // NewRuntime loads each program into one Lua state. The programs were proved
@@ -146,9 +148,40 @@ func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe) {
 // run starts or carries on a hook run -- args start it -- and deals with
 // how it ended.
 func (r *Runtime) run(run *hookRun, args ...lua.LValue) {
-	if _, err := r.sb.resume(run.th, run.fn, run.call, args...); err != nil {
+	done, err := r.sb.resume(run.th, run.fn, run.call, args...)
+	switch {
+	case err != nil:
 		r.fail(run, err)
+	case !done:
+		run.pulses = run.call.wait
+		r.waiting = append(r.waiting, run)
 	}
+}
+
+// Tick is one pulse for every hook run waiting on wait(), in the order they
+// began waiting. One that comes due carries on, with me's health and summons
+// read fresh. inFight is the world's answer to "is this mob still in a fight?" (See Task 3)
+func (r *Runtime) Tick(inFight func(*mobile.Instance) bool) {
+	var due, still []*hookRun
+	for _, run := range r.waiting {
+		run.pulses--
+		if run.pulses > 0 {
+			still = append(still, run)
+		} else {
+			due = append(due, run)
+		}
+	}
+	r.waiting = still
+	for _, run := range due {
+		r.refresh(run.mob, run.me)
+		r.run(run)
+	}
+}
+
+// refresh re-reads what me compies that can change while a hook waits.
+func (r *Runtime) refresh(mob *mobile.Instance, me *lua.LTable) {
+	me.RawSetString("health", lua.LNumber(mob.CurHealth))
+	me.RawSetString("summons", lua.LNumber(r.actions.Summons(mob)))
 }
 
 // fail counts a failed run against its program, switching the program off at MaxFailures.

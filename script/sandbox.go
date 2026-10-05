@@ -32,6 +32,14 @@ const (
 	maxBuiltString = 4 * 1024
 )
 
+// MaxWait and MaxWaitPerCall bound wait(): one wait is at most 10 seconds,
+// a hook runs at most 30 in all. A waiting mob's other hooks don't fire,
+// so a hook that waited forever would silence it for good.
+const (
+	MaxWait        = 10
+	MaxWaitPerCall = 30
+)
+
 // patternFunctions are removed from the string library: gopher-lua's pattern
 // matcher runs in Go, where the deadline can't reach, and a pathological
 // pattern backtracks for minutes. A taunt needs format, sub, upper and "..";
@@ -67,6 +75,10 @@ type hookCall struct {
 	says int
 	// summoned counts this call's summons against MaxSummonsPerCall.
 	summoned int
+	// waited is this run's seconds of waiting so far, against MaxWaitPerCall
+	waited int
+	// wait is the one it's in now, for Tick to count down
+	wait int
 }
 
 // sandbox is one Lua state with only the safe libraries open, plus chance and
@@ -126,6 +138,7 @@ func newSandbox() *sandbox {
 
 	g.RawSetString("chance", s.L.NewFunction(s.chance))
 	g.RawSetString("pick", s.L.NewFunction(s.pick))
+	g.RawSetString("wait", s.L.NewFunction(s.wait))
 	return s
 }
 
@@ -165,6 +178,23 @@ func (s *sandbox) pick(L *lua.LState) int {
 	}
 	L.Push(list.RawGetInt(i + 1))
 	return 1
+}
+
+// wait(seconds) suspends the hook in progress: it yields out of the hook's
+// coroutine, and Runtime.Tick resumes it that many pulses -- seconds -- later.
+func (s *sandbox) wait(L *lua.LState) int {
+	n := L.CheckNumber(1)
+	h := s.running(L, "wait")
+	secs := int(n)
+	if lua.LNumber(secs) != n || secs < 1 || secs > MaxWait {
+		L.RaiseError("wait: %v is not a whole number of seconds from 1 to %d", n, MaxWait)
+	}
+	if h.waited+secs > MaxWaitPerCall {
+		L.RaiseError("wait: more than %d seconds of waiting in one call", MaxWaitPerCall)
+	}
+	h.waited += secs
+	h.wait = secs
+	return L.Yield()
 }
 
 // cappedRep is string.rep, refusing a result longer than maxBuiltString.

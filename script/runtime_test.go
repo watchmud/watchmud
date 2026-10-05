@@ -25,12 +25,13 @@ type harness struct {
 	dice     *testdice.LoadedDice
 	said     []line
 	summoned []summonCall
-	live     map[*mobile.Instance]int // what me.summons and the live cap read
+	live     map[*mobile.Instance]int  // what me.summons and the live cap read
+	out      map[*mobile.Instance]bool // mobs whose fight is over, as Tick's inFight sees it
 }
 
 func newHarness(t *testing.T, scripts map[string]string) *harness {
 	t.Helper()
-	h := &harness{t: t, dice: testdice.New(), live: map[*mobile.Instance]int{}}
+	h := &harness{t: t, dice: testdice.New(), live: map[*mobile.Instance]int{}, out: map[*mobile.Instance]bool{}}
 	programs := map[string]*Program{}
 	for name, src := range scripts {
 		p, err := Compile(name, src)
@@ -67,6 +68,11 @@ func (h *harness) failures() *[]string {
 	var logged []string
 	h.rt.logFailure = func(err error) { logged = append(logged, err.Error()) }
 	return &logged
+}
+
+// tick is one pulse.
+func (h *harness) tick() {
+	h.rt.Tick(func(m *mobile.Instance) bool { return !h.out[m] })
 }
 
 func (h *harness) texts() []string {
@@ -464,4 +470,164 @@ func TestSummonWithADotFails(t *testing.T) {
 
 	require.Len(t, *logged, 1)
 	assert.Contains(t, (*logged)[0], "colon")
+}
+
+func TestWaitDefersTheRest(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:say("one") wait(2) me:say("two") end`})
+	m := mob("M", "z/w")
+
+	h.rt.FightStart(m, bob)
+	assert.Equal(t, []string{"one"}, h.texts())
+	h.tick()
+	assert.Equal(t, []string{"one"}, h.texts(), "one pulse in: still waiting")
+	h.tick()
+	assert.Equal(t, []string{"one", "two"}, h.texts())
+	h.tick()
+	assert.Equal(t, []string{"one", "two"}, h.texts(), "and done")
+}
+
+func TestWaitRefreshesMe(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe)
+			wait(1)
+			me:say(me.health .. " " .. me.summons)
+		end`})
+	m := summoner("z/w")
+	h.rt.FightStart(m, bob)
+
+	m.CurHealth = 7
+	h.live[m] = 1
+	h.tick()
+
+	assert.Equal(t, []string{"7 1"}, h.texts())
+}
+
+func TestSummonAfterAWait(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) wait(1) me:summon("imp", 2) end`})
+	h.rt.FightStart(summoner("z/w"), bob)
+	assert.Empty(t, h.summoned)
+
+	h.tick()
+
+	assert.Equal(t, []summonCall{{"Warlock", "imp", 2}}, h.summoned)
+}
+
+// one run is one call: the say cap counts across the wait
+func TestCapsSpanAWait(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe)
+			me:say("a") me:say("b") wait(1) me:say("c")
+		end`})
+	logged := h.failures()
+
+	h.rt.FightStart(mob("M", "z/w"), bob)
+	h.tick()
+
+	assert.Equal(t, []string{"a", "b"}, h.texts())
+	require.Len(t, *logged, 1)
+	assert.Contains(t, (*logged)[0], "says")
+}
+
+// its own me still works after a wait (above); one kept from another call doesn't
+func TestStashedMeCantActAfterAWait(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me.memory.old = me end
+		function on_fight_pulse(me, foe) wait(1) me.memory.old:say("ghost") end`})
+	m := mob("M", "z/w")
+	logged := h.failures()
+
+	h.rt.FightStart(m, bob)
+	h.rt.FightPulse(m, bob)
+	h.tick()
+
+	assert.Empty(t, h.said)
+	require.Len(t, *logged, 1)
+	assert.Contains(t, (*logged)[0], "earlier call")
+}
+
+// Review focus 5 among them: 1.5 is refused, not cut to 1
+func TestWaitBadArguments(t *testing.T) {
+	for _, arg := range []string{"0", "-1", "11", "1.5", `"x"`} {
+		t.Run(arg, func(t *testing.T) {
+			h := newHarness(t, map[string]string{"z/w": `
+				function on_fight_start(me, foe) wait(` + arg + `) me:say("after") end`})
+			logged := h.failures()
+
+			h.rt.FightStart(mob("M", "z/w"), bob)
+			for range 12 {
+				h.tick()
+			}
+
+			assert.Empty(t, h.said)
+			assert.Len(t, *logged, 1)
+		})
+	}
+}
+
+func TestWaitAtTopLevelFailsCompile(t *testing.T) {
+	_, err := Compile("z/top", `wait(1)`)
+	assert.ErrorContains(t, err, "only inside a hook")
+}
+
+func TestWaitPerCallCap(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe)
+			wait(10) wait(10) wait(10) wait(1) me:say("never")
+		end`})
+	logged := h.failures()
+
+	h.rt.FightStart(mob("M", "z/w"), bob)
+	for range 32 {
+		h.tick()
+	}
+
+	assert.Empty(t, h.said)
+	require.Len(t, *logged, 1)
+	assert.Contains(t, (*logged)[0], "seconds")
+}
+
+// in the order they began waiting, whatever the map order of anything else
+func TestWaitersResumeInOrder(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) wait(1) me:say(me.name) end`})
+	a, b, c := mob("A", "z/w"), mob("B", "z/w"), mob("C", "z/w")
+
+	h.rt.FightStart(b, bob)
+	h.rt.FightStart(c, bob)
+	h.rt.FightStart(a, bob)
+	h.tick()
+
+	assert.Equal(t, []string{"B", "C", "A"}, h.texts())
+}
+
+// an error after a wait is a strike like any other
+func TestErrorAfterAWaitIsAStrike(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) me:say("tick") wait(1) error("boom") end`})
+	m := mob("M", "z/w")
+
+	for range MaxFailures + 2 {
+		h.rt.FightStart(m, bob)
+		h.tick()
+	}
+
+	assert.Len(t, h.said, MaxFailures, "switched off after the third")
+}
+
+// Review focus 3: a script author's reflex. Whatever pcall makes of a yield,
+// nothing panics and the mob isn't stuck: two pulses on, its hooks fire again.
+func TestWaitInsidePcall(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/w": `
+		function on_fight_start(me, foe) pcall(wait, 1) end
+		function on_fight_pulse(me, foe) me:say("free") end`})
+	m := mob("M", "z/w")
+
+	h.rt.FightStart(m, bob)
+	h.tick()
+	h.tick()
+	h.rt.FightPulse(m, bob)
+
+	assert.Equal(t, []string{"free"}, h.texts())
 }
