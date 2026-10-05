@@ -39,6 +39,8 @@ type World struct {
 
 	// now is the clock cooldowns read; tests replace it rather than sleep.
 	now func() time.Time
+	// pace is how fast now runs against the wall clock; see SetPace.
+	pace float64
 
 	reservedNames map[string]bool // by player.NameKey; see IsReservedName
 }
@@ -51,6 +53,7 @@ func New(c *loader.Content, s player.Store, roller rules.Roller) (w *World, err 
 		occupancy:   spaces.NewOccupancy(),
 		fightLedger: combat.NewFightLedger(),
 		now:         time.Now,
+		pace:        1,
 		roller:      roller,
 		store:       s,
 	}
@@ -292,3 +295,18 @@ func (w *World) ObjectDefinition(zoneId, definitionId string) (*object.Definitio
 	}
 	return d, true
 }
+
+// SetPace runs the world's clock -- what cooldowns read -- at rate times the
+// wall clock. The server sets it from its tick, so a test world ticking a
+// hundred times fast has cooldowns a hundred times short, the same as
+// everything else in it. 1 is real time.
+func (w *World) SetPace(rate float64) {
+	start := time.Now()
+	w.pace = rate
+	w.now = func() time.Time {
+		return start.Add(time.Duration(float64(time.Since(start)) * rate))
+	}
+}
+
+// Pace is what SetPace last set: 1 unless something sped the world up.
+func (w *World) Pace() float64 { return w.pace }

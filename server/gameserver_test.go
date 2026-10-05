@@ -379,3 +379,10 @@ func swung(sent []any, attacker string) bool {
 	}
 	return false
 }
+
+// The tick sets the world's pace: ten times the pulse rate, ten times the clock.
+func TestSetTickInterval_setsThePace(t *testing.T) {
+	gs, _ := newTestGameServer(t)
+	gs.SetTickInterval(rules.PulseInterval / 10)
+	assert.InDelta(t, 10.0, gs.world.Pace(), 0.001)
+}

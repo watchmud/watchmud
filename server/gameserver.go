@@ -43,8 +43,14 @@ func New(w *world.World, c *rules.Catalog, s player.Store) *GameServer {
 // pulse job counts pulses rather than reading a clock, so a faster tick runs
 // the whole world faster and in the same order -- for tests that want a
 // fight to finish while they wait.
+//
+// The world's clock keeps the same pace, so cooldowns -- which read a clock,
+// not pulses -- are as much faster as the rest.
 func (gs *GameServer) SetTickInterval(d time.Duration) {
 	gs.tickInterval = d
+	if d > 0 {
+		gs.world.SetPace(float64(rules.PulseInterval) / float64(d))
+	}
 }
 
 // Run the game server, obviously.
