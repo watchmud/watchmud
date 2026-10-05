@@ -20,6 +20,9 @@ page (`web/`), the Postgres layer (`db/`), and the `client.Client` abstraction w
 earlier. The separate console client repo `trasa/watchmud-client` is no longer used by
 anything.
 
+How the project is worked on -- pace, releases, production rules, and what's on master
+but not yet released -- is `docs/working.md`.
+
 ## Commands
 
 ```
