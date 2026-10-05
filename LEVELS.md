@@ -160,6 +160,11 @@ Targets to check him against once power modifiers, heals and threat all exist:
 
 Until then he is unbeatable, and that's fine: he's the reason heals get built.
 
+**At half health he calls his guard** (2026-10-04): "Rise, my guard!", and two barrow
+skeletons rise, each going for a random player in the room -- the healer as likely as the
+tank, which is what provoke and stun are for. Once a fight; they crumble with it and drop
+nothing. Two is a tuning placeholder, like the rest of his numbers.
+
 **With power in combat, AC 16 may be too much.** Five or more below him is -5 to hit,
 so anyone at power 5 or under can never land a blow (20 - 5 < 16), and a group at the
 barrow's top end, power 10, needs an 18 -- 15% a swing, for 75% damage. Out-of-league

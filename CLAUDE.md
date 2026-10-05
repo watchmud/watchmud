@@ -599,7 +599,7 @@ change. An object naming a role the catalog doesn't define is a hard load failur
 ### Scripts (Lua)
 
 **Go is the engine; a script decides *when*.** A script composes actions the engine
-already has -- today, one: `me:say` -- and never does the math. An action a script needs
+already has -- today, two: `me:say` and `me:summon` -- and never does the math. An action a script needs
 that the engine lacks is a Go feature first.
 
 A mob names a script in mobs.json, `"script": "barrow_king"` (bare is its zone,
@@ -613,7 +613,8 @@ Hooks, both optional: `on_fight_start(me, foe)` (fired by `World.startFight` -- 
 `kill` and aggro both use -- for each mob that wasn't already fighting) and
 `on_fight_pulse(me, foe)` (from `DoViolence`, after the blow, never over a body). `me` is
 copies (`name`, `health`, `max_health`), `me.memory` (a table per mob instance, dropped
-with the mob in `World.RemoveMobile`), and `me:say`, bound to that one call. `foe` is
+with the mob in `World.RemoveMobile`), `me.summons` (how many of its summons are alive),
+and `me:say` and `me:summon`, bound to that one call. `foe` is
 `name` and `is_player`. `chance(pct)` and `pick(list)` roll through `w.roller`, only
 inside a hook; `math.random` is gone so tests can load the dice.
 
@@ -637,8 +638,36 @@ that loads code or prints. Three limits exist because of what the deadline can't
   `string`/`table`/`math` tables, with `_G` pointing at itself, and strings' shared
   metatable is locked. A script can break itself, not another script.
 
+**Summoning.** `me:summon(id, count)` calls up mobs into the summoner's room and answers
+how many came. What a mob may summon is content: `"summons": ["barrow_skeleton"]` in
+mobs.json, resolved at load onto `mobile.Definition.Summons` (bare is its zone, `"zone/id"`
+any other; a second pass after every zone's mobs, since a summon may name a later zone),
+and anything unresolved fails startup. Summoning an id not on that list, or a count under
+1, is a script error. `script.MaxSummonsPerCall` (4, across a whole hook call) and
+`script.MaxLiveSummons` (4 alive per summoner) *clamp* rather than raise: a boss that
+summons every round is ordinary script, and raising would spend its three strikes.
+
+A summon's life is the engine's, in `world/summons.go`. `mobile.Instance.Summoner` points
+at whoever called it up (nil for a mob a reset or a wizard put down). Each picks a player
+in the room through `w.roller`, skipping a `nohassle` wizard, and `startFight`s them --
+nobody to pick, it stands. It leaves **no corpse, loot or coins**: `combatantDied` sends
+its `Died` and then `crumble`s it (`event.Crumbled`, `EndAllFightsWith`, `RemoveMobile`).
+It **lives as long as its summoner's fight**: the summoner's death crumbles its summons
+right after his `Died`, and `sweepSummons`, at the end of every `DoViolence`, crumbles any
+whose summoner is gone or not `InFight` -- one check for flee, wipe and anything later.
+`Occupancy.MobileCount` skips summons, so a summon never keeps a reset from refilling a
+room. And because `DoViolence` ranges over a snapshot, a fighter `roomOf` can't place is
+skipped: a summon crumbled earlier in the round must not swing from nowhere.
+
+The world reaches a script through `script.Actions` (`Say`, `Summon`, `Summons`), filled
+in by `world.New`; a test fills it with recorders.
+
 Adding a hook: a `Runtime` method that calls `fire` with its name, the name in `hooks`
-(script/program.go), the Go call site, and a test in `world/scripts_test.go`.
+(script/program.go), the Go call site, and a test in `world/scripts_test.go`. Adding an
+action: a field on `Actions`, a method on `me` in `Runtime.me` that checks
+`r.sb.current != call` (a `me` kept in memory must not act later) and has a cap if it
+puts anything in front of players, the world func behind it, and tests in
+`script/runtime_test.go` and `world/`.
 
 ### Definition vs Instance
 
