@@ -331,7 +331,7 @@ never straight back unless it's a dead end, lingers in one room in four
 ground's prey, and a wanderer has no ground. Everything else is the hunter's code:
 tells, fleeing, resting, recall, dying. It is power 1 too, so **`keepOut`** lists the
 doors it never takes (today: south from the Edge of the Old Wood, which shuts off the
-wolves and the whole Barrow). `TestKeepOut_safe` walks the real content from the start
+wolves and the whole Barrow, and west from the Millpond, the Drowned Mill). `TestKeepOut_safe` walks the real content from the start
 room without those doors and fails if anything aggressive above power 2 is in reach --
 new dangerous content needs a door in `keepOut`, not a looser test.
 `WATCHMUD_WANDERERS` names them, beside `WATCHMUD_BOTS`; the five-bot cap is for both

@@ -1,0 +1,73 @@
+[
+  {
+    "id": "mill_yard",
+    "name": "The Mill Yard",
+    "description": "A cobbled yard between the millpond and the mill, green with weed. The great wheel stands still against the mill's flank, half sunk in black water. A door hangs open to the west; south, the yard runs down to the sluice.",
+    "exits": [
+      { "direction": "east", "dest_zone": "hollowfield", "dest_room": "millpond" },
+      { "direction": "west", "dest_room": "mill_house" },
+      { "direction": "south", "dest_room": "sluice" }
+    ]
+  },
+  {
+    "id": "mill_house",
+    "name": "The Mill House",
+    "description": "Two millstones the size of cartwheels lie silent under a skin of wet flour. Water seeps up between the floorboards. A ladder climbs to the loft, and a trapdoor in the corner stands open on darkness and the smell of the river.",
+    "exits": [
+      { "direction": "east", "dest_room": "mill_yard" },
+      { "direction": "up", "dest_room": "grain_loft" },
+      { "direction": "down", "dest_room": "flooded_cellar" }
+    ]
+  },
+  {
+    "id": "grain_loft",
+    "name": "The Grain Loft",
+    "description": "Sacks of grain rot under the rafters, split and sprouting. Something has been sleeping in them, and it was wet when it did.",
+    "exits": [
+      { "direction": "down", "dest_room": "mill_house" }
+    ]
+  },
+  {
+    "id": "flooded_cellar",
+    "name": "The Flooded Cellar",
+    "description": "Cold water stands knee deep, still and black. The wheel's axle runs overhead into the west wall, and the dripping from it is the only sound -- almost. West, a breach in the wall opens on the wheel pit.",
+    "exits": [
+      { "direction": "up", "dest_room": "mill_house" },
+      { "direction": "west", "dest_room": "wheel_pit" }
+    ]
+  },
+  {
+    "id": "wheel_pit",
+    "name": "The Wheel Pit",
+    "description": "The pit beneath the wheel, where the river was meant to run. The paddles hang above you, green and dripping, and the water here is deep enough to drown in. Someone did.",
+    "exits": [
+      { "direction": "east", "dest_room": "flooded_cellar" }
+    ]
+  },
+  {
+    "id": "sluice",
+    "name": "The Sluice Gate",
+    "description": "A timber sluice that once fed the wheel has rotted half open, and the race below it runs fast and brown. Things move in the water.",
+    "exits": [
+      { "direction": "north", "dest_room": "mill_yard" },
+      { "direction": "west", "dest_room": "mill_race" }
+    ]
+  },
+  {
+    "id": "mill_race",
+    "name": "The Mill Race",
+    "description": "A stone channel cut to carry the river to the wheel, choked now with reeds and silt. A narrow ledge runs along it, slick underfoot. West, the race opens into marsh.",
+    "exits": [
+      { "direction": "east", "dest_room": "sluice" },
+      { "direction": "west", "dest_room": "reed_marsh" }
+    ]
+  },
+  {
+    "id": "reed_marsh",
+    "name": "The Reed Marsh",
+    "description": "Reeds higher than your head close in on every side, and the ground gives under each step. Somewhere among them a long shape stands perfectly still, watching.",
+    "exits": [
+      { "direction": "east", "dest_room": "mill_race" }
+    ]
+  }
+]

@@ -142,6 +142,14 @@ Started: **the Hollowfields** (1-5, south of Wrathrock -- farms, bandits, an old
 and **the Sunken Barrow** (6-10, down under the overturned oak in the wood's far corner),
 whose Barrow-King (power 15) is the first boss.
 
+**The Drowned Mill** (4-7, west of the Millpond; 2026-10-06, spec in
+`docs/superpowers/specs/`) is the step between: marsh eels, reed stalkers and drowned
+millhands, and the Drowned Miller (power 8, 90 health, 2d6) in the wheel pit, a boss
+for two. It drops mid-tier gear for every kind of player, one ability each -- the
+stalker's spear (smite), the river-stone pendant (heal), the miller's mallet (stun),
+iron gauntlets (provoke) -- plus eelskin boots and millhand's gloves. Every number is a
+first guess.
+
 **The Barrow-King is a group fight, and it takes all three kinds of gear.** Nothing may
 branch on a role, so each has to be something the gear actually does:
 

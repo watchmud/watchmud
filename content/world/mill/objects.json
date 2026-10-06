@@ -1,0 +1,68 @@
+[
+  {
+    "id": "eelskin_boots",
+    "name": "eelskin boots",
+    "category": "ARMOR",
+    "aliases": [ "boots", "eelskin" ],
+    "short_description": "a pair of eelskin boots",
+    "description_on_ground": "A pair of boots of slick grey eelskin lies here, still damp.",
+    "equipment_slot": "feet",
+    "armor_type": "leather"
+  },
+  {
+    "id": "stalker_spear",
+    "name": "stalker's spear",
+    "category": "WEAPON",
+    "aliases": [ "spear", "stalker" ],
+    "short_description": "a stalker's spear",
+    "description_on_ground": "A long spear with a barbed head of bone lies here, wrapped in reed.",
+    "equipment_slot": "wield",
+    "damage": "1d8",
+    "roles": { "striker": 3 },
+    "abilities": [ "smite" ]
+  },
+  {
+    "id": "millhand_gloves",
+    "name": "millhand's gloves",
+    "category": "ARMOR",
+    "aliases": [ "gloves", "millhand" ],
+    "short_description": "a pair of millhand's gloves",
+    "description_on_ground": "A pair of thick leather work gloves lies here, white with old flour.",
+    "equipment_slot": "hands",
+    "armor_type": "leather"
+  },
+  {
+    "id": "river_stone_pendant",
+    "name": "river-stone pendant",
+    "category": "TREASURE",
+    "aliases": [ "pendant", "stone", "river" ],
+    "short_description": "a river-stone pendant",
+    "description_on_ground": "A smooth grey river stone on a cord lies here, cool and faintly glowing.",
+    "equipment_slot": "neck",
+    "roles": { "healer": 3 },
+    "abilities": [ "heal" ]
+  },
+  {
+    "id": "millers_mallet",
+    "name": "miller's mallet",
+    "category": "WEAPON",
+    "aliases": [ "mallet", "miller" ],
+    "short_description": "the miller's mallet",
+    "description_on_ground": "A heavy mallet for dressing millstones lies here, its iron head pitted with rust.",
+    "equipment_slot": "wield",
+    "damage": "1d10",
+    "roles": { "striker": 4 },
+    "abilities": [ "stun" ]
+  },
+  {
+    "id": "iron_gauntlets",
+    "name": "iron gauntlets",
+    "category": "ARMOR",
+    "aliases": [ "gauntlets", "iron" ],
+    "short_description": "a pair of iron gauntlets",
+    "description_on_ground": "A pair of iron gauntlets lies here, their joints rusted stiff.",
+    "equipment_slot": "hands",
+    "armor_type": "plate",
+    "abilities": [ "provoke" ]
+  }
+]

@@ -1,0 +1,62 @@
+[
+  {
+    "type": "CreateMobile",
+    "mobile_id": "marsh_eel",
+    "room_id": "sluice",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "marsh_eel",
+    "room_id": "mill_race",
+    "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "marsh_eel",
+    "room_id": "mill_race",
+    "instance_max": 3
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "reed_stalker",
+    "room_id": "reed_marsh",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "reed_stalker",
+    "room_id": "reed_marsh",
+    "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "drowned_millhand",
+    "room_id": "mill_house",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "drowned_millhand",
+    "room_id": "grain_loft",
+    "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "drowned_millhand",
+    "room_id": "flooded_cellar",
+    "instance_max": 3
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "drowned_millhand",
+    "room_id": "flooded_cellar",
+    "instance_max": 4
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "drowned_miller",
+    "room_id": "wheel_pit",
+    "instance_max": 1
+  }
+]

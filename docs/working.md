@@ -52,8 +52,10 @@ inhabitant bots (v0.4.0).
 - The Mudlet add-on (`mudlet/`): bars and a map from GMCP. Its site section is in this
   branch already -- it needs only v0.10.0's GMCP, so it goes live with the merge, not a
   release. Nobody has run it in a real Mudlet yet: try it before telling players
+- The Drowned Mill (power 4-7), west of the Millpond, with the Drowned Miller (power 8);
+  six new items; the socialite knows where to send players who've outgrown the farms
 
-**Next, roughly:** a zone
-between the Hollowfields and the Barrow; the bots ROADMAP lists (explore-and-map, bots
+**Next, roughly:** tuning the mill and the King once players have tried them; the bots
+ROADMAP lists (explore-and-map, bots
 that wear what they find). The Barrow-King's AC waits for a real group to try him.
 Leftovers: `watchmud.games` DNS points nowhere; nothing alerts on an unhealthy game.

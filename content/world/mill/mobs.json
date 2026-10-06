@@ -1,0 +1,66 @@
+[
+  {
+    "id": "marsh_eel",
+    "name": "marsh eel",
+    "aliases": [ "eel", "marsh" ],
+    "short_description": "A marsh eel.",
+    "description_in_room": "A marsh eel as thick as your arm coils in the shallows.",
+    "max_health": 22,
+    "wandering_definition": { "can_wander": false },
+    "ac": 12,
+    "damage": "1d6",
+    "power": 4,
+    "aggressive": false,
+    "loot": [ { "object": "eelskin_boots", "chance": 20 } ]
+  },
+  {
+    "id": "reed_stalker",
+    "name": "reed stalker",
+    "aliases": [ "stalker", "reed" ],
+    "short_description": "A reed stalker.",
+    "description_in_room": "A reed stalker, a grey long-legged thing like a heron the height of a man, turns its spear of a beak toward you.",
+    "max_health": 28,
+    "wandering_definition": { "can_wander": false },
+    "ac": 13,
+    "damage": "1d6",
+    "power": 5,
+    "aggressive": true,
+    "loot": [ { "object": "stalker_spear", "chance": 15 } ]
+  },
+  {
+    "id": "drowned_millhand",
+    "name": "drowned millhand",
+    "aliases": [ "millhand", "drowned", "hand" ],
+    "short_description": "A drowned millhand.",
+    "description_in_room": "A drowned millhand shambles toward you, river water running from its mouth.",
+    "max_health": 34,
+    "wandering_definition": { "can_wander": false },
+    "ac": 13,
+    "damage": "1d8",
+    "power": 6,
+    "aggressive": true,
+    "loot": [
+      { "object": "millhand_gloves", "chance": 20 },
+      { "object": "river_stone_pendant", "chance": 10 }
+    ]
+  },
+  {
+    "id": "drowned_miller",
+    "name": "Drowned Miller",
+    "aliases": [ "miller", "drowned" ],
+    "short_description": "The Drowned Miller.",
+    "description_in_room": "The Drowned Miller rises from the black water of the pit, weed in his beard and a mallet in his fist.",
+    "max_health": 90,
+    "wandering_definition": { "can_wander": false },
+    "ac": 14,
+    "damage": "2d6",
+    "power": 8,
+    "aggressive": true,
+    "script": "drowned_miller",
+    "loot": [
+      { "object": "millers_mallet", "chance": 35 },
+      { "object": "iron_gauntlets", "chance": 35 },
+      { "object": "river_stone_pendant", "chance": 35 }
+    ]
+  }
+]

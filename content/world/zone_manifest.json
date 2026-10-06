@@ -35,5 +35,13 @@
     "lifetime_minutes": 10,
     "enabled": true,
     "power": { "min": 6, "max": 10 }
+  },
+  {
+    "id": "mill",
+    "name": "The Drowned Mill",
+    "reset_mode": "always",
+    "lifetime_minutes": 5,
+    "enabled": true,
+    "power": { "min": 4, "max": 7 }
   }
 ]

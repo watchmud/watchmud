@@ -13,10 +13,11 @@
   {
     "id": "millpond",
     "name": "The Millpond",
-    "description": "A broad, still pond backs up behind a mill whose wheel stopped turning a long time ago. The reeds along the bank are flattened into nests, and something in them is hissing at you.",
+    "description": "A broad, still pond backs up behind a mill whose wheel stopped turning a long time ago. The reeds along the bank are flattened into nests, and something in them is hissing at you. West, past the pond, the mill yard waits.",
     "exits": [
       { "direction": "east", "dest_room": "waystone" },
-      { "direction": "south", "dest_room": "orchard" }
+      { "direction": "south", "dest_room": "orchard" },
+      { "direction": "west", "dest_zone": "mill", "dest_room": "mill_yard" }
     ]
   },
   {
