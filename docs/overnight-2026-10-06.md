@@ -22,10 +22,13 @@ Everything below is on PR #36's branch, CI green, nothing released or deployed.
    placeholder numbers (position regen, full-moon effects, potion price/cooldown).
 
 **What the night was:** the CircleMUD list you picked (socials, wizard tools, reports,
-positions, small commands, track, the moon), potions, then reviews -- nine of them,
-each finding checked before fixing: the night's own code, the morning's, the first
-night's, security, saving, Mudlet, core mechanics and the bots. Some thirty-five real bugs
-fixed; the worst are listed under "Fixes found along the way" in the PR.
+positions, small commands, track, the moon), potions, then reviews -- fifteen of
+them, until every major part of the server had had one, each finding checked before
+fixing: the night's own code, the morning's, the first night's, security, saving,
+Mudlet, core mechanics, the bots, my own fixes, rendering, the item commands, the small
+commands and loader, and the script engine. Some fifty real bugs fixed; the worst are
+in the PR's "In production today" and "Fixes found along the way". tintin++ was tried
+for real and works.
 
 
 Unattended work on `claude/watchmud-roadmap-development-2gbc8l` (PR #36), in order, until
