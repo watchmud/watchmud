@@ -70,6 +70,9 @@ inhabitant bots (v0.4.0).
   what another player has on
 - Scripts hear: `on_hear(me, speaker, said)`; ask the hedge-witch about healing
 
+The site guide's rows for all of this are drafted in `docs/site-next-release.md`, to go
+in with the release (the live `look goose` row only becomes true with it).
+
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots
 that wear what they find). The Barrow-King's AC waits for a real group to try him.

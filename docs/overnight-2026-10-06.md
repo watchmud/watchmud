@@ -21,6 +21,8 @@ production, and nothing here is released.
 
 - [x] **7. FAQ answers for the new commands** (give, look/examine, bags), so the
   socialite documents them for the newest players.
+- [x] **9. Draft the site guide's rows** for the release (`docs/site-next-release.md`):
+  `site/` publishes on reaching master, so it can't go in the PR.
 - [ ] **8. Hunt the two flaky tests** seen once each earlier (a bot game test,
   `TestMoveWhileFighting`): run the suite many times, root-cause what fails.
 
@@ -60,3 +62,5 @@ Feel and tuning calls met along the way are noted below rather than decided.
   recommendation to wait until something needs it.
 - **7.** Two socialite topics: give (before shops, so "give coins" isn't a shop
   question) and examining things (`look <name>`). Bags got theirs with the bags commit.
+- **9.** The live site already says `look goose` looks at one thing; in v0.10.0 it
+  didn't. True from the next release; flagged in the draft and in working.md.
