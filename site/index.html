@@ -312,7 +312,7 @@ You hit angry goose for 3 damage.
     <li>Before fighting anything, <code>consider</code> it. "A fair fight" or easier is fine. "Would probably kill you" means exactly that.</li>
     <li>After a kill, <code>get all from corpse</code> to loot it. That picks up any coins too.</li>
     <li>When you're hurt, stop and wait. Health comes back on its own when you aren't fighting.</li>
-    <li>Type <code>recall</code> to go straight back to Temple Square from anywhere, as long as you aren't in a fight.</li>
+    <li>Type <code>recall</code> to go straight back to Temple Square from anywhere. The temple token around your neck lets you, once a minute, as long as you aren't in a fight.</li>
     <li>Sell what you looted at the General Store, east of Market Square, and buy something better than your starting kit.</li>
     <li>Type <code>quit</code> when you're done. The game saves you.</li>
   </ol>
@@ -329,7 +329,7 @@ You hit angry goose for 3 damage.
         <tr><td><code>n s e w u d</code></td><td>Walk north, south, east, west, up or down</td></tr>
         <tr><td><code>look</code></td><td>Describe the room again (<code>l</code> for short), or <code>look goose</code> for one thing in it</td></tr>
         <tr><td><code>exits</code></td><td>Where you can go from here</td></tr>
-        <tr><td><code>recall</code></td><td>Straight back to Temple Square</td></tr>
+        <tr><td><code>recall</code></td><td>Straight back to Temple Square, once a minute. It's the temple token you wear that lets you: lose it and the General Store sells another</td></tr>
         <tr class="group"><td colspan="2">Things</td></tr>
         <tr><td><code>get knife</code></td><td>Pick something up. <code>get all</code> takes everything; <code>get 2.knife</code> takes the second knife</td></tr>
         <tr><td><code>get all from corpse</code></td><td>Loot what a mob dropped</td></tr>
@@ -349,6 +349,10 @@ You hit angry goose for 3 damage.
         <tr><td><code>flee</code></td><td>Try to run. It doesn't always work</td></tr>
         <tr><td><code>cast heal Ana</code></td><td>Heal Ana, or yourself with just <code>cast heal</code>, if something you're wearing grants it. Costs mana, even if nobody was hurt</td></tr>
         <tr><td><code>cast smite goose</code></td><td>A blow that always lands and starts the fight, if your weapon grants it. Mid-fight, just <code>cast smite</code> hits whatever you're fighting</td></tr>
+        <tr><td><code>cast provoke goose</code></td><td>Turn a mob onto you, away from whoever it was hitting, if your armor grants it. How a tank keeps a fight off the healer</td></tr>
+        <tr><td><code>cast stun goose</code></td><td>The mob skips its next two swings, if your weapon grants it</td></tr>
+        <tr><td><code>cast ward Ana</code></td><td>A shield that takes the next hits before Ana's health does, for half a minute, if something you're wearing grants it. Just <code>cast ward</code> for yourself</td></tr>
+        <tr><td><code>cast assess goose</code></td><td>A mob's exact health, armor and damage, and who it's fighting, if something you're wearing grants it. It starts no fight</td></tr>
         <tr class="group"><td colspan="2">You</td></tr>
         <tr><td><code>stat</code></td><td>Your health, power and coins</td></tr>
         <tr><td><code>role</code></td><td>Whether your gear makes you a Tank, Healer or Striker, and why</td></tr>
@@ -370,7 +374,7 @@ You hit angry goose for 3 damage.
   <dl>
     <div>
       <dt>Your gear decides what you are.</dt>
-      <dd>There are no classes. Heavy armor makes you a Tank; trade it for a censer and you're a Healer before the next prompt. Type <code>role</code> to see the reasoning. Spells come from gear too: hold a censer and you can <code>cast heal</code>, wield a bandit's cudgel and you can <code>cast smite</code>; put them away and you can't.</dd>
+      <dd>There are no classes. Heavy armor makes you a Tank; trade it for a censer and you're a Healer before the next prompt. Type <code>role</code> to see the reasoning. Spells come from gear too: hold a censer and you can <code>cast heal</code>, wield a bandit's cudgel and you can <code>cast smite</code>, wear a ring of mending and you can <code>cast ward</code>; put them away and you can't. <code>abilities</code> lists what yours let you do.</dd>
     </div>
     <div>
       <dt>Dying isn't the end.</dt>
@@ -378,7 +382,7 @@ You hit angry goose for 3 damage.
     </div>
     <div>
       <dt>Some characters are programs.</dt>
-      <dd>Anyone marked <code>[bot]</code> in <code>who</code> is a bot that hunts and gives its loot to the donation room, east of Temple Square. They step aside when you arrive, and they can't chat. Type <code>help bots</code> for more.</dd>
+      <dd>Anyone listed under <strong>Bots</strong> in <code>who</code> is a program. Most hunt the fields and give their loot to the donation room, east of Temple Square, stepping aside when you arrive; some just wander. One stands in Temple Square to welcome newcomers and answer questions: ask it about hunting, recall, healing, gear, repair, shops or roles. Type <code>help bots</code> for more.</dd>
     </div>
     <div>
       <dt>Text keeps arriving while you type.</dt>
