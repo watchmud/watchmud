@@ -29,3 +29,6 @@ vendor/
 deploy/.env
 deploy/backups/
 deploy/certs/
+
+# built by .github/workflows/pages.yaml from mudlet/, not checked in
+site/watchmud.mpackage

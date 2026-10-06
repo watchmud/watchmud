@@ -681,8 +681,8 @@ Additive once the byte loop exists:
   2026-10-01: `telnet/wrap.go`; no NAWS, no wrapping.
 - Then the MUD-specific layer as it earns its keep: `MSSP`, `GMCP`, `MCCP`, `MXP`.
   GMCP done 2026-10-06: `Char.Vitals` and `Room.Info` (CLAUDE.md, telnet/). Mudlet
-  hands them to scripts; drawing bars or a map from them is a Mudlet package we
-  could ship later. MSSP waits until the game wants to be listed.
+  hands them to scripts; `mudlet/` is the package that draws bars and a map from them,
+  served from www.watchmud.com (2026-10-06). MSSP waits until the game wants to be listed.
 - Test against tintin++ specifically, since that's the target.
 
 ---

@@ -226,6 +226,16 @@ them. A room's `num` is an FNV hash of its "zone/room", stable with nothing stor
 `TestRoomNum_uniqueInTheWorld` fails on a collision in the real content. What a client
 sends back (`Core.Hello`, `Core.Supports.Set`) is ignored.
 
+**`mudlet/` is the other end of it**: `watchmud.lua`, a Mudlet script drawing health and
+mana bars from `Char.Vitals` and a map from `Room.Info` (rooms keyed on `num`, placed a
+step from a neighbour already on the map, linked both ways as they turn up). `mudlet.Build`
+wraps it as a `.mpackage`; `cmd/watchmud-mudlet` writes one, and the pages workflow builds
+it into the site rather than anyone checking it in. There's no Mudlet in CI, so
+`mudlet/script_test.go` runs the script in gopher-lua against a stand-in for the slice of
+Mudlet's API it calls -- a script that calls something new needs that stand-in to grow,
+and a check against Mudlet's documentation, since the stand-in is only as true as it was
+written. Change the GMCP and this script in the same commit.
+
 **Color is the renderer's, and the connection's to take away.** `render` always paints
 (`telnet/ansi.go`: the palette is named by what a thing *is* -- `colorRoomName`,
 `colorMob` -- so restyling is one file), and `conn.frame` strips it with `plain` unless the

@@ -49,8 +49,11 @@ inhabitant bots (v0.4.0).
 - `abilities`, `equipment`, `inventory`, `stat`, `role` and `list` are aligned tables
   in color; `equipment` no longer prints instance ids; `inventory` shows power and
   condition and folds duplicates; `stat` adds mana, armor class and the room by name
+- The Mudlet add-on (`mudlet/`): bars and a map from GMCP. Its site section is in this
+  branch already -- it needs only v0.10.0's GMCP, so it goes live with the merge, not a
+  release. Nobody has run it in a real Mudlet yet: try it before telling players
 
-**Next, roughly:** a Mudlet package that draws the GMCP (bars and a map); a zone
+**Next, roughly:** a zone
 between the Hollowfields and the Barrow; the bots ROADMAP lists (explore-and-map, bots
 that wear what they find). The Barrow-King's AC waits for a real group to try him.
 Leftovers: `watchmud.games` DNS points nowhere; nothing alerts on an unhealthy game.

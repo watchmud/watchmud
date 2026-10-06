@@ -319,6 +319,25 @@ You hit angry goose for 3 damage.
 </section>
 
 <section>
+  <h2>Optional: health bars and a map</h2>
+  <p>WatchMUD sends Mudlet your health, your mana and where you are, as data alongside the text. A small add-on turns that into two bars along the bottom of the window and a map on the right that draws itself as you walk.</p>
+  <ol class="steps">
+    <li>While connected, paste this into Mudlet's input line and press <kbd>Enter</kbd>:</li>
+  </ol>
+  <div class="connect" aria-label="Install the add-on">
+    <div class="field">
+      <span class="label">Paste</span>
+      <span class="value" id="v-pkg">lua installPackage("https://www.watchmud.com/watchmud.mpackage")</span>
+      <button class="copy" type="button" data-copy="v-pkg">Copy</button>
+    </div>
+  </div>
+  <ol class="steps" start="2">
+    <li>The bars fill in at your next prompt, and the map starts with the next room you enter.</li>
+    <li>Nothing appears? In Mudlet's <strong>Settings</strong>, check that <strong>Enable GMCP</strong> is ticked, then reconnect. To remove the add-on, open <strong>Package Manager</strong> from the toolbar and uninstall <strong>WatchMUD</strong>.</li>
+  </ol>
+</section>
+
+<section>
   <h2>Commands worth knowing</h2>
   <p>You can always type <code>help</code> for this list in the game. Most commands have a short form; <code>n</code> is <code>north</code>, <code>i</code> is <code>inventory</code>.</p>
   <div class="table-wrap">
