@@ -5,10 +5,10 @@
 Everything below is on PR #36's branch, CI green, nothing released or deployed.
 
 **Wants you:**
-1. **A hotfix for v0.10.0?** Seven fixes are for bugs live today -- telnet injection
+1. **A hotfix for v0.10.0?** Eight fixes are for bugs live today -- telnet injection
    (anyone can hide what the room types), saves that are never retried after a mongo
    blip, a login freezing the game during one, the Barrow resetting mid-fight, crash
-   duplicates. "If you want a hotfix" below lists the commits; the first four were
+   duplicates, players able to knock bots off by talking. "If you want a hotfix" below lists the commits; the first four were
    tried on the tag and pass.
 2. **Try Mudlet** (the PR's add-on; merging publishes its site section). If the map
    misbehaves: close Mudlet's own map window, uninstall its `generic_mapper`. Rooms now
@@ -227,7 +227,7 @@ reach from here): nothing found that would stop it loading, but --
 
 ### If you want a hotfix before this PR ships
 
-Seven of the night's fixes are for bugs in v0.10.0. Releasing is yours; this is only
+Eight of the night's fixes are for bugs in v0.10.0. Releasing is yours; this is only
 which commits carry them, for a `hotfix/` branch off the release tag:
 - `bd01955` -- typed lines cleaned, IAC doubled (telnet/conn.go). Self-contained.
 - `2e59676` -- write-behind retries and distrusts failed writes (writebehind/).
@@ -241,6 +241,9 @@ Later in the night, two more fixes for v0.10.0 bugs (not tried on the tag):
   per login). A bigger change to `server/`; would need the login tests reworked.
 - `71e9c95` -- hand-overs save everyone in the room at once (crash duplicates).
   Small: `world/handlers.go` and `world/playersave.go`.
+- `45d7a57` -- the bots' patterns anchored, so a player can't knock one off by
+  talking. `bot/` only (and "nothing" reserved in `world/names.go`); the bots ship in
+  the same image, so it rides any release.
 
 Tried in a scratch worktree off `v0.10.0` (not pushed): the first two cherry-pick
 cleanly once the docs are dropped; the Barrow and hung-login parts (and their
