@@ -77,6 +77,8 @@ type hookCall struct {
 	summoned int
 	// swept counts this call's sweeps against MaxSweepsPerCall.
 	swept int
+	// fled is whether this call has tried me:flee() already.
+	fled bool
 	// waited is this run's seconds of waiting so far, against MaxWaitPerCall
 	waited int
 	// wait is the one it's in now, for Tick to count down

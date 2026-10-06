@@ -62,6 +62,9 @@ type Actions struct {
 	// Sweep is me:sweep, already cut to the cap: dispose of up to n pieces of
 	// junk on the mob's floor, and answer how many went.
 	Sweep func(mob *mobile.Instance, n int) int
+	// Flee is me:flee(): break off the fight and run, answering whether the
+	// mob got away.
+	Flee func(mob *mobile.Instance) bool
 }
 
 // Runtime is the world's one Lua state, every program loaded into it, and
@@ -336,6 +339,23 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 			call.summoned += got
 		}
 		L.Push(lua.LNumber(got))
+		return 1
+	}))
+	me.RawSetString("flee", L.NewFunction(func(L *lua.LState) int {
+		if _, isMe := L.Get(1).(*lua.LTable); !isMe {
+			L.RaiseError("flee: call it as me:flee(), with a colon")
+		}
+		if r.sb.current != call {
+			L.RaiseError("flee: this me belongs to an earlier call")
+		}
+		// once a call: a mob that got away is out of the fight, and one that
+		// couldn't won't find a door by trying again this round
+		if call.fled {
+			L.Push(lua.LFalse)
+			return 1
+		}
+		call.fled = true
+		L.Push(lua.LBool(r.actions.Flee(mob)))
 		return 1
 	}))
 	me.RawSetString("junk", L.NewFunction(func(L *lua.LState) int {

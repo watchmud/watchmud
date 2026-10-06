@@ -29,6 +29,7 @@ type harness struct {
 	live     map[*mobile.Instance]int  // what me.summons and the live cap read
 	junk     int                       // what me:junk() answers, and sweep takes from
 	swept    []int                     // each sweep's n, as the world was asked
+	fled     int                       // how many times the world was asked to flee
 	out      map[*mobile.Instance]bool // mobs whose fight is over, as Tick's inFight sees it
 }
 
@@ -51,6 +52,7 @@ func newHarness(t *testing.T, scripts map[string]string) *harness {
 		},
 		Summons: func(mob *mobile.Instance) int { return h.live[mob] },
 		Junk:    func(mob *mobile.Instance) int { return h.junk },
+		Flee:    func(mob *mobile.Instance) bool { h.fled++; return true },
 		Sweep: func(mob *mobile.Instance, n int) int {
 			h.swept = append(h.swept, n)
 			got := min(n, h.junk)
@@ -893,4 +895,36 @@ func TestJanitor(t *testing.T) {
 	h.tick()
 	assert.Equal(t, []int{3}, h.swept)
 	assert.Equal(t, 4, h.junk)
+}
+
+// me:flee() reaches the world once a call, however often it's asked
+func TestFlee_onceACall(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/coward": `
+		function on_fight_pulse(me, foe)
+			local a, b = me:flee(), me:flee()
+			me:say(tostring(a) .. " " .. tostring(b))
+		end`})
+	h.rt.FightPulse(mob("Coward", "z/coward"), bob)
+	assert.Equal(t, 1, h.fled)
+	assert.Equal(t, []string{"true false"}, h.texts())
+}
+
+// the real bandit: only when losing, only once, and only on the coin flip
+func TestBandit(t *testing.T) {
+	src, err := os.ReadFile("../content/world/hollowfield/scripts/bandit.lua")
+	require.NoError(t, err)
+	h := newHarness(t, map[string]string{"hollowfield/bandit": string(src)})
+	b := mob("bandit", "hollowfield/bandit")
+
+	h.rt.FightPulse(b, bob)
+	assert.Zero(t, h.fled, "healthy: it fights on")
+
+	b.CurHealth = b.Definition.MaxHealth / 5
+	h.dice.Load([]int{0, 0}) // chance(50) comes up; pick the first plea
+	h.rt.FightPulse(b, bob)
+	assert.Equal(t, 1, h.fled)
+	assert.Len(t, h.said, 1)
+
+	h.rt.FightPulse(b, bob)
+	assert.Equal(t, 1, h.fled, "once a life")
 }

@@ -27,6 +27,11 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 		if w.roomOf(fight.Fighter) == nil || w.roomOf(fight.Fightee) == nil {
 			continue
 		}
+		// nor across rooms: a mob that fled earlier this round is somewhere
+		// else now, and nobody swings after it
+		if w.roomOf(fight.Fighter) != w.roomOf(fight.Fightee) {
+			continue
+		}
 		// each fighter should have a speed, like fast medium slow,
 		// and then we can take that into account vs the last time
 		// that Violence happened - comparing it to PulseCount.

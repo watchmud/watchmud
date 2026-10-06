@@ -131,6 +131,7 @@
     ],
     "short_description": "A bandit.",
     "description_in_room": "A bandit in a patched jerkin fingers a cudgel.",
+    "script": "bandit",
     "max_health": 24,
     "wandering_definition": {
       "can_wander": false

@@ -739,8 +739,8 @@ change. An object naming a role the catalog doesn't define is a hard load failur
 ### Scripts (Lua)
 
 **Go is the engine; a script decides *when*.** A script composes actions the engine
-already has -- today `me:say`, `me:summon`, `me:junk` and `me:sweep` -- and never does
-the math. An action a script needs
+already has -- today `me:say`, `me:summon`, `me:junk`, `me:sweep` and `me:flee` -- and
+never does the math. An action a script needs
 that the engine lacks is a Go feature first.
 
 A mob names a script in mobs.json, `"script": "barrow_king"` (bare is its zone,
@@ -840,7 +840,15 @@ room. And because `DoViolence` ranges over a snapshot, a fighter `roomOf` can't 
 skipped: a summon crumbled earlier in the round must not swing from nowhere.
 
 The world reaches a script through `script.Actions` (`Say`, `Summon`, `Summons`, `Junk`,
-`Sweep`), filled in by `world.New`; a test fills it with recorders.
+`Sweep`, `Flee`), filled in by `world.New`; a test fills it with recorders.
+
+**`me:flee()`** (`world/mob_flee.go`) breaks off every fight the mob is in and runs it
+through an open exit that keeps it in its zone, picked through `w.roller`, the room
+told with the `event.Fled` a player's flee uses; it answers whether it got away, once
+a call. `DoViolence` skips a fight whose sides aren't in the same room, since a mob that
+fled earlier in a round still has fights in that round's snapshot. First user: the
+bandit (`hollowfield/bandit`), below a quarter health, once a life, on a coin flip --
+taking its loot with it, which is a tuning call.
 
 **The janitor** (`wrathrock/janitor`, `nofight`, wandering Wrathrock) is `on_arrive`'s
 first user: `me:junk()` counts the junk on his floor and `me:sweep(n)` takes up to `n`

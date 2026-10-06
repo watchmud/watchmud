@@ -66,6 +66,7 @@ func New(c *loader.Content, s player.Store, roller rules.Roller) (w *World, err 
 		Summons: w.liveSummons,
 		Junk:    w.junkHere,
 		Sweep:   w.sweep,
+		Flee:    w.mobFlees,
 	}); err != nil {
 		return nil, fmt.Errorf("building world: %w", err)
 	}
