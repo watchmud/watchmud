@@ -25,8 +25,11 @@ production, and nothing here is released.
   `site/` publishes on reaching master, so it can't go in the PR.
 - [x] **10. Enforce unique room names** in content: the bots navigate by them, and
   ROADMAP noted it was "true today, not enforced".
-- [ ] **8. Hunt the two flaky tests** seen once each earlier (a bot game test,
+- [x] **8. Hunt the two flaky tests** seen once each earlier (a bot game test,
   `TestMoveWhileFighting`): run the suite many times, root-cause what fails.
+
+- [x] **11. `drop 5 coins`** said "You aren't carrying that." (a TODO in `h_drop.go`);
+  it now says coins stay in the purse and to give them instead.
 
 Feel and tuning calls met along the way are noted below rather than decided.
 
@@ -66,3 +69,6 @@ Feel and tuning calls met along the way are noted below rather than decided.
   question) and examining things (`look <name>`). Bags got theirs with the bags commit.
 - **9.** The live site already says `look goose` looks at one thing; in v0.10.0 it
   didn't. True from the next release; flagged in the draft and in working.md.
+- **8.** Not reproduced: 15 full-suite runs, 5 under `-race` (world, bot, telnet,
+  server) and 5 at `-cpu=1`, all green. The move test already reports what it was
+  fighting if it fails again, which is the lead to follow then.

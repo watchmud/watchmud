@@ -80,6 +80,7 @@ var failureByVerb = map[string]string{
 	"unlock/NO_TARGET":        "Unlock what?",
 	"look/NO_TARGET":          "Look in what?",
 	"drop/NO_TARGET":          "Drop what?",
+	"drop/COINS_IN_PURSE":     "Your coins stay in your purse. Give them to someone instead.",
 	"get/NO_TARGET":           "Get what?",
 	"wear/NO_TARGET":          "Wear what?",
 	"equip/NO_TARGET":         "Wield what?",
