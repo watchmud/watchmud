@@ -162,10 +162,9 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
   Future: ~~a **Wanderer** (roams, fights only when attacked, never loots)~~ done
   2026-10-06 (`bot/wanderer.go`, spec in `docs/superpowers/specs/`), ~~a
   **Socialite** (greets new characters in town, answers newbie questions)~~ done
-  2026-10-06 (`bot/socialite.go`, `bot/faq.go`), bots that
-  **explore and map** the world instead of following hand-written hunting grounds
-  (needs room names to stay unique -- enforced since 2026-10-06 by
-  `TestRoomNames_uniqueInTheWorld`), and bots that **wear
+  2026-10-06 (`bot/socialite.go`, `bot/faq.go`), ~~bots that
+  **explore and map** the world~~ done 2026-10-06 (`bot/explorer.go`; hunters
+  following that map instead of hand-written grounds is the next step), and bots that **wear
   the upgrades they find** and grow into the Barrow.
 
 The Context section below describes the tree as it was in September 2026, before any of

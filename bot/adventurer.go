@@ -92,11 +92,16 @@ const (
 	// Socialite stays in Temple Square, greets new characters and answers
 	// questions (socialite.go).
 	Socialite
+	// Explorer maps the world, taking every exit it may, then wanders; safe
+	// the way a wanderer is (explorer.go).
+	Explorer
 )
 
 // Stats is what an adventurer has done since it started.
 type Stats struct {
 	Kills, Looted, Donations, TellsAnswered, Avoided, Deaths, Steps int
+	// Mapped is how many rooms an explorer has on its atlas.
+	Mapped int
 }
 
 // Adventurer is a bot that plays like a player: out to a hunting ground, fights
@@ -118,6 +123,7 @@ type Adventurer struct {
 	pendingTells      []tell
 	saidAt            time.Time
 	greeted           map[string]bool // new characters a socialite has welcomed
+	atlas             *atlas          // what an explorer has mapped
 
 	mu    sync.Mutex
 	stats Stats
@@ -128,6 +134,7 @@ func NewAdventurer(cfg AdventurerConfig) *Adventurer {
 		cfg:      cfg,
 		rng:      rand.New(rand.NewPCG(cfg.Seed, cfg.Seed^0x9e3779b97f4a7c15)),
 		now:      time.Now,
+		atlas:    newAtlas(),
 		avoiding: map[string]time.Time{},
 		toldAt:   map[string]time.Time{},
 	}
@@ -247,6 +254,8 @@ func (a *Adventurer) goHome(ctx context.Context) (stateFn, error) {
 		return a.wander, nil
 	case Socialite:
 		return a.socialize, nil
+	case Explorer:
+		return a.explore, nil
 	}
 	return a.town, nil
 }

@@ -337,6 +337,17 @@ new dangerous content needs a door in `keepOut`, not a looser test.
 `WATCHMUD_WANDERERS` names them, beside `WATCHMUD_BOTS`; the five-bot cap is for both
 together, and every bot is every other's sibling.
 
+**An explorer** (`Style: Explorer`, `bot/explorer.go`, `WATCHMUD_EXPLORERS`) maps the
+world instead of following a hand-written table: an `atlas` (`bot/atlas.go`) of rooms by
+name -- unique, `TestRoomNames_uniqueInTheWorld` -- and the open exits it has seen,
+each to the room it led to once walked. It takes an untaken exit from where it stands,
+or walks the shortest known way (`atlas.route`, BFS) to the nearest room with one, and
+when there are none left it wanders. Safe as a wanderer: the same `keepOut`, no closed
+doors, fights only back, loots nothing. `TestExplorer_mapsTheWorld` runs one against
+the real content until it has mapped exactly what's reachable. The atlas survives a
+death and a recall, not a reconnect. It is the groundwork for bots that navigate by
+map rather than by `bot/grounds.go`; nothing reads the atlas but the explorer yet.
+
 **A socialite** (`Style: Socialite`, `bot/socialite.go`, `WATCHMUD_SOCIALITES`) stands in
 Temple Square, welcomes each new character once and answers questions from `faq`
 (`bot/faq.go`): keyword topics in order, first match wins, `menu` when none does. It

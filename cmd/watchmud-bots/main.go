@@ -1,6 +1,7 @@
 // watchmud-bots plays the bots: a hunter per name in WATCHMUD_BOTS, a
-// wanderer per name in WATCHMUD_WANDERERS and a socialite per name in
-// WATCHMUD_SOCIALITES, all sharing WATCHMUD_BOTS_PASSWORD,
+// wanderer per name in WATCHMUD_WANDERERS, a socialite per name in
+// WATCHMUD_SOCIALITES and an explorer per name in WATCHMUD_EXPLORERS, all
+// sharing WATCHMUD_BOTS_PASSWORD,
 // each logging back in after anything that knocks it off -- a deploy, a
 // crash, a bad connection -- forever.
 //
@@ -43,19 +44,20 @@ func run() int {
 	hunters := splitNames(os.Getenv("WATCHMUD_BOTS"))
 	wanderers := splitNames(os.Getenv("WATCHMUD_WANDERERS"))
 	socialites := splitNames(os.Getenv("WATCHMUD_SOCIALITES"))
+	explorers := splitNames(os.Getenv("WATCHMUD_EXPLORERS"))
 	// every bot is every other's sibling: no hunter makes way for a wanderer,
 	// and a socialite answers no bot
-	names := slices.Concat(hunters, wanderers, socialites)
+	names := slices.Concat(hunters, wanderers, socialites, explorers)
 	password := os.Getenv("WATCHMUD_BOTS_PASSWORD")
 	if len(names) == 0 || password == "" {
 		// idle rather than exit, so restart: unless-stopped doesn't spin
-		log.Print("watchmud-bots: no bots configured (WATCHMUD_BOTS, WATCHMUD_WANDERERS or WATCHMUD_SOCIALITES, and WATCHMUD_BOTS_PASSWORD); idling")
+		log.Print("watchmud-bots: no bots configured (WATCHMUD_BOTS, WATCHMUD_WANDERERS, WATCHMUD_SOCIALITES or WATCHMUD_EXPLORERS, and WATCHMUD_BOTS_PASSWORD); idling")
 		<-ctx.Done()
 		return 0
 	}
 	if dup := duplicate(names); dup != "" {
 		// one character, one session: the second would be refused forever
-		log.Printf("watchmud-bots: %s is listed twice (WATCHMUD_BOTS, WATCHMUD_WANDERERS, WATCHMUD_SOCIALITES)", dup)
+		log.Printf("watchmud-bots: %s is listed twice (WATCHMUD_BOTS, WATCHMUD_WANDERERS, WATCHMUD_SOCIALITES, WATCHMUD_EXPLORERS)", dup)
 		return 2
 	}
 	if len(names) > bot.MaxBots {
@@ -77,7 +79,7 @@ func run() int {
 				Siblings: siblings,
 				Seed:     seedFor(name),
 				Pace:     bot.HumanPace,
-				Style:    styleOf(i, len(hunters), len(wanderers)),
+				Style:    styleOf(i, len(hunters), len(wanderers), len(socialites)),
 				Log:      log.Printf,
 			})
 		})
@@ -114,15 +116,17 @@ func splitNames(s string) []string {
 }
 
 // styleOf is the ith bot's style: the hunters, then the wanderers, then
-// the socialites, in the order names were listed.
-func styleOf(i, hunters, wanderers int) bot.Style {
+// the socialites, then the explorers, in the order names were listed.
+func styleOf(i, hunters, wanderers, socialites int) bot.Style {
 	switch {
 	case i < hunters:
 		return bot.Hunter
 	case i < hunters+wanderers:
 		return bot.Wanderer
+	case i < hunters+wanderers+socialites:
+		return bot.Socialite
 	}
-	return bot.Socialite
+	return bot.Explorer
 }
 
 // duplicate is a name listed more than once, in any case, or "".
