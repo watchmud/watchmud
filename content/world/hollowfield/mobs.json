@@ -229,5 +229,23 @@
         "chance": 30
       }
     ]
+  },
+  {
+    "id": "crow",
+    "name": "crow",
+    "aliases": [ "bird" ],
+    "short_description": "A crow.",
+    "description_in_room": "A crow hops about, eyeing anything that glints.",
+    "max_health": 6,
+    "wandering_definition": {
+      "can_wander": true,
+      "check_frequency_seconds": 20,
+      "check_percentage": 60,
+      "wander_style": "random"
+    },
+    "ac": 11,
+    "damage": "1d2",
+    "power": 1,
+    "script": "crow"
   }
 ]

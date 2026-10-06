@@ -106,5 +106,11 @@
     "mobile_id": "wolf",
     "room_id": "deep_wood",
     "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "crow",
+    "room_id": "wheat_field",
+    "instance_max": 2
   }
 ]

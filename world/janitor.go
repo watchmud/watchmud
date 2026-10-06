@@ -18,10 +18,16 @@ import (
 const JunkAfter = 5 * time.Minute
 
 // junk is what a sweeper may take off room's floor at now: what a player
-// dropped and left lying JunkAfter or longer, never a corpse or anything else
-// that can't be taken, and nothing at all in the donation room -- leaving
-// things there is what it's for.
+// dropped and left lying JunkAfter or longer.
 func (w *World) junk(room *spaces.Room, now time.Time) []*object.Instance {
+	return w.leftLying(room, now, JunkAfter)
+}
+
+// leftLying is what a player dropped on room's floor and left there for at
+// least after: never a corpse or anything else that can't be taken, never what
+// a reset put down, and nothing at all in the donation room -- leaving things
+// there is what it's for. What a mob may help itself to.
+func (w *World) leftLying(room *spaces.Room, now time.Time, after time.Duration) []*object.Instance {
 	if d := w.content.Settings.Donation; room.Zone != nil && room.Zone.Id == d.ZoneId && room.Id == d.RoomId {
 		return nil
 	}
@@ -31,7 +37,7 @@ func (w *World) junk(room *spaces.Room, now time.Time) []*object.Instance {
 			continue
 		}
 		droppedAt := item.DecaysAt.Add(-rules.DroppedDecay)
-		if now.Sub(droppedAt) >= JunkAfter {
+		if now.Sub(droppedAt) >= after {
 			found = append(found, item)
 		}
 	}

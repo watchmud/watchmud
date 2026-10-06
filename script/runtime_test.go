@@ -30,6 +30,7 @@ type harness struct {
 	junk     int                       // what me:junk() answers, and sweep takes from
 	swept    []int                     // each sweep's n, as the world was asked
 	fled     int                       // how many times the world was asked to flee
+	lying    []string                  // what me:take() finds, in order
 	out      map[*mobile.Instance]bool // mobs whose fight is over, as Tick's inFight sees it
 }
 
@@ -53,6 +54,14 @@ func newHarness(t *testing.T, scripts map[string]string) *harness {
 		Summons: func(mob *mobile.Instance) int { return h.live[mob] },
 		Junk:    func(mob *mobile.Instance) int { return h.junk },
 		Flee:    func(mob *mobile.Instance) bool { h.fled++; return true },
+		Take: func(mob *mobile.Instance) string {
+			if len(h.lying) == 0 {
+				return ""
+			}
+			got := h.lying[0]
+			h.lying = h.lying[1:]
+			return got
+		},
 		Sweep: func(mob *mobile.Instance, n int) int {
 			h.swept = append(h.swept, n)
 			got := min(n, h.junk)
@@ -942,4 +951,21 @@ func TestShopkeeper(t *testing.T) {
 	require.Len(t, h.said, 2)
 	assert.Contains(t, h.said[0].text, "'value'")
 	assert.Contains(t, h.said[1].text, "Welcome in, Bob")
+}
+
+// me:take() answers what it took, or nil, and takes once a call
+func TestTake_oneACall(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/crow": `
+		function on_arrive(me)
+			local a, b = me:take(), me:take()
+			me:say(tostring(a) .. " " .. tostring(b))
+		end`})
+	h.lying = []string{"a feather", "a pelt"}
+	h.rt.Arrive(mob("crow", "z/crow"))
+	assert.Equal(t, []string{"a feather nil"}, h.texts())
+
+	h.lying = nil
+	h.said = nil
+	h.rt.Arrive(mob("crow", "z/crow"))
+	assert.Equal(t, []string{"nil nil"}, h.texts())
 }

@@ -126,6 +126,8 @@ func render(msg any, self string) string {
 		}
 		return paint(colorTell, m.Speaker+" tells the group, '"+m.Value+"'") + "\n"
 
+	case event.Snatched:
+		return "The " + m.Mob + " snatches up " + m.Item + ".\n"
 	case event.Swept:
 		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
 

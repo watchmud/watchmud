@@ -65,6 +65,9 @@ type Actions struct {
 	// Flee is me:flee(): break off the fight and run, answering whether the
 	// mob got away.
 	Flee func(mob *mobile.Instance) bool
+	// Take is me:take(): pick up one thing from the floor to keep, answering
+	// what, or "" for nothing.
+	Take func(mob *mobile.Instance) string
 }
 
 // Runtime is the world's one Lua state, every program loaded into it, and
@@ -339,6 +342,26 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 			call.summoned += got
 		}
 		L.Push(lua.LNumber(got))
+		return 1
+	}))
+	me.RawSetString("take", L.NewFunction(func(L *lua.LState) int {
+		if _, isMe := L.Get(1).(*lua.LTable); !isMe {
+			L.RaiseError("take: call it as me:take(), with a colon")
+		}
+		if r.sb.current != call {
+			L.RaiseError("take: this me belongs to an earlier call")
+		}
+		// one thing a call: a magpie, not a moving van
+		if call.took {
+			L.Push(lua.LNil)
+			return 1
+		}
+		call.took = true
+		if got := r.actions.Take(mob); got != "" {
+			L.Push(lua.LString(got))
+		} else {
+			L.Push(lua.LNil)
+		}
 		return 1
 	}))
 	me.RawSetString("flee", L.NewFunction(func(L *lua.LState) int {

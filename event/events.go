@@ -216,6 +216,12 @@ type GroupTold struct {
 	Value   string
 }
 
+// Snatched is a mob picking something up off the floor to keep.
+type Snatched struct {
+	Mob  string
+	Item string
+}
+
 // Swept is a sweeper -- the janitor -- taking junk off the floor for good.
 type Swept struct {
 	Sweeper string

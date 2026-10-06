@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"slices"
 	"time"
 	"uuid"
 
@@ -57,6 +58,12 @@ func (w *World) becomeMobileCorpse(m *mobile.Instance) {
 	for _, drop := range w.rollLoot(m) {
 		if err := corpse.Contents.Add(drop); err != nil {
 			log.Error().Err(err).Msgf("becomeMobileCorpse: adding %s to the corpse of %s", drop.Definition.Name, m.Definition.Name)
+		}
+	}
+	// and whatever it had picked up
+	for _, taken := range slices.Collect(m.Inventory.All()) {
+		if err := object.Move(taken, m.Inventory, corpse.Contents); err != nil {
+			log.Error().Err(err).Msgf("becomeMobileCorpse: %s's %s", m.Definition.Name, taken.Definition.Name)
 		}
 	}
 	corpse.Coins = w.rollCoins(m) // after the loot, so its dice come first

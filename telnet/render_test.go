@@ -1010,3 +1010,8 @@ func TestRender_ooc(t *testing.T) {
 		assert.Equal(t, command.OOC{Value: "hi there"}, cmd, line)
 	}
 }
+
+func TestRender_snatched(t *testing.T) {
+	assert.Equal(t, "The crow snatches up a goose feather.\n",
+		plain(render(event.Snatched{Mob: "crow", Item: "a goose feather"}, "testdood")))
+}

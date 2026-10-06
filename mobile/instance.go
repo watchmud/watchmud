@@ -3,6 +3,7 @@ package mobile
 import (
 	"errors"
 	"fmt"
+	"github.com/watchmud/watchmud/object"
 	"math/rand"
 	"time"
 	"uuid"
@@ -24,6 +25,10 @@ type Instance struct {
 	// reset or a wizard put here. A summon lives as long as its summoner's
 	// fight -- see world/summons.go.
 	Summoner *Instance
+	// Inventory is what the mob has picked up (a script's me:take): it goes
+	// into the corpse when the mob dies, and with the mob when it's removed
+	// any other way.
+	Inventory *object.List
 }
 
 func NewInstance(d *Definition) *Instance {
@@ -33,6 +38,7 @@ func NewInstance(d *Definition) *Instance {
 		LastWanderingTime: time.Now(),
 		WanderingForward:  true, // by default
 		CurHealth:         d.MaxHealth,
+		Inventory:         object.NewList(),
 	}
 }
 
