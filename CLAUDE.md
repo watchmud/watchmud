@@ -295,7 +295,7 @@ at random among the grounds its power suits and nobody is using, so bots spread 
 player on one sends them to the other. `cmd/watchmud-bots` runs up to 5 (one address, the server's
 cap), reconnecting forever.
 
-**A wanderer is an `Adventurer` with `Wander` set** (`bot/wanderer.go`): home leads to
+**A wanderer is an `Adventurer` with `Style: Wanderer`** (`bot/wanderer.go`): home leads to
 `wander` instead of `town`. It takes a random exit from each room's `[ Exits: ]` line,
 never straight back unless it's a dead end, lingers in one room in four
 (`Pace.Linger`), fights only what attacks it, and loots nothing -- `fight` loots only a
