@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime/debug"
+	"sync/atomic"
 	"time"
 	"uuid"
 
@@ -26,6 +27,9 @@ type GameServer struct {
 	store          player.Store
 	// bcryptCost is bcrypt.DefaultCost; tests turn it down to MinCost.
 	bcryptCost int
+	// lastBeat is unix nanoseconds at the end of the last tick, for the
+	// health check (health.go); zero until Run starts.
+	lastBeat atomic.Int64
 }
 
 func New(w *world.World, c *rules.Catalog, s player.Store) *GameServer {
@@ -65,6 +69,7 @@ func (gs *GameServer) Run(ctx context.Context) error {
 	defer ticker.Stop()
 
 	last := time.Now()
+	gs.beat(last)
 	var pulse rules.PulseCount
 
 	for {
@@ -82,6 +87,7 @@ func (gs *GameServer) Run(ctx context.Context) error {
 			pulse++
 			gs.heartbeat(pulse, delta)
 			gs.prompt()
+			gs.beat(time.Now())
 		}
 	}
 }

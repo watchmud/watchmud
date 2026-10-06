@@ -71,6 +71,15 @@ single-threaded and carries no locks. **Don't add goroutines that touch world st
 push work onto `incomingBuffer` or into the heartbeat instead. Connection goroutines are
 allowed to exist only because all they do is send on that channel.
 
+**`/healthz` reads the loop, not the world** (`server/health.go`). `Run` stamps
+`GameServer.lastBeat` -- an `atomic.Int64`, the one thing another goroutine may read --
+at the end of every tick, and `HealthHandler` answers 503 once it is older than
+`healthMaxAge` (30s, `cmd/watchmud`). A handler or pulse that never returns stops the
+ticks while the listeners carry on accepting, which is the failure it exists to see.
+It listens on `health:` in the config (loopback; off when the port is 0), and
+`watchmud -healthcheck` asks it, because the distroless image has no curl --
+`deploy/compose.yaml`'s healthcheck runs that.
+
 ### Message routing
 
 Two-level dispatch, both of them type switches. `GameServer.dispatch` handles the pre-world
@@ -428,7 +437,7 @@ Two halves, each checked at startup so content can't name an ability that does n
 
 - **The numbers are content**: `content/rules/abilities.json`, loaded by
   `Catalog.SetAbilities` -- id, name, mana cost, cooldown, a `target` kind (`self`,
-  `friend`, `foe`, `none`), and each ability's own parameters (heal's `amount`: `base +
+  `friend`, `foe`, `mob`, `none`), and each ability's own parameters (heal's `amount`: `base +
   per_power * power`). A bad target, a negative cost, or an object granting an id the
   catalog lacks fails the load.
 - **What it does is Go**: `effects` in `world/abilities.go`, an `effect` per ability id.
@@ -446,8 +455,10 @@ a target string: `friend` is the caster when empty, otherwise a player **in the 
 room**. `foe` (`castFoe`) is a mob in the room by name -- `FindMobile`, as `kill` uses --
 or, with no name, whoever the caster is fighting; no fight and no name is `NO_FOE`, not
 `NO_TARGET`, since failure text is keyed on the `cast` verb and would read "Cast what?".
-It then refuses what `kill` refuses: a no-fight room, a can't-fight mob. `none` resolves
-nothing; recall is the first to use it.
+It then refuses what `kill` refuses: a no-fight room, a can't-fight mob. `mob`
+(`castMob`, which `castFoe` is built on) finds the mob the same way and refuses neither:
+looking at something isn't fighting it. `none` resolves nothing; recall is the first
+to use it.
 
 **Recall is an ability** (`recall`: `none`, no mana, 60s), granted by the **temple
 token** -- worn on the neck, in every new character's kit, sold at the General Store, and
@@ -498,6 +509,21 @@ round is used -- `LastPulse` moves -- with an `event.Staggered` and no swing, we
 script pulse. Rounds rather than seconds because the world only knows the pulse
 inside `DoViolence`, while cooldowns run on `w.now`.
 Smite, provoke and stun all draw the mob in through `World.openFight`.
+**Ward** (`friend`, granted by the ring of mending) is the first defensive ability: a
+shield of `amount` damage on the target that `DoViolence` takes each landed blow out
+of before health (`Player.AbsorbWard`), so `event.Struck.Damage` is what got through
+and `Absorbed` what the ward took; the blow that empties it is followed by
+`event.WardBroken`. It lasts the ability's `duration` (`rules.Ability.Duration`, its
+first user) on `w.now`, and expiry is read rather than scheduled, so it fades in
+silence. In memory like cooldowns (`Player.ward`), cleared by `Revive`. A second ward
+refreshes to the larger of what's left and what's new, never stacks. Like heal it
+neither starts nor joins a fight. A blow the ward takes all of never reaches the armor:
+no `wearFromBlow`.
+**Assess** (`mob`, granted by the bandit hood) is the first informative ability: the
+mob's exact health, AC, power and damage dice, who it's swinging at and the stun it has
+left (`event.Assessed`) -- the numbers `consider` only hints at and a fight never shows.
+The room sees the caster look; only the caster gets the numbers. It touches nothing,
+and works mid-fight, in a no-fight room, and on a mob that can't be fought.
 Nothing about abilities reads a role; the Healer label and the censer's heal are two
 separate consequences of the same item, as are Striker and the cudgel's smite.
 

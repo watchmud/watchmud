@@ -207,9 +207,11 @@ a managed mongo outside the cluster, which moves the whole problem elsewhere.
 
 **Health checks need an endpoint first.** A TCP probe would open a telnet session every
 few seconds, and wouldn't notice the one failure that matters: the world goroutine
-wedged while the listener still accepts. The fix is a small HTTP endpoint (`webPort` is
-still in the config struct, unused) reporting the time of the last heartbeat, failing
-when it's stale. Worth having on the VPS too.
+wedged while the listener still accepts. ~~The fix is a small HTTP endpoint reporting the
+time of the last heartbeat, failing when it's stale.~~ Done 2026-10-06: `GET /healthz`
+on the `health:` port, 503 after 30s without a tick, and compose's healthcheck (deploy/README.md,
+"Health"); in k8s it is the liveness probe as it stands. The unused `webPort` and
+`serverPort` keys went with it.
 
 **For it:** restarts, rescheduling and health checks done for you; secrets, logs and
 monitoring the other projects already use; rolling out a new image is one command;

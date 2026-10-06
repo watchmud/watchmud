@@ -13,7 +13,7 @@ import (
 type cast struct {
 	caster  *player.Player
 	target  *player.Player   // for self and friend
-	foe     *mobile.Instance // for foe
+	foe     *mobile.Instance // for foe and mob
 	ability *rules.Ability
 	power   int // of the item granting it
 }
@@ -28,6 +28,8 @@ var effects = map[string]effect{
 	"smite":   smiteEffect,
 	"provoke": provokeEffect,
 	"stun":    stunEffect,
+	"ward":    wardEffect,
+	"assess":  assessEffect,
 	"recall":  recallEffect,
 }
 
@@ -108,6 +110,38 @@ func stunEffect(w *World, c cast) {
 	w.fightLedger.Stun(c.foe, rounds)
 	w.playerRoom(c.caster).Send(event.Stunned{Actor: c.caster.Name(), Target: c.foe.Name(), Rounds: rounds})
 	w.openFight(c)
+}
+
+// wardEffect shields the target: the next amount of damage done to them goes
+// into the ward instead, until it's spent or its duration is up. Like heal,
+// it neither starts nor joins a fight, and is fine in one.
+func wardEffect(w *World, c cast) {
+	c.target.SetWard(c.ability.Amount.For(c.power), w.now(), c.ability.Duration)
+	w.playerRoom(c.caster).Send(event.Warded{
+		Actor:  c.caster.Name(),
+		Target: c.target.Name(),
+		Amount: c.target.Ward(w.now()),
+	})
+}
+
+// assessEffect reads the mob's numbers out to the caster: what consider
+// only hints at, and what a fight never shows. It touches nothing, and is
+// fine mid-fight.
+func assessEffect(w *World, c cast) {
+	a := event.Assessed{
+		Actor:      c.caster.Name(),
+		Target:     c.foe.Name(),
+		Health:     c.foe.CurHealth,
+		MaxHealth:  c.foe.Definition.MaxHealth,
+		ArmorClass: c.foe.ArmorClass(),
+		Power:      c.foe.Power(),
+		Damage:     c.foe.WeaponDamageRoll(),
+		Stunned:    w.fightLedger.Stunned(c.foe),
+	}
+	if fight := w.fightLedger.GetFight(c.foe); fight != nil {
+		a.Fighting = fight.Fightee.Name()
+	}
+	w.playerRoom(c.caster).Send(a)
 }
 
 // recallEffect takes the caster back to the start room -- what the recall

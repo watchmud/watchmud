@@ -14,6 +14,9 @@ type Ability struct {
 	Cooldown time.Duration
 	Target   AbilityTarget
 	Amount   AbilityAmount
+	// Duration is how long what it leaves behind lasts: ward's shield. Zero
+	// for an ability that is over when it's cast.
+	Duration time.Duration
 	// NotInFight refuses a cast mid-fight, before anything is spent: recall,
 	// which would otherwise be a free, certain escape and make flee pointless.
 	NotInFight bool
@@ -30,6 +33,7 @@ func (a *Ability) UnmarshalJSON(data []byte) error {
 		Cooldown   string        `json:"cooldown"`
 		Target     AbilityTarget `json:"target"`
 		Amount     AbilityAmount `json:"amount"`
+		Duration   string        `json:"duration"`
 		NotInFight bool          `json:"not_in_fight"`
 		Wizards    bool          `json:"wizards"`
 	}
@@ -52,6 +56,13 @@ func (a *Ability) UnmarshalJSON(data []byte) error {
 		}
 		a.Cooldown = d
 	}
+	if raw.Duration != "" {
+		d, err := time.ParseDuration(raw.Duration)
+		if err != nil {
+			return fmt.Errorf("ability %q duration: %w", raw.Id, err)
+		}
+		a.Duration = d
+	}
 	return nil
 }
 
@@ -65,6 +76,8 @@ func (a *Ability) check() error {
 		return fmt.Errorf("ability %q: mana %d", a.Id, a.Mana)
 	case a.Cooldown < 0:
 		return fmt.Errorf("ability %q: cooldown %s", a.Id, a.Cooldown)
+	case a.Duration < 0:
+		return fmt.Errorf("ability %q: duration %s", a.Id, a.Duration)
 	case !a.Target.valid():
 		return fmt.Errorf("ability %q: unknown target %q", a.Id, a.Target)
 	}
@@ -78,6 +91,9 @@ const (
 	TargetSelf   AbilityTarget = "self"   // always the caster
 	TargetFriend AbilityTarget = "friend" // the caster or a player in their room
 	TargetFoe    AbilityTarget = "foe"    // a mob in the caster's room
+	// TargetMob is a mob in the caster's room too, but never refused for
+	// where it is or what it is: looking at something isn't fighting it.
+	TargetMob AbilityTarget = "mob"
 )
 
 func (t AbilityTarget) valid() bool {
@@ -95,6 +111,7 @@ var abilityTargets = enum[AbilityTarget]{
 		TargetSelf,
 		TargetFriend,
 		TargetFoe,
+		TargetMob,
 	},
 }
 

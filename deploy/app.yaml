@@ -27,6 +27,12 @@ tls:
   cert: /app/certs/fullchain.pem
   key: /app/certs/privkey.pem
 
+# /healthz, for compose.yaml's healthcheck: `watchmud -healthcheck` asks it from
+# inside the container, so loopback is enough, and it isn't published.
+health:
+  host: 127.0.0.1
+  port: 4080
+
 # The uri carries the password, so it isn't here: WATCHMUD_MONGO_URI in the
 # environment supplies it (compose.yaml builds it from .env).
 mongo:

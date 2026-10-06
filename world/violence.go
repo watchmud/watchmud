@@ -48,7 +48,14 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 				continue
 			}
 			var isDead = false
+			// a ward takes what it can of the blow before health does
+			var absorbed int
+			var wardBroke bool
 			if fightResult.WasHit {
+				if p, ok := fight.Fightee.(*player.Player); ok {
+					absorbed, wardBroke = p.AbsorbWard(fightResult.Damage, w.now())
+					fightResult.Damage -= absorbed
+				}
 				isDead = fight.Fightee.TakeMeleeDamage(fightResult.Damage)
 			}
 			// tell everyone what is going on
@@ -59,10 +66,15 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 					Target:   fight.Fightee.Name(),
 					Hit:      fightResult.WasHit,
 					Damage:   int(fightResult.Damage),
+					Absorbed: absorbed,
 				})
+				if wardBroke {
+					room.Notify(event.WardBroken{Name: fight.Fightee.Name()})
+				}
 			}
 
-			if fightResult.WasHit {
+			// A blow the ward took all of never reached the armor.
+			if fightResult.WasHit && !(absorbed > 0 && fightResult.Damage == 0) {
 				// A landed blow costs the gear on both ends of it. After the
 				// damage, so a killing blow still wears the armor it went
 				// through, and after the room has been told about the blow,

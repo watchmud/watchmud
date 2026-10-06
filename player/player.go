@@ -50,6 +50,10 @@ type Player struct {
 	// only: a quit resets it, and logging back in takes longer than any
 	// cooldown.
 	readyAt map[string]time.Time
+	// ward is what's left of a ward's shield, good until wardUntil -- see
+	// ward.go. In memory, like readyAt: it lasts seconds.
+	ward      int
+	wardUntil time.Time
 }
 
 // New player. The catalog goes to the equipment, which needs it to say what
@@ -134,6 +138,7 @@ func (p *Player) RestoreHealth(amount int) {
 // the rest back is up to them.
 func (p *Player) Revive() {
 	p.curHealth = 1
+	p.ward = 0
 }
 
 func (p *Player) CurrentMana() int { return p.curMana }

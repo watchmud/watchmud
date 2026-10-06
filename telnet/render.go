@@ -260,6 +260,18 @@ func render(msg any, self string) string {
 	case event.Staggered:
 		return m.Name + " staggers, stunned.\n"
 
+	case event.Assessed:
+		return renderAssessed(m, self)
+
+	case event.Warded:
+		return renderWarded(m, self)
+
+	case event.WardBroken:
+		if m.Name == self {
+			return "Your ward shatters.\n"
+		}
+		return m.Name + "'s ward shatters.\n"
+
 	case event.Received:
 		// The only backfill so far is the temple token, so the reason to
 		// wear it is recall's; a second backfill item would want its own.
@@ -358,6 +370,45 @@ func renderInventory(items []event.InventoryItem) string {
 		b.WriteString("\t" + item.ShortDescription + "\n")
 	}
 	return b.String()
+}
+
+// renderAssessed gives the numbers to whoever cast it; the rest of the room
+// only sees them looking.
+func renderAssessed(m event.Assessed, self string) string {
+	if m.Actor != self {
+		return m.Actor + " studies " + m.Target + ".\n"
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "You study %s.\n", m.Target)
+	fmt.Fprintf(&b, "  Health %d/%d  AC %d  Power %d  Hits for %s\n",
+		m.Health, m.MaxHealth, m.ArmorClass, m.Power, m.Damage)
+	switch {
+	case m.Fighting == self:
+		b.WriteString("  Fighting you\n")
+	case m.Fighting != "":
+		b.WriteString("  Fighting " + m.Fighting + "\n")
+	}
+	switch {
+	case m.Stunned == 1:
+		b.WriteString("  Stunned for 1 more round\n")
+	case m.Stunned > 1:
+		fmt.Fprintf(&b, "  Stunned for %d more rounds\n", m.Stunned)
+	}
+	return b.String()
+}
+
+func renderWarded(m event.Warded, self string) string {
+	switch {
+	case m.Actor == self && m.Target == self:
+		return fmt.Sprintf("A ward settles over you. (%d)\n", m.Amount)
+	case m.Actor == self:
+		return fmt.Sprintf("You ward %s. (%d)\n", m.Target, m.Amount)
+	case m.Target == self:
+		return fmt.Sprintf("%s wards you. (%d)\n", m.Actor, m.Amount)
+	case m.Actor == m.Target:
+		return m.Actor + " casts ward.\n"
+	}
+	return m.Actor + " wards " + m.Target + ".\n"
 }
 
 func renderHealed(m event.Healed, self string) string {
@@ -551,6 +602,14 @@ func renderViolence(self string, s event.Struck) string {
 	case s.Target == self:
 		if !s.Hit {
 			return fmt.Sprintf("%s misses you.\n", s.Attacker)
+		}
+		switch {
+		case s.Absorbed > 0 && s.Damage == 0:
+			// it landed, and nothing got through: not a hurt
+			return fmt.Sprintf("%s hits you, but your ward takes it. (%d)\n", s.Attacker, s.Absorbed)
+		case s.Absorbed > 0:
+			return paint(colorHurt, fmt.Sprintf("%s hits you for %d damage; your ward takes %d.",
+				s.Attacker, s.Damage, s.Absorbed)) + "\n"
 		}
 		return paint(colorHurt, fmt.Sprintf("%s hits you for %d damage.", s.Attacker, s.Damage)) + "\n"
 	default:

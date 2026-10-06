@@ -52,6 +52,8 @@ func TestLoad_theDeployConfig(t *testing.T) {
 	assert.Empty(t, cfg.Mongo.Uri, "the uri carries the password: it comes from the environment")
 	assert.Equal(t, 4443, cfg.TLS.Port)
 	assert.Equal(t, "/app/certs/fullchain.pem", cfg.TLS.Cert, "where compose.yaml mounts deploy/certs")
+	assert.Equal(t, "127.0.0.1", cfg.Health.Host, "the healthcheck runs inside the container; nothing outside needs it")
+	assert.NotZero(t, cfg.Health.Port, "compose.yaml's healthcheck asks it")
 }
 
 func TestLoad_tlsIsOptional(t *testing.T) {
@@ -77,4 +79,19 @@ tls:
 	require.NoError(t, err)
 	assert.Equal(t, 4443, cfg.TLS.Port)
 	assert.Equal(t, "/certs/privkey.pem", cfg.TLS.Key)
+}
+
+func TestLoad_healthIsOptional(t *testing.T) {
+	cfg, err := Load(writeConfig(t, minimal))
+	require.NoError(t, err)
+	assert.Zero(t, cfg.Health.Port, "no health: block, no health port")
+}
+
+func TestLoad_healthDefaultsToLoopback(t *testing.T) {
+	cfg, err := Load(writeConfig(t, minimal+`
+health:
+  port: 4080
+`))
+	require.NoError(t, err)
+	assert.Equal(t, "127.0.0.1", cfg.Health.Host)
 }

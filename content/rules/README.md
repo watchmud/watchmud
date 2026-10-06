@@ -39,11 +39,16 @@ What gear lets a player *do*: `abilities.json`, one entry per ability.
   again. Everyone has 100 mana; it comes back a little every few seconds, even in a
   fight.
 - `target` is who it can be aimed at: `self`, `friend` (yourself, or a player in the
-  same room), `foe` (a mob in the room) or `none`.
+  same room), `foe` (a mob in the room you could fight), `mob` (any mob in the room -- for looking,
+not fighting) or `none`.
 - The rest are the ability's own numbers. Heal's `amount` is `base + per_power x
   power`, where power is the power of the item granting it -- a power-3 censer heals
   16. Smite, the first `foe` ability, uses the same `amount` for its damage: a power-1
   cudgel hits for 11, and it always lands.
+- `duration` is how long what an ability leaves behind lasts. Only ward has one: its
+  `amount` is the damage the shield takes before health does, and it fades after
+  `duration` ("30s") if it isn't used up first. Casting it again refreshes it to the
+  larger of what's left and what's new; it never stacks.
 
 An object grants abilities while it's worn and unbroken, with an `"abilities"` key in
 its zone's objects.json:

@@ -79,7 +79,14 @@ if [ -z "$yes" ]; then
 fi
 rm -f "$previous_env"
 
-$compose up -d --remove-orphans
+# --wait: back once the game's healthcheck passes (its loop is ticking), or
+# fails if it doesn't within the timeout
+if ! $compose up -d --remove-orphans --wait --wait-timeout 120; then
+  $compose ps
+  echo "deploy: $version started but isn't healthy (docker compose -f deploy/compose.yaml logs watchmud)." >&2
+  echo "deploy: to roll back: deploy/deploy.sh ${running:-<the previous version>}" >&2
+  exit 1
+fi
 $compose ps
 echo "deploy: $version is running"
 
