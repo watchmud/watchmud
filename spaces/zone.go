@@ -131,14 +131,14 @@ func (z *Zone) createObject(cmd CreateObject) error {
 	}
 	into := r.Inventory
 	if cmd.ContainerId != "" {
-		container := firstOf(r.Inventory, cmd.ContainerId)
+		container := firstOf(r.Inventory, z.ObjectDefinitions[cmd.ContainerId])
 		if container == nil || container.Contents == nil {
 			return fmt.Errorf("createObject: no container %q in the room for %s", cmd.ContainerId, cmd)
 		}
 		into = container.Contents
 	}
-	if existing := countOf(into, cmd.ObjectDefinitionId); cmd.InstanceMax > 0 && existing >= cmd.InstanceMax {
-		if c := firstOf(into, cmd.ObjectDefinitionId); c != nil && c.Lock != nil {
+	if countOf(into, defn) >= cmd.InstanceMax {
+		if c := firstOf(into, defn); c != nil && c.Lock != nil {
 			c.Lock.Reset()
 		}
 		return nil
@@ -151,20 +151,24 @@ func (z *Zone) createObject(cmd CreateObject) error {
 	return into.Add(inst)
 }
 
-// firstOf is the first object of this definition in the list, or nil.
-func firstOf(l *object.List, definitionId string) *object.Instance {
+// firstOf is the first object of this definition in the list, or nil. The
+// definition itself, not its id: a knife from another zone is another knife.
+func firstOf(l *object.List, defn *object.Definition) *object.Instance {
+	if defn == nil {
+		return nil
+	}
 	for inst := range l.All() {
-		if inst.Definition.ObjectId.DefinitionId == definitionId {
+		if inst.Definition == defn {
 			return inst
 		}
 	}
 	return nil
 }
 
-func countOf(l *object.List, definitionId string) int {
+func countOf(l *object.List, defn *object.Definition) int {
 	n := 0
 	for inst := range l.All() {
-		if inst.Definition.ObjectId.DefinitionId == definitionId {
+		if inst.Definition == defn {
 			n++
 		}
 	}

@@ -2,6 +2,7 @@ package spaces
 
 import (
 	"testing"
+	"uuid"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -45,9 +46,9 @@ func TestReset_topsUpRatherThanPilingUp(t *testing.T) {
 		require.Empty(t, z.Reset(NewOccupancy()))
 	}
 
-	assert.Equal(t, 1, countOf(loft.Inventory, "grain_bin"))
-	assert.Equal(t, 2, countOf(loft.Inventory, "key"), "the floor's two")
-	bin := firstOf(loft.Inventory, "grain_bin")
+	assert.Equal(t, 1, countOf(loft.Inventory, z.ObjectDefinitions["grain_bin"]))
+	assert.Equal(t, 2, countOf(loft.Inventory, z.ObjectDefinitions["key"]), "the floor's two")
+	bin := firstOf(loft.Inventory, z.ObjectDefinitions["grain_bin"])
 	assert.Equal(t, 1, count(bin.Contents), "and the one in the bin")
 }
 
@@ -55,24 +56,38 @@ func TestReset_powerAndContainer(t *testing.T) {
 	z, loft := lootedZone()
 	require.Empty(t, z.Reset(NewOccupancy()))
 
-	bin := firstOf(loft.Inventory, "grain_bin")
-	inBin := firstOf(bin.Contents, "key")
+	bin := firstOf(loft.Inventory, z.ObjectDefinitions["grain_bin"])
+	inBin := firstOf(bin.Contents, z.ObjectDefinitions["key"])
 	assert.Equal(t, 7, inBin.Power, "what the instruction said")
-	assert.Equal(t, 4, firstOf(loft.Inventory, "key").Power, "otherwise the bottom of the band")
+	assert.Equal(t, 4, firstOf(loft.Inventory, z.ObjectDefinitions["key"]).Power, "otherwise the bottom of the band")
 }
 
 // a reset shuts a chest someone left open, and puts back what was taken
 func TestReset_closesTheChestAgain(t *testing.T) {
 	z, loft := lootedZone()
 	require.Empty(t, z.Reset(NewOccupancy()))
-	bin := firstOf(loft.Inventory, "grain_bin")
+	bin := firstOf(loft.Inventory, z.ObjectDefinitions["grain_bin"])
 	require.NoError(t, bin.Lock.Open())
-	require.NoError(t, bin.Contents.Remove(firstOf(bin.Contents, "key")))
+	require.NoError(t, bin.Contents.Remove(firstOf(bin.Contents, z.ObjectDefinitions["key"])))
 
 	require.Empty(t, z.Reset(NewOccupancy()))
 
 	assert.True(t, bin.Closed())
 	assert.Equal(t, 1, count(bin.Contents))
+}
+
+// a key from another zone is another key: it doesn't fill this zone's quota
+func TestReset_countsItsOwnDefinition(t *testing.T) {
+	z, loft := lootedZone()
+	stranger := object.NewDefinition("key", "bone key", "barrow", rules.ObjectCategoryOther, nil,
+		"a bone key", "A bone key is here.", rules.SlotNone, rules.ArmorTypeNone, nil)
+	require.NoError(t, loft.Inventory.Add(object.NewInstance(uuid.New(), stranger)))
+	require.NoError(t, loft.Inventory.Add(object.NewInstance(uuid.New(), stranger)))
+
+	for range 2 { // one a reset
+		require.Empty(t, z.Reset(NewOccupancy()))
+	}
+	assert.Equal(t, 2, countOf(loft.Inventory, z.ObjectDefinitions["key"]))
 }
 
 func TestReset_noSuchContainer(t *testing.T) {

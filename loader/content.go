@@ -380,6 +380,12 @@ func (c *Content) loadZoneInstructions(fsys fs.FS) error {
 		}
 		zone := c.Zones[zonename]
 		for _, entry := range insts {
+			// zero would mean "add one every reset" to an object and "never"
+			// to a mob; neither is what a missing number means
+			if entry.InstanceMax < 1 {
+				return fmt.Errorf("zone %s: %s %s%s in %s: instance_max must be at least 1",
+					zonename, entry.Type, entry.ObjectId, entry.MobileId, entry.RoomId)
+			}
 			switch entry.Type {
 			case "CreateObject":
 				zone.AddCommand(spaces.CreateObject{

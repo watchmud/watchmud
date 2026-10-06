@@ -391,7 +391,9 @@ be made stable, because a room's contents and a player's inventory were shufflin
 
 `instructions.json` entries become `spaces.ZoneCommand`s (`CreateObject`, `CreateMobile`)
 that `Zone.Reset` replays -- at startup and again on every zone reset -- which is how mobs
-and loot repopulate. `CreateObject` **tops up** to `instance_max` -- on the room's floor,
+and loot repopulate. `instance_max` is required (the loader refuses one under 1).
+`CreateObject` **tops up** to it, one a reset, counting that definition -- not its id, so
+another zone's "key" isn't this one's -- on the room's floor,
 or inside the first container of a definition in the room with `"container"` -- and
 makes things at the bottom of the zone's power band unless it says `"power"`. A
 container already there gets its lock reset instead. Put a container's instruction

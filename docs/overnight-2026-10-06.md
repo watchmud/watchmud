@@ -5,7 +5,7 @@ the session's credit runs out. Each task is its own commit with `make check` gre
 pushed when it lands, so whatever is ticked here is on the branch. Nothing touches
 production, and nothing here is released.
 
-- [ ] **1. Review PR #36's own diff** for bugs before anyone merges it (doors, chests,
+- [x] **1. Review PR #36's own diff** for bugs before anyone merges it (doors, chests,
   put, bags, the status tables, the mill) and fix what's real.
 - [ ] **2. `give <item|coins> to <player>`**: `object.Move` between two inventories,
   in the same room; worn things stay on, as with `drop` and `put`.
@@ -21,3 +21,11 @@ production, and nothing here is released.
 Feel and tuning calls met along the way are noted below rather than decided.
 
 ## Notes
+
+- **1.** Two fixes, both in zone resets. A missing `instance_max` meant "another every
+  reset" for an object and "never" for a mob; every instruction in content sets it, so
+  nothing was wrong yet, and the loader now refuses one under 1. And a reset counted
+  objects by definition id alone, so another zone's `key` filled this zone's quota; it
+  counts the definition now. Read and found sound: put, get-from, findContainer, the
+  door handler and its lock errors, bag persistence (writebehind compares records with
+  `reflect.DeepEqual`, so a change inside a bag is saved).
