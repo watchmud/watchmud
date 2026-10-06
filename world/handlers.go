@@ -138,6 +138,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleTime(msg, cmd)
 	case command.Wimpy:
 		w.handleWimpy(msg, cmd)
+	case command.Track:
+		w.handleTrack(msg, cmd)
 	case command.Reports:
 		w.handleReports(msg, cmd)
 	case command.GroupTell:

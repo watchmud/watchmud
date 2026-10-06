@@ -42,6 +42,7 @@ func failureText(verb, code string) string {
 }
 
 var failureByVerb = map[string]string{
+	"track/NO_TARGET":             "Track what?",
 	"split/NO_VALUE":              "Split how many coins?",
 	"split/NOT_ENOUGH_COINS":      "You don't have enough coins for that.",
 	"wimpy/BAD_REQUEST":           "Wimpy how much? A number of health under your most, or 0 for never.",
@@ -120,6 +121,7 @@ var failureByVerb = map[string]string{
 }
 
 var failureByCode = map[string]string{
+	"NO_TRAIL":          "You can't find a trail to follow.",
 	"NO_ONE_TO_SPLIT":   "There's nobody in your group here to split with.",
 	"NOT_STANDING":      "You'll have to stand up first.",
 	"ASLEEP":            "You're asleep. 'wake' first.",

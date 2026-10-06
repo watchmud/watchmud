@@ -407,6 +407,11 @@ func (p Position) Verb() string {
 	return p.To
 }
 
+// Track is "track bandit": which way the nearest one is.
+type Track struct{ Target string }
+
+func (Track) Verb() string { return "track" }
+
 // Split shares coins out among the group in the room: "split 30".
 type Split struct{ Amount string }
 

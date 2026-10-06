@@ -134,6 +134,11 @@ func render(msg any, self string) string {
 	case event.Swept:
 		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
 
+	case event.Tracked:
+		if m.Here {
+			return "It's right here.\n"
+		}
+		return "You find a trail: the " + m.Target + " went " + strings.ToLower(m.Direction.String()) + " from here.\n"
 	case event.SplitCoins:
 		if m.Actor == self {
 			return fmt.Sprintf("You split the coins %d ways: %s each.\n", m.Among, coinWord(m.Each))

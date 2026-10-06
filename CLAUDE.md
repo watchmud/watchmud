@@ -995,7 +995,10 @@ every verb help knows; `time` is **Wrathrock's clock, which is Seattle's**
 (`America/Los_Angeles`, with `time/tzdata` embedded because the image is distroless);
 `wimpy <health>` (on the record) makes `DoViolence` run a player who's hit below it
 through `World.flee` -- the same code the `flee` command uses. `hit`, `hold`/`grab` and
-`score` are aliases of `kill`, `wear` and `stat`.
+`score` are aliases of `kill`, `wear` and `stat`. `track <mob>` (`world/h_track.go`) is a
+breadth-first search out from the player's room, through open exits within the zone,
+answering the first step towards the nearest mob of that name -- a trail, not a map:
+step, then track again. It's how you chase a bandit that ran.
 
 **Socials** are content, `content/rules/socials.json` (`rules.Social`, checked by
 `Catalog.SetSocials`): lines for doing it alone (self, room) and, optionally, at a player

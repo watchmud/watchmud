@@ -32,7 +32,8 @@ var helpSections = []helpSection{
 	}},
 	{"Looking", []helpEntry{
 		{"look, look <thing>", "the room, or something in it (l)", []string{"look", "l"}},
-		{"look in <corpse>", "what it's holding", []string{"look"}},
+		{"look in <corpse>, track", "what it's holding; which way a mob went",
+			[]string{"look", "track"}},
 		{"consider <mob>", "how a fight with it would go (con)", []string{"consider", "con"}},
 	}},
 	{"Things", []helpEntry{

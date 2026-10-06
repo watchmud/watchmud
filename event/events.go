@@ -242,6 +242,13 @@ type PositionChanged struct {
 	Woke  bool
 }
 
+// Tracked is the trail: the first step towards the nearest Target, or Here.
+type Tracked struct {
+	Target    string
+	Direction rules.Direction
+	Here      bool
+}
+
 // SplitCoins is coins shared out: Each to every one of Among, the actor
 // included, what's left over kept by the actor.
 type SplitCoins struct {

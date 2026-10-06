@@ -215,6 +215,8 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "nohassle":
 		return command.NoHassle{Setting: strings.ToLower(rest)}, nil
 
+	case "track":
+		return command.Track{Target: rest}, nil
 	case "split":
 		return command.Split{Amount: rest}, nil
 	case "where":
