@@ -51,6 +51,17 @@ func (s *wizAdminSuite) TestGotoAndTransfer() {
 	sent[event.RoomDescription](s.T(), s.annRec, len(s.annRec.Sent)-1)
 }
 
+// goto out of a fight ends it, rather than leaving one that can't swing and
+// won't let anyone move
+func (s *wizAdminSuite) TestGoto_leavesTheFight() {
+	target, exists := s.w.StartRoom.FindMobile("target")
+	s.Require().True(exists)
+	s.Require().NoError(s.w.fightLedger.Fight(s.p, target))
+	s.as(s.p, command.Goto{Target: "wrathrock/market_square"})
+	s.Assert().False(s.w.fightLedger.InFight(s.p))
+	s.Assert().False(s.w.fightLedger.InFight(target))
+}
+
 func (s *wizAdminSuite) TestPurge() {
 	s.Require().NotEmpty(s.w.StartRoom.Mobiles())
 	s.as(s.p, command.Purge{})
@@ -89,6 +100,8 @@ func (s *wizAdminSuite) TestModeration() {
 	s.as(s.ann, command.Social{Name: "smile"})
 	s.Assert().Equal(event.Muted, sent[event.Failed](s.T(), s.annRec, 0).Code)
 	s.Assert().True(s.ann.Record().Muted)
+	s.as(s.ann, command.Social{Name: "florb"})
+	s.Assert().Equal(event.UnknownCommand, sent[event.Failed](s.T(), s.annRec, 0).Code, "a typo is a typo, muted or not")
 
 	s.as(s.p, command.Moderate{Target: "ann", Freeze: true})
 	s.as(s.ann, command.Inventory{})

@@ -26,6 +26,13 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		msg.Fail(event.UnknownCommand)
 		return nil
 	}
+	// Every verb the parser doesn't know arrives as a social: one that isn't
+	// is a typo, and gets the typo's answer before muted, frozen or asleep
+	// has a say.
+	if s, ok := msg.Command.(command.Social); ok && w.content.Catalog.Socials[s.Name] == nil {
+		msg.Fail(event.UnknownCommand)
+		return nil
+	}
 	if p := msg.Player; p != nil {
 		// a frozen player can look around and leave, nothing else
 		if _, ok := msg.Command.(command.Look); !ok && p.Frozen() {

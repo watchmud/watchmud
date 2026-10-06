@@ -19,6 +19,9 @@ func (w *World) handleGoto(msg *gameserver.HandlerParameter, cmd command.Goto) {
 		msg.Fail(event.TargetNotFound)
 		return
 	}
+	// a wizard leaving a fight leaves it, as anyone transferred does: a
+	// fight across rooms never swings and never ends
+	w.fightLedger.EndAllFightsWith(msg.Player.Id())
 	w.movePlayerMagically(msg.Player, dest)
 	msg.Player.Send(dest.DescriptionExcept(msg.Player))
 }

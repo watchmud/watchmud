@@ -67,6 +67,8 @@ var failureByVerb = map[string]string{
 	"put/NOT_ENOUGH_COINS":        "You don't have that many coins.",
 	"junk/TARGET_NOT_FOUND":       "You aren't carrying that.",
 	"junk/NO_TARGET":              "Junk what?",
+	"mute/TARGET_IN_USE":          "A wizard can't be muted.",
+	"freeze/TARGET_IN_USE":        "A wizard can't be frozen.",
 	"quaff/TARGET_NOT_FOUND":      "You aren't carrying that.",
 	"quaff/NO_TARGET":             "Quaff what?",
 	"quaff/NOT_READY":             "You can't drink another yet.",
