@@ -10,5 +10,22 @@
     },
     "ac": 10,
     "aggressive": true
+  },
+  {
+    "id": "janitor",
+    "name": "janitor",
+    "aliases": [ "sweeper" ],
+    "short_description": "The town janitor.",
+    "description_in_room": "The town janitor leans on his broom, glaring at the floor.",
+    "max_health": 20,
+    "wandering_definition": {
+      "can_wander": true,
+      "check_frequency_seconds": 30,
+      "check_percentage": 50,
+      "wander_style": "random"
+    },
+    "flags": [ "nofight" ],
+    "ac": 10,
+    "script": "janitor"
   }
 ]

@@ -930,9 +930,9 @@ func TestRender_lookedAt(t *testing.T) {
 	box := event.LookedAtObject{Item: "a strongbox", Container: true, Closed: true, Locked: true}
 	assert.Contains(t, plain(render(box, "testdood")), "It's locked.")
 
-	rat := event.LookedAtMob{Name: "a giant rat", Health: 40, Fighting: "bob"}
-	assert.Equal(t, "A giant rat is badly hurt, fighting bob.\n", plain(render(rat, "testdood")))
-	assert.Equal(t, "A giant rat is in perfect health.\n", plain(render(event.LookedAtMob{Name: "a giant rat", Health: 100}, "testdood")))
+	rat := event.LookedAtMob{Name: "giant rat", Health: 40, Fighting: "bob"}
+	assert.Equal(t, "The giant rat is badly hurt, fighting bob.\n", plain(render(rat, "testdood")))
+	assert.Equal(t, "The giant rat is in perfect health.\n", plain(render(event.LookedAtMob{Name: "giant rat", Health: 100}, "testdood")))
 
 	bob := event.LookedAtPlayer{Name: "Bob", Lineage: "Wood Elf", Role: "Tank", Health: 80, Wearing: []string{"a knife", "a leather cap"}}
 	assert.Equal(t, "Bob is a Wood Elf, slightly hurt.\n  Geared as a Tank.\n  Wearing a knife, a leather cap.\n",
@@ -983,4 +983,9 @@ func TestRender_groups(t *testing.T) {
 		require.NoError(t, err, line)
 		assert.Equal(t, want, cmd, line)
 	}
+}
+
+func TestRender_swept(t *testing.T) {
+	assert.Equal(t, "The janitor sweeps up a pelt and tips it into a barrow.\n",
+		plain(render(event.Swept{Sweeper: "janitor", Item: "a pelt"}, "testdood")))
 }

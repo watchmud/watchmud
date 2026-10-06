@@ -27,6 +27,8 @@ type harness struct {
 	said     []line
 	summoned []summonCall
 	live     map[*mobile.Instance]int  // what me.summons and the live cap read
+	junk     int                       // what me:junk() answers, and sweep takes from
+	swept    []int                     // each sweep's n, as the world was asked
 	out      map[*mobile.Instance]bool // mobs whose fight is over, as Tick's inFight sees it
 }
 
@@ -48,6 +50,13 @@ func newHarness(t *testing.T, scripts map[string]string) *harness {
 			return count
 		},
 		Summons: func(mob *mobile.Instance) int { return h.live[mob] },
+		Junk:    func(mob *mobile.Instance) int { return h.junk },
+		Sweep: func(mob *mobile.Instance, n int) int {
+			h.swept = append(h.swept, n)
+			got := min(n, h.junk)
+			h.junk -= got
+			return got
+		},
 	})
 	require.NoError(t, err)
 	h.rt = rt
@@ -823,4 +832,65 @@ func TestHedgeWitch(t *testing.T) {
 	h.tick()
 	require.Len(t, h.said, 2)
 	assert.Contains(t, h.said[1].text, "Bob")
+}
+
+// on_arrive gets me alone; junk and sweep reach the world, sweep cut to the cap
+func TestArrive_junkAndSweep(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/janitor": `
+		function on_arrive(me)
+			local n = me:junk()
+			local a = me:sweep(4)
+			local b = me:sweep(4)
+			me:say(n .. " " .. a .. " " .. b)
+		end`})
+	h.junk = 9
+
+	h.rt.Arrive(mob("Janitor", "z/janitor"))
+
+	assert.Equal(t, []string{"9 4 1"}, h.texts(), "five a call, across both sweeps")
+	assert.Equal(t, []int{4, 1}, h.swept)
+}
+
+func TestArrive_sweepCountMustBePositive(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/janitor": `
+		function on_arrive(me) me:sweep(0) end`})
+	logged := h.failures()
+	h.rt.Arrive(mob("Janitor", "z/janitor"))
+	require.Len(t, *logged, 1)
+	assert.Contains(t, (*logged)[0], "a count of 0")
+}
+
+// a wait in on_arrive isn't about a fight either
+func TestArrive_waitNeedsNoFight(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/janitor": `
+		function on_arrive(me) wait(2); me:say("there") end`})
+	j := mob("Janitor", "z/janitor")
+	h.out[j] = true
+	h.rt.Arrive(j)
+	h.tick()
+	assert.Empty(t, h.said)
+	h.tick()
+	assert.Equal(t, []string{"there"}, h.texts())
+}
+
+// the real janitor: junk, a beat, a sweep of three
+func TestJanitor(t *testing.T) {
+	src, err := os.ReadFile("../content/world/wrathrock/scripts/janitor.lua")
+	require.NoError(t, err)
+	h := newHarness(t, map[string]string{"wrathrock/janitor": string(src)})
+	j := mob("janitor", "wrathrock/janitor")
+	h.out[j] = true
+
+	h.rt.Arrive(j) // nothing to sweep
+	h.tick()
+	h.tick()
+	assert.Empty(t, h.swept)
+
+	h.junk = 7
+	h.rt.Arrive(j)
+	assert.Empty(t, h.swept, "a beat first")
+	h.tick()
+	h.tick()
+	assert.Equal(t, []int{3}, h.swept)
+	assert.Equal(t, 4, h.junk)
 }

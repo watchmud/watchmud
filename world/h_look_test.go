@@ -90,7 +90,7 @@ func (s *handleLookSuite) TestAtAMob() {
 	s.look("target")
 
 	got := sent[event.LookedAtMob](s.T(), s.r, 0)
-	s.Assert().Equal(mob.Definition.ShortDescription, got.Name)
+	s.Assert().Equal(mob.Name(), got.Name, "the name: a short description is a sentence")
 	s.Assert().Equal(percent(mob.CurHealth, mob.Definition.MaxHealth), got.Health)
 	s.Assert().Less(got.Health, 50)
 }

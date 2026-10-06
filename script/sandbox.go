@@ -75,6 +75,8 @@ type hookCall struct {
 	says int
 	// summoned counts this call's summons against MaxSummonsPerCall.
 	summoned int
+	// swept counts this call's sweeps against MaxSweepsPerCall.
+	swept int
 	// waited is this run's seconds of waiting so far, against MaxWaitPerCall
 	waited int
 	// wait is the one it's in now, for Tick to count down

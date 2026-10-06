@@ -79,6 +79,7 @@ func (w *World) doMobRandomWander(mob *mobile.Instance) error {
 			return errors.New(fmt.Sprintf("Mobile ID '%s' is in a room without exit and can't wander out of it.", mob.Definition.Id))
 		}
 		w.moveMobile(mob, dir, mobRoom.DestinationRoom(dir))
+		w.scripts.Arrive(mob)
 	}
 	return nil
 }
@@ -102,6 +103,7 @@ func (w *World) doMobFollowPathWander(mob *mobile.Instance) error {
 			mob.WanderingForward = !mob.WanderingForward
 		}
 		w.moveMobile(mob, dir, mobRoom.DestinationRoom(dir))
+		w.scripts.Arrive(mob)
 	}
 	return nil
 }

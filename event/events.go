@@ -193,6 +193,12 @@ type GroupTold struct {
 	Value   string
 }
 
+// Swept is a sweeper -- the janitor -- taking junk off the floor for good.
+type Swept struct {
+	Sweeper string
+	Item    string
+}
+
 // Gave is one thing, or some coins, passed from Actor to Recipient: the
 // giver, the one given to and the room each see it their own way.
 type Gave struct {

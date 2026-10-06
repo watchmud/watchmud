@@ -36,6 +36,10 @@ const (
 	MaxLiveSummons    = 4
 )
 
+// MaxSweepsPerCall bounds me:sweep across one hook call: more junk than that
+// waits for the next room, a limit rather than an error.
+const MaxSweepsPerCall = 5
+
 // Foe is who a scripted mob is fighting, as its script sees them.
 type Foe struct {
 	Name     string
@@ -52,6 +56,12 @@ type Actions struct {
 	Summon func(summoner *mobile.Instance, def *mobile.Definition, count int) int
 	// Summons is me.summons: how many of the mob's summons are alive.
 	Summons func(summoner *mobile.Instance) int
+	// Junk is me:junk(): how many things on the mob's floor are junk -- the
+	// world's rule, see world/janitor.go.
+	Junk func(mob *mobile.Instance) int
+	// Sweep is me:sweep, already cut to the cap: dispose of up to n pieces of
+	// junk on the mob's floor, and answer how many went.
+	Sweep func(mob *mobile.Instance, n int) int
 }
 
 // Runtime is the world's one Lua state, every program loaded into it, and
@@ -91,7 +101,7 @@ type hookRun struct {
 	me     *lua.LTable
 	pulses int // left to wait
 	// fight is whether the run is about a fight, and so ends if the fight
-	// does while it waits. on_hear isn't.
+	// does while it waits. on_hear and on_arrive aren't.
 	fight bool
 }
 
@@ -120,13 +130,18 @@ func NewRuntime(programs map[string]*Program, roller Roller, actions Actions) (*
 // FightStart is on_fight_start: mob has just gone from not fighting to
 // fighting foe.
 func (r *Runtime) FightStart(mob *mobile.Instance, foe Foe) {
-	r.fire(mob, "on_fight_start", foe, nil)
+	r.fire(mob, "on_fight_start", func() []lua.LValue { return []lua.LValue{r.foe(foe)} })
 }
 
 // FightPulse is on_fight_pulse: mob has just swung at foe, and neither of
 // them is dead.
 func (r *Runtime) FightPulse(mob *mobile.Instance, foe Foe) {
-	r.fire(mob, "on_fight_pulse", foe, nil)
+	r.fire(mob, "on_fight_pulse", func() []lua.LValue { return []lua.LValue{r.foe(foe)} })
+}
+
+// Arrive is on_arrive: mob has just wandered into a room.
+func (r *Runtime) Arrive(mob *mobile.Instance) {
+	r.fire(mob, "on_arrive", nil)
 }
 
 // Hear is on_hear: someone in mob's room said text. speaker is a Foe for its
@@ -134,7 +149,7 @@ func (r *Runtime) FightPulse(mob *mobile.Instance, foe Foe) {
 // said.text is what was said and said.words the set of its words, lowercased:
 // scripts have no pattern functions, so a word is looked up, not searched for.
 func (r *Runtime) Hear(mob *mobile.Instance, speaker Foe, text string) {
-	r.fire(mob, "on_hear", speaker, func() lua.LValue { return r.said(text) })
+	r.fire(mob, "on_hear", func() []lua.LValue { return []lua.LValue{r.foe(speaker), r.said(text)} })
 }
 
 func (r *Runtime) said(text string) *lua.LTable {
@@ -158,11 +173,11 @@ func (r *Runtime) Forget(mob *mobile.Instance) {
 	r.drop(func(run *hookRun) bool { return run.mob == mob })
 }
 
-// fire calls hook(me, foe), and the third argument extra makes, if any --
+// fire calls hook(me, ...), the rest of the arguments what args makes --
 // made only once the hook is known to run.
-func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe, extra func() lua.LValue) {
+func (r *Runtime) fire(mob *mobile.Instance, hook string, args func() []lua.LValue) {
 	if r.sb.current != nil {
-		r.pending = append(r.pending, func() { r.fire(mob, hook, foe, extra) })
+		r.pending = append(r.pending, func() { r.fire(mob, hook, args) })
 		return
 	}
 	lp := r.programs[mob.Definition.Script]
@@ -183,12 +198,12 @@ func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe, extra func() 
 	}
 	th, _ := r.sb.L.NewThread()
 	run := &hookRun{mob: mob, lp: lp, hook: hook, fn: fn, th: th, call: call,
-		me: r.me(mob, call), fight: hook != "on_hear"}
-	args := []lua.LValue{run.me, r.foe(foe)}
-	if extra != nil {
-		args = append(args, extra())
+		me: r.me(mob, call), fight: hook == "on_fight_start" || hook == "on_fight_pulse"}
+	all := []lua.LValue{run.me}
+	if args != nil {
+		all = append(all, args()...)
 	}
-	r.run(run, args...)
+	r.run(run, all...)
 }
 
 // run starts or carries on a hook run -- args start it -- and deals with
@@ -213,7 +228,7 @@ func (r *Runtime) run(run *hookRun, args ...lua.LValue) {
 // Tick is one pulse for every hook run waiting on wait(), in the order they
 // began waiting. One that comes due carries on, with me's health and summons
 // read fresh -- unless the fight it was about is over (inFight, the world's
-// answer; on_hear is about no fight) or its program has been switched off,
+// answer; on_hear and on_arrive are about no fight) or its program has been switched off,
 // and then it simply ends.
 func (r *Runtime) Tick(inFight func(*mobile.Instance) bool) {
 	var due, still []*hookRun
@@ -319,6 +334,36 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		if count > 0 {
 			got = r.actions.Summon(mob, def, count)
 			call.summoned += got
+		}
+		L.Push(lua.LNumber(got))
+		return 1
+	}))
+	me.RawSetString("junk", L.NewFunction(func(L *lua.LState) int {
+		if _, isMe := L.Get(1).(*lua.LTable); !isMe {
+			L.RaiseError("junk: call it as me:junk(), with a colon")
+		}
+		if r.sb.current != call {
+			L.RaiseError("junk: this me belongs to an earlier call")
+		}
+		L.Push(lua.LNumber(r.actions.Junk(mob)))
+		return 1
+	}))
+	me.RawSetString("sweep", L.NewFunction(func(L *lua.LState) int {
+		if _, isMe := L.Get(1).(*lua.LTable); !isMe {
+			L.RaiseError("sweep: call it as me:sweep(count), with a colon")
+		}
+		n := L.CheckInt(2)
+		if r.sb.current != call {
+			L.RaiseError("sweep: this me belongs to an earlier call")
+		}
+		if n < 1 {
+			L.RaiseError("sweep: a count of %d", n)
+		}
+		n = min(n, MaxSweepsPerCall-call.swept)
+		got := 0
+		if n > 0 {
+			got = r.actions.Sweep(mob, n)
+			call.swept += got
 		}
 		L.Push(lua.LNumber(got))
 		return 1

@@ -109,6 +109,9 @@ func render(msg any, self string) string {
 		}
 		return paint(colorTell, m.Speaker+" tells the group, '"+m.Value+"'") + "\n"
 
+	case event.Swept:
+		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
+
 	case event.Gave:
 		switch self {
 		case m.Actor:
@@ -959,7 +962,7 @@ func healthWords(pct int) string {
 }
 
 func renderLookedAtMob(m event.LookedAtMob) string {
-	s := capitalize(m.Name) + " is " + healthWords(m.Health)
+	s := "The " + m.Name + " is " + healthWords(m.Health)
 	if m.Fighting != "" {
 		s += ", fighting " + m.Fighting
 	}

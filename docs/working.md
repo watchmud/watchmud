@@ -68,6 +68,8 @@ inhabitant bots (v0.4.0).
 - `give <item|coins> to <player>`, in the same room
 - `look <thing>` (and `examine`) works at last: an item's stats, how hurt a mob looks,
   what another player has on
+- The town janitor: wanders Wrathrock, can't be fought, sweeps up what's been
+  dropped and left 5 minutes (never in the donation room)
 - Groups: `follow`, `group`, `gt`, `ungroup` -- followers walk after their leader
 - An outside uptime check (`.github/workflows/uptime.yaml`), live once on master
 - Scripts hear: `on_hear(me, speaker, said)`; ask the hedge-witch about healing

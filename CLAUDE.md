@@ -710,7 +710,8 @@ change. An object naming a role the catalog doesn't define is a hard load failur
 ### Scripts (Lua)
 
 **Go is the engine; a script decides *when*.** A script composes actions the engine
-already has -- today, two: `me:say` and `me:summon` -- and never does the math. An action a script needs
+already has -- today `me:say`, `me:summon`, `me:junk` and `me:sweep` -- and never does
+the math. An action a script needs
 that the engine lacks is a Go feature first.
 
 A mob names a script in mobs.json, `"script": "barrow_king"` (bare is its zone,
@@ -723,6 +724,7 @@ the world goroutine, no locks.
 Hooks, all optional: `on_fight_start(me, foe)` (fired by `World.startFight` -- which
 `kill` and aggro both use -- for each mob that wasn't already fighting),
 `on_fight_pulse(me, foe)` (from `DoViolence`, after the blow, never over a body), and
+`on_arrive(me)` (after the mobile pulse wanders the mob into a room), and
 `on_hear(me, speaker, said)` (from `handleSay`, for each scripted mob in the room, after
 the room has heard it). `said.text` is what was said and `said.words` the set of its
 words, lowercased -- a script has no pattern functions, so it looks a word up
@@ -808,8 +810,17 @@ whose summoner is gone or not `InFight` -- one check for flee, wipe and anything
 room. And because `DoViolence` ranges over a snapshot, a fighter `roomOf` can't place is
 skipped: a summon crumbled earlier in the round must not swing from nowhere.
 
-The world reaches a script through `script.Actions` (`Say`, `Summon`, `Summons`), filled
-in by `world.New`; a test fills it with recorders.
+The world reaches a script through `script.Actions` (`Say`, `Summon`, `Summons`, `Junk`,
+`Sweep`), filled in by `world.New`; a test fills it with recorders.
+
+**The janitor** (`wrathrock/janitor`, `nofight`, wandering Wrathrock) is `on_arrive`'s
+first user: `me:junk()` counts the junk on his floor and `me:sweep(n)` takes up to `n`
+of it out of the world, longest-lying first (`event.Swept`), capped at
+`script.MaxSweepsPerCall` (5) a call -- clamped, like summons. What's junk is the
+engine's (`world/janitor.go`), not the script's: something a player dropped and left
+`JunkAfter` (5 minutes) or longer -- time to drop a thing for a friend -- never a
+`NoTake` thing such as a corpse, never what a reset put down (no `DecaysAt`), and
+nothing in the donation room.
 
 Adding a hook: a `Runtime` method that calls `fire` with its name, the name in `hooks`
 (script/program.go), the Go call site, and a test in `world/scripts_test.go`. Adding an

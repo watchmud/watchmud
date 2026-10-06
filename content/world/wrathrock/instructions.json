@@ -4,5 +4,11 @@
     "mobile_id": "rabbit",
     "room_id": "south_trail",
     "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "janitor",
+    "room_id": "market_square",
+    "instance_max": 1
   }
 ]

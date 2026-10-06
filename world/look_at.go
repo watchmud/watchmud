@@ -76,7 +76,7 @@ func (w *World) lookedAtObject(inst *object.Instance, worn bool) event.LookedAtO
 }
 
 func (w *World) lookedAtMob(mob *mobile.Instance) event.LookedAtMob {
-	l := event.LookedAtMob{Name: mob.Definition.ShortDescription, Health: percent(mob.CurHealth, mob.Definition.MaxHealth)}
+	l := event.LookedAtMob{Name: mob.Name(), Health: percent(mob.CurHealth, mob.Definition.MaxHealth)}
 	if fight := w.fightLedger.GetFight(mob); fight != nil {
 		l.Fighting = fight.Fightee.Name()
 	}
