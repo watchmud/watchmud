@@ -320,6 +320,10 @@ span waits; the real scripts behave) found two sandbox bugs:
 - `wait` inside an iterator or a metamethod didn't pause -- gopher-lua swallows that
   yield -- and the hook ran straight on. Now it's an error that says why.
 
+A last review, of the fixes since: one gap in the ghost-login fix -- a Logout built
+before the login ahead of it attached a player carried a nil snapshot and removed
+nobody. It now goes by the connection's player; the hotfix patch has it too.
+
 Checks against the real thing:
 - **tintin++** (2.02.20, installed here): a scripted session made a character with no
   typing -- its `#action`s fire on our GA-marked prompts -- and played; wrapping,
