@@ -302,6 +302,13 @@ the target grammar, the first two in v0.10.0 too):
 - `put 0 coins in chest` put every coin in it.
 All three are refused as parse errors now (`parseTarget`).
 
+A review of the small commands and the loader:
+- A one-room `followPath` panicked every mobile pulse, and stopped every mob after it
+  from wandering or aggroing that pulse. The loader now wants two real rooms.
+- A room, object or mob id used twice in a zone quietly replaced the first -- a
+  copy-paste would have cut Temple Square off. Refused now.
+- A dropped item with the same name hid a chest from `unlock`.
+
 Checks against the real thing:
 - **tintin++** (2.02.20, installed here): a scripted session made a character with no
   typing -- its `#action`s fire on our GA-marked prompts -- and played; wrapping,

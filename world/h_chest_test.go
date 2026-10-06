@@ -170,3 +170,16 @@ func (s *chestSuite) TestPutRefusals() {
 	s.do(command.Put{Target: "dragon", Into: "box"})
 	s.Assert().Equal(event.TargetNotFound, s.failed())
 }
+
+// a tinderbox dropped beside the strongbox doesn't answer for "box": only
+// what has a lid is counted when a lid is wanted
+func (s *chestSuite) TestAnItemDoesntHideTheChest() {
+	tinder := object.NewDefinition("tinderbox", "tinderbox", "wrathrock", rules.ObjectCategoryOther,
+		[]string{"box"}, "a tinderbox", "A tinderbox is here.", rules.SlotNone, rules.ArmorTypeNone, nil)
+	s.Require().NoError(s.w.StartRoom.Inventory.Add(object.NewInstance(uuid.New(), tinder))) // newest: listed first
+	s.carryKey()
+
+	s.do(command.Unlock{Target: "box"})
+
+	s.Assert().Equal(event.DoorUnlocked, sent[event.ContainerChanged](s.T(), s.r, 0).Change)
+}

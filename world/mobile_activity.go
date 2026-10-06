@@ -130,6 +130,10 @@ func getNextDirectionOnPath(mob *mobile.Instance, mobRoom *spaces.Room) (dir rul
 	}
 	nextIndex := -1
 
+	if len(mob.Definition.Wandering.Path) < 2 {
+		// the loader refuses one; this keeps a bad one from indexing -1
+		return rules.DirectionNone, false, errors.New("a path needs two rooms")
+	}
 	if currentIndex < 0 {
 		// note: this might be OK (if the mob was pulled off the path for some reason?)
 		// TODO should it change to a random walk? or just wait here, or?

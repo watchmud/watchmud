@@ -170,6 +170,11 @@ func (c *Content) loadRooms(fsys fs.FS) error {
 
 		for i := range entries {
 			entry := &entries[i]
+			// a second room with an id would take the first one's place, and
+			// its exits: the original cut off, settings pointing at the copy
+			if _, dup := zone.Rooms[entry.Id]; dup {
+				return fmt.Errorf("zone %s: two rooms with the id %q", zonename, entry.Id)
+			}
 
 			r := spaces.NewRoom(zone, entry.Id, entry.Name, entry.Description)
 			r.SetFlags(entry.Flags)
@@ -250,6 +255,11 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 			return err
 		}
 		for _, obj := range objEntries {
+			// as for mobs: a second "rope" that's a lantern would make every
+			// rope a lantern
+			if _, dup := c.Zones[zonename].ObjectDefinitions[obj.Id]; dup {
+				return fmt.Errorf("zone %s: two objects with the id %q", zonename, obj.Id)
+			}
 			d := object.NewDefinition(
 				obj.Id,
 				obj.Name,
@@ -303,6 +313,32 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 	return nil
 }
 
+// checkPath refuses a followPath wanderer whose path can't be walked: fewer
+// than two rooms is nowhere to go (and a one-room path once indexed before
+// its start), and every step names a room that exists.
+func (c *Content) checkPath(zonename string, mob mobEntry) error {
+	if mob.WanderingDefinition.WanderStyle != rules.WanderFollowPath {
+		return nil
+	}
+	path := mob.WanderingDefinition.Path
+	if len(path) < 2 {
+		return fmt.Errorf("mob %s/%s: a followPath needs at least two rooms, has %d", zonename, mob.Id, len(path))
+	}
+	for _, id := range path {
+		found := false
+		for _, z := range c.Zones {
+			if _, ok := z.Rooms[id]; ok {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("mob %s/%s: path names a room nothing has: %q", zonename, mob.Id, id)
+		}
+	}
+	return nil
+}
+
 func (c *Content) loadMobileDefinitions(fsys fs.FS) error {
 	// Summons name mobs, which may be in a zone not loaded yet: held for a
 	// second pass, like room exits.
@@ -319,6 +355,14 @@ func (c *Content) loadMobileDefinitions(fsys fs.FS) error {
 			return err
 		}
 		for _, mob := range mobEntries {
+			// a copy-pasted entry with its id unchanged would quietly
+			// replace the first: every instruction naming it spawns the copy
+			if _, dup := c.Zones[zonename].MobileDefinitions[mob.Id]; dup {
+				return fmt.Errorf("zone %s: two mobs with the id %q", zonename, mob.Id)
+			}
+			if err := c.checkPath(zonename, mob); err != nil {
+				return err
+			}
 			ac, err := mobArmorClass(zonename, mob)
 			if err != nil {
 				return err

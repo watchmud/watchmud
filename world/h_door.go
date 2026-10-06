@@ -50,16 +50,20 @@ func (w *World) findLidded(room *spaces.Room, target string) *object.Instance {
 	if err != nil {
 		return nil
 	}
-	var lidded []*object.Instance
-	for _, inst := range targetsIn(t, room.Inventory.All()) {
-		if inst.Lock != nil {
-			lidded = append(lidded, inst)
+	// only lidded things are counted, before "2." picks among them: a
+	// tinderbox dropped beside the strongbox mustn't answer for "box"
+	lidded := func(yield func(*object.Instance) bool) {
+		for inst := range room.Inventory.All() {
+			if inst.Lock != nil && !yield(inst) {
+				return
+			}
 		}
 	}
-	if len(lidded) == 0 {
+	found := targetsIn(t, lidded)
+	if len(found) == 0 {
 		return nil
 	}
-	return lidded[0]
+	return found[0]
 }
 
 // tryLock is one change to a lock, with the player's key if they carry it.
