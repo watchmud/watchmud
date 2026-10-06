@@ -68,3 +68,22 @@ func TestRecovering_aLoginThatErrs(t *testing.T) {
 	gs.recovering(gameserver.NewHandlerParameter(p, command.Look{}), storeDown)
 	assert.Empty(t, p.sent)
 }
+
+// A login's last step panicking after the player was attached still answers
+// the conversation, and takes the half-made login back out.
+func TestRecovering_aLoginsLastStep(t *testing.T) {
+	gs, _ := newTestGameServer(t)
+	c := &testConn{}
+	p := player.NewTestPlayer(uuid.New(), "Bob", nil)
+	attachThenBoom := func(msg *gameserver.HandlerParameter) error {
+		msg.Client.SetPlayer(p)
+		gs.world.PlacePlayer(p, gs.world.StartRoom)
+		panic("boom")
+	}
+
+	gs.recovering(gameserver.NewHandlerParameter(c, loginChecked{Name: "Bob", Ok: true}), attachThenBoom)
+
+	assert.Equal(t, []any{event.LoginFailed{Reason: event.Unknown}}, c.sent)
+	assert.Nil(t, c.Player())
+	assert.False(t, gs.world.IsPlaying("Bob"))
+}

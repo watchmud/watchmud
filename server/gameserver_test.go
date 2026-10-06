@@ -465,3 +465,42 @@ func TestLogin_reloadsARecordLoggedOutMeanwhile(t *testing.T) {
 	}
 	assert.Equal(t, 99, c.Player().Coins(), "the record from after the logout")
 }
+
+// A connection that hangs up while its login is away being looked up or
+// checked doesn't come back as a character in the world with nobody there --
+// one no Logout would ever take out, keeping the real player from logging in.
+func TestLogin_hungUpMidwayLeavesNoGhost(t *testing.T) {
+	gs, _ := newTestGameServer(t)
+	first := &testConn{}
+	create(t, gs, first, "bob", "sekrit")
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(first, command.Logout{})))
+
+	c := &testConn{}
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Login{Name: "bob", Password: "sekrit"})))
+	settle(t, gs) // looked up; off to bcrypt
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Logout{Cause: "client disconnected"})))
+	settle(t, gs) // checked: for nobody
+
+	assert.False(t, gs.world.IsPlaying("Bob"), "no ghost")
+	assert.Nil(t, c.Player())
+	assert.Empty(t, gs.inFlight)
+	assert.Empty(t, gs.gone)
+
+	again := &testConn{}
+	login(t, gs, again, "bob", "sekrit")
+	assert.NotNil(t, again.Player(), "and the real Bob gets in")
+}
+
+// The same for a creation: nothing made, and the name free again.
+func TestCreate_hungUpMidwayMakesNothing(t *testing.T) {
+	gs, store := newTestGameServer(t)
+	c := &testConn{}
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.CreatePlayer{Name: "bob", Lineage: "human", Password: "sekrit"})))
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Logout{Cause: "client disconnected"})))
+	settle(t, gs)
+
+	_, found, err := store.Load("Bob")
+	require.NoError(t, err)
+	assert.False(t, found)
+	assert.Empty(t, gs.creating)
+}

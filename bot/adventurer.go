@@ -172,7 +172,7 @@ var (
 
 var (
 	okRe         = regexp.MustCompile(`(?m)^Ok\.$`)
-	tellAnswerRe = regexp.MustCompile(`(?m)^(?:Ok|No one by that name is playing)\.$`)
+	tellAnswerRe = regexp.MustCompile(`(?m)^(?:Ok|No one by that name is playing|They aren't taking tells)\.$`)
 	anyRe        = regexp.MustCompile(``)
 	restRe       = regexp.MustCompile(`(?m)^(?:You sit back and rest\.|You're already resting\.|Not in the middle of a fight!|You're already doing that\.)$`)
 	standRe      = regexp.MustCompile(`(?m)^(?:You stand up\.|You're already on your feet\.|You wake and get to your feet\.)$`)

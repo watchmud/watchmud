@@ -231,4 +231,7 @@ func TestNotice_someoneCame(t *testing.T) {
 	assert.False(t, a.someoneCame)
 	a.notice(Chunk{Text: "Ann enters.\n"})
 	assert.True(t, a.someoneCame)
+	a.someoneCame = false
+	a.notice(Chunk{Text: "Ann has entered the game.\n"})
+	assert.True(t, a.someoneCame, "logging in on the ground counts too")
 }

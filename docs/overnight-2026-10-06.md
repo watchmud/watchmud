@@ -266,6 +266,16 @@ Two more reviews, of the core mechanics and of the bots:
 - An explorer now forgets an exit a room no longer shows (a door shut since), and a
   bot waiting out recall's cooldown stops when it's told to shut down.
 
+A last review, of the fixes above:
+- **A connection that hung up mid-login came back as a ghost:** the late answer put
+  the character in the world with nobody there, and no Logout ever came, so the real
+  player was refused as already playing until a restart. (Possible before tonight in
+  the bcrypt window; the store lookup made the window wider.) Results for a
+  connection that's gone are dropped now.
+- A panic in a login's last step left the conversation waiting for good; an empty
+  creation password was answered twice; bots timed out on "They aren't taking
+  tells." and missed a player logging in on their ground.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:

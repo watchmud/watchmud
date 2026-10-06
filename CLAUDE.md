@@ -160,7 +160,10 @@ what makes quit-and-log-straight-back-in safe. Two consequences:
   instead: `GameServer.creating` refuses a second creation of a name still being made,
   and `GameServer.logouts` counts each name's logouts, so a record loaded before a
   logout of that character -- another session quitting meanwhile -- is loaded again
-  before it's played. `handleLogin` refuses a character already in the world
+  before it's played. A connection that hangs up while its lookup or hash is away
+(`GameServer.inFlight`, `gone`) has whatever comes back dropped -- or the character
+would be in the world with nobody to play them and no Logout ever to come, keeping the
+real one out until a restart. `handleLogin` refuses a character already in the world
   (`event.AlreadyPlaying`), and `handleLoginChecked` checks again -- two sessions of one
   character save over each other.
 
