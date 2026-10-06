@@ -14,7 +14,7 @@ production, and nothing here is released.
 - [x] **4. A script hook for speech, `on_hear(me, speaker, text)`**, and the
   hedge-witch answering `say heal` with a line (words only: healing a player from a
   script would be a new Go action, raised rather than decided).
-- [ ] **5. Small cleanup**: `world/settings.go`'s lone `VERBOSE_LOGGING` const.
+- [x] **5. Small cleanup**: `world/settings.go`'s lone `VERBOSE_LOGGING` const.
 - [ ] **6. Stretch: split `spaces.Room` into definition and instance** (ROADMAP "Known
   problems"): a spec first, then the refactor in steps, each green.
 
@@ -45,3 +45,5 @@ Feel and tuning calls met along the way are noted below rather than decided.
   carries a censer they'd have to take off her, which is true (she drops it, 15%) but
   is a nudge to kill her: reword it if that's not wanted. No new Go action: she talks,
   she doesn't heal.
+- **5.** `VERBOSE_LOGGING` gone; ping logs at trace. The stdlib-`log` half of the
+  ROADMAP item had already gone everywhere but `cmd/watchmud-bots`.

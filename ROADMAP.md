@@ -817,8 +817,10 @@ Named so they don't get rediscovered as surprises:
   not branching on it.** Combat that wants tankiness should read the armor, not the label.
 - ~~**`server.handleLogin`** logs the error from `player.FromRecord` and then falls through
   and uses the player anyway.~~ Already fixed: it returns the error.
-- **`world/settings.go`** is a single `VERBOSE_LOGGING` const, and logging is split between
-  zerolog and stdlib `log` depending on file age. Worth one consolidating pass eventually.
+- ~~**`world/settings.go`** is a single `VERBOSE_LOGGING` const, and logging is split
+  between zerolog and stdlib `log` depending on file age.~~ Done 2026-10-06: the const is
+  gone (ping logs at trace), and the server is all zerolog; only `cmd/watchmud-bots`, a
+  command-line tool, still uses `log`.
 
 ---
 

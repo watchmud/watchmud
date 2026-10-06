@@ -1001,8 +1001,8 @@ table -- damage and healing never pull a mob.
   `2.knife`, `20 coins`. Every command now carries the raw string and lets the handler call
   it -- the second grammar (`get`'s old pre-parsed `FindMode`/`Index`/`Target`) went away
   with protobuf, along with `message.FindMode`.
-- Logging is mixed: newer code uses zerolog (`github.com/rs/zerolog/log`), older code the
-  stdlib `log`. Follow whichever the file already uses.
+- Logging is zerolog (`github.com/rs/zerolog/log`) throughout the server; only
+  `cmd/watchmud-bots` uses the stdlib `log`.
 - Config is `app.local.yaml` (`-config` to override, `-content` overrides just the content
   path). `serverconfig.Load` uses `yaml.UnmarshalStrict`, so an unknown key is a hard startup
   failure -- add the struct field and the YAML key in the same change. `deploy/app.yaml`
