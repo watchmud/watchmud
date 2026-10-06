@@ -57,6 +57,8 @@ var failureByVerb = map[string]string{
 	"give/TO_PLAYER_NOT_FOUND":   "They aren't here.",
 	"give/NO_VALUE":              "How many? Give 20 coins to someone.",
 	"follow/TO_PLAYER_NOT_FOUND": "They aren't here.",
+	"ooc/NO_VALUE":               "Say what on ooc? Or 'ooc off' to leave it.",
+	"OFF_CHANNEL":                "You've left the ooc channel: 'ooc on' to rejoin it first.",
 	"assist/BAD_REQUEST":         "Assist on, assist off, or just assist to switch it.",
 	"gtell/NO_VALUE":             "Tell the group what?",
 	"NOT_IN_GROUP":               "You aren't in a group.",

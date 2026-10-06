@@ -101,6 +101,13 @@ func render(msg any, self string) string {
 			return m.Leader + " leaves " + strings.ToLower(m.Direction.String()) + ", but you can't follow in the middle of a fight.\n"
 		}
 		return "You follow " + m.Leader + " " + strings.ToLower(m.Direction.String()) + ".\n"
+	case event.OOCSaid:
+		return paint(colorOOC, "[ooc] "+m.Speaker+": "+m.Value) + "\n"
+	case event.OOCSet:
+		if m.On {
+			return "You're on the ooc channel.\n"
+		}
+		return "You've left the ooc channel. 'ooc on' to come back.\n"
 	case event.Assisted:
 		if m.Actor == self {
 			return "You leap to " + m.Member + "'s aid against the " + m.Target + "!\n"

@@ -109,6 +109,14 @@ type Ungroup struct {
 
 func (Ungroup) Verb() string { return "ungroup" }
 
+// OOC is the out-of-character channel: "ooc <words>" to everyone on it,
+// "ooc on" and "ooc off" to join and leave it.
+type OOC struct {
+	Value string
+}
+
+func (OOC) Verb() string { return "ooc" }
+
 // Assist is "assist [on|off]": whether you join your group's fights. Just
 // "assist" switches it.
 type Assist struct {

@@ -1000,3 +1000,13 @@ func TestRender_assist(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, command.Assist{Setting: "off"}, cmd)
 }
+
+func TestRender_ooc(t *testing.T) {
+	assert.Equal(t, "[ooc] ann: anyone for the mill?\n", plain(render(event.OOCSaid{Speaker: "ann", Value: "anyone for the mill?"}, "bob")))
+	assert.Equal(t, "You've left the ooc channel. 'ooc on' to come back.\n", plain(render(event.OOCSet{}, "bob")))
+	for _, line := range []string{"ooc hi there", "newbie hi there", "nb hi there"} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, command.OOC{Value: "hi there"}, cmd, line)
+	}
+}

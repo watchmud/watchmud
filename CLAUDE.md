@@ -370,7 +370,10 @@ knows a newcomer because the server says so -- `event.EnteredGame.First`, set by
 `World.ArriveNew` from creation, renders "X has entered the game for the first time."
 Said in the room, it answers what names it, starts with "help", or is a question it
 has a topic for; a question it can't place, not put to it by name, is someone else's
-conversation. Told, it always answers (a topic or the menu). One answer per person per
+conversation. Told, it always answers (a topic or the menu). On the ooc channel it
+answers only a question it has a topic for, or one naming it, addressed to the asker
+("Bob: ...") -- the channel is everyone's, and a menu in reply to every question there
+would be noise. One answer per person per
 `answerEvery` (20s) either way, never to a sibling. Every command an answer quotes is
 sent to the real game by `TestFAQ_commandsTheGameKnows`, so an answer can't point at a
 verb that's gone. Keep the answers true: they are the game's documentation for the
@@ -956,6 +959,11 @@ takes a player out of any group from either end.
 without `assist off` (`groups.noAssist`, in memory), join against the mob through
 `joinFight`, which assists no one, so there's no chain. Kill, aggro, smite and summons
 all start fights through `startFight`, so a group fights together however one began.
+
+**The ooc channel** (`world/h_ooc.go`; `ooc`, `newbie`, `nb`): out-of-character chat
+to everyone playing who's on it, wherever they are. `ooc off`/`ooc on` leave and rejoin,
+kept on the record as `NoOOC` (inverted like `NoColor`, so everyone starts on it); off
+the channel you can't speak on it either.
 
 `look <thing>` (and `examine`/`exa`; `world/look_at.go`) looks at one thing, only the
 looker told: a player in the room (`event.LookedAtPlayer`: lineage, role, how hurt, what

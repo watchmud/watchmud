@@ -80,6 +80,8 @@ func parseCommand(tokens []string) (command.Command, error) {
 		return command.Follow{Target: rest}, nil
 	case "ungroup":
 		return command.Ungroup{Target: rest}, nil
+	case "ooc", "newbie", "nb":
+		return command.OOC{Value: rest}, nil
 	case "assist":
 		return command.Assist{Setting: strings.ToLower(rest)}, nil
 	case "group":

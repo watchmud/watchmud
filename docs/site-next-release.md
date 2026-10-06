@@ -35,6 +35,7 @@ list.
 After the `tell` row:
 
 ```html
+<tr><td><code>ooc hello</code></td><td>Chat with everyone playing who's on the channel: questions, plans, anything out of the game. <code>ooc off</code> leaves it. The Temple Square bot answers questions there too</td></tr>
 <tr><td><code>follow Ana</code></td><td>Walk wherever Ana walks, as her group. <code>follow</code> on its own stops</td></tr>
 <tr><td><code>group</code>, <code>gt hello</code></td><td>How your group is doing and where; <code>gt</code> talks to just them</td></tr>
 ```

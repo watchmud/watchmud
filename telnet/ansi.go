@@ -42,6 +42,7 @@ const (
 	colorSay   = bold
 	colorTell  = magenta
 	colorShout = boldYellow
+	colorOOC   = cyan // the ooc channel: not in the world, so not in its colors
 
 	colorHurt   = red     // a blow that landed on you
 	colorDeath  = boldRed // you died, or something did

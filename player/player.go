@@ -30,6 +30,8 @@ type Player struct {
 	// noColor is the player turning ANSI color off. Inverted so the zero
 	// value, which is every record written before there was a choice, is on.
 	noColor bool
+	// noOOC is the player leaving the ooc channel; inverted the same way.
+	noOOC bool
 	// coins is the purse. Never negative: Spend refuses what it can't pay.
 	coins int
 	// backfilled is the backfill starting gear this character has been
@@ -254,6 +256,10 @@ func (p *Player) Spend(n int) bool {
 	return true
 }
 func (p *Player) SetColor(on bool) { p.noColor = !on }
+
+// OOC is whether the player hears the ooc channel.
+func (p *Player) OOC() bool      { return !p.noOOC }
+func (p *Player) SetOOC(on bool) { p.noOOC = !on }
 
 // Backfilled is the backfill starting gear this character has been handed.
 func (p *Player) Backfilled() []string { return p.backfilled }

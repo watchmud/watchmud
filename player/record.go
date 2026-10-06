@@ -17,6 +17,7 @@ type Record struct {
 	Wizard               bool
 	Bot                  bool
 	NoColor              bool // inverted: a record from before the choice is color on
+	NoOOC                bool // inverted the same way: everyone starts on the channel
 	Coins                int
 	CurHealth, MaxHealth int
 	// CurMana is a pointer for the durability reason: a record from before
@@ -86,6 +87,7 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 	p.wizard = rec.Wizard
 	p.bot = rec.Bot
 	p.noColor = rec.NoColor
+	p.noOOC = rec.NoOOC
 	p.coins = max(rec.Coins, 0)
 	p.backfilled = slices.Clone(rec.Backfilled)
 
@@ -170,6 +172,7 @@ func (p *Player) Record() *Record {
 		Wizard:       p.wizard,
 		Bot:          p.bot,
 		NoColor:      p.noColor,
+		NoOOC:        p.noOOC,
 		Coins:        p.coins,
 		CurHealth:    p.curHealth,
 		MaxHealth:    p.maxHealth,

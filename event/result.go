@@ -75,6 +75,8 @@ const (
 	CantNest      ResultCode = "CANT_NEST"
 	CoinsInPurse  ResultCode = "COINS_IN_PURSE"
 	NotEmpty      ResultCode = "NOT_EMPTY"
+	// ooc: off the channel, so not heard on it either
+	OffChannel ResultCode = "OFF_CHANNEL"
 	// groups
 	NotInGroup       ResultCode = "NOT_IN_GROUP"
 	NotFollowing     ResultCode = "NOT_FOLLOWING"

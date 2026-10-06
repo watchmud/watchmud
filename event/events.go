@@ -187,6 +187,17 @@ type GroupMember struct {
 	Room      string
 }
 
+// OOCSaid is a line on the ooc channel, to everyone on it, speaker included.
+type OOCSaid struct {
+	Speaker string
+	Value   string
+}
+
+// OOCSet answers "ooc on" and "ooc off".
+type OOCSet struct {
+	On bool
+}
+
 // Assisted is a group member joining another's fight, seen by the room.
 type Assisted struct {
 	Actor  string

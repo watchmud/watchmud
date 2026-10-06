@@ -74,6 +74,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleGroup(msg, cmd)
 	case command.Assist:
 		w.handleAssist(msg, cmd)
+	case command.OOC:
+		w.handleOOC(msg, cmd)
 	case command.GroupTell:
 		w.handleGroupTell(msg, cmd)
 	case command.Open:
