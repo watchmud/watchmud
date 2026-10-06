@@ -220,6 +220,20 @@ cleanly once the docs are dropped; the Barrow and hung-login parts (and their
 tests, `world/zone_activity_test.go`, `server/recover_test.go`) go in by hand; and
 `go vet` and the whole of `go test ./...` pass on the result.
 
+Two more reviews, of the core mechanics and of the bots:
+- Mechanics (none reachable with today's content): a player killed by one of two mobs
+  in the death room could die twice in a round; negative dice (1d2-3) healed; aggro
+  ignored nofight rooms.
+- **Bots: any player could knock one off the server by talking.** Their patterns
+  weren't anchored, so a say of "You are dead!" sent a bot home and one of recall's
+  refusal disconnected it. Every pattern is anchored now, consider's to the prey's own
+  name, and "nothing" is a reserved name (an emote by a Nothing would be the refusal).
+- A hunter kept fighting and looting after a player walked in; it now looks when
+  someone enters and leaves the ground to them.
+- Not done: the smoke test can fail on a full-moon night (a wild dog attacks it on the
+  walk), and `TestKeepOut_safe` ignores `moonstruck`; an explorer would keep trying a
+  door it once saw open; recall's cooldown wait ignores shutdown.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:

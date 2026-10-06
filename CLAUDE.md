@@ -339,7 +339,11 @@ expected strings in tests stay readable, and it is impossible to forget.
 `Expect` a regexp against what arrived since the last match. It imports nothing of the
 server -- no `event/`, no `telnet/` -- so it reads the text a player reads, and a
 rendering change that breaks it is one a player would have noticed too. Fix the bot's
-pattern, never the renderer to suit the bot.
+pattern, never the renderer to suit the bot. **Every line it acts on is anchored to
+the start of a line** (`(?m)^`): what the game says about the bot starts "You", and a
+player's say or emote starts with their name -- never "You", a reserved word, nor
+"Nothing", reserved so nobody can emote recall's refusal. Unanchored, a player saying
+"You are dead!" sent a bot home and a fake recall refusal knocked it off the server.
 
 `bot.Smoke` is the one scenario: recall, the walk to the millpond, the geese, `get all
 from corpse`, `drop all.feather` (never `drop all` -- the character keeps its starting

@@ -117,6 +117,7 @@ type Adventurer struct {
 
 	health, maxHealth int
 	attacked, died    bool
+	someoneCame       bool   // someone entered since the room was last looked at
 	carrying          int    // looted since the last donation
 	here              string // the room it's in, as far as it knows
 	ground            *ground
@@ -170,17 +171,24 @@ var (
 )
 
 var (
-	okRe             = regexp.MustCompile(`(?m)^Ok\.$`)
-	tellAnswerRe     = regexp.MustCompile(`(?m)^Ok\.$|No one by that name is playing\.`)
-	anyRe            = regexp.MustCompile(``)
-	restRe           = regexp.MustCompile(`You sit back and rest\.|You're already resting\.|Not in the middle of a fight!|You're already doing that\.`)
-	standRe          = regexp.MustCompile(`You stand up\.|You're already on your feet\.|You wake and get to your feet\.`)
-	busyText         = "You're too busy fighting!"
-	killRe           = regexp.MustCompile(`(?m)^Ok\.$|You don't see that here\.|You're already fighting!`)
-	considerOrGoneRe = regexp.MustCompile(`\(power (\d+); you are (\d+)\)|You don't see that here\.`)
-	lootRe           = regexp.MustCompile(`You get |There's nothing in there\.|You don't see that here\.`)
-	dropRe           = regexp.MustCompile(`Dropped\.|You aren't carrying that\.`)
-	saidRe           = regexp.MustCompile(`You say, "`)
+	okRe         = regexp.MustCompile(`(?m)^Ok\.$`)
+	tellAnswerRe = regexp.MustCompile(`(?m)^(?:Ok|No one by that name is playing)\.$`)
+	anyRe        = regexp.MustCompile(``)
+	restRe       = regexp.MustCompile(`(?m)^(?:You sit back and rest\.|You're already resting\.|Not in the middle of a fight!|You're already doing that\.)$`)
+	standRe      = regexp.MustCompile(`(?m)^(?:You stand up\.|You're already on your feet\.|You wake and get to your feet\.)$`)
+	busyText     = "You're too busy fighting!"
+	killRe       = regexp.MustCompile(`(?m)^(?:Ok\.|You don't see that here\.|You're already fighting!)$`)
+	lootRe       = regexp.MustCompile(`(?m)^(?:You get |There's nothing in there\.$|You don't see that here\.$)`)
+	dropRe       = regexp.MustCompile(`(?m)^(?:Dropped\.|You aren't carrying that\.)$`)
+	saidRe       = regexp.MustCompile(`(?m)^You say, "`)
+	// What the game says about the bot itself starts a line with "You", and
+	// nothing a player says or emotes can: theirs starts with their name, and
+	// "you" can't be one. So every line the bot acts on is anchored -- a
+	// player saying "You are dead!" or emoting a recall refusal mustn't send
+	// it home or knock it off the server.
+	youDiedRe = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(youDied) + `$`)
+	youFledRe = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(youFled) + `$`)
+	busyRe    = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(busyText) + `$`)
 )
 
 // roomRe matches a room description by its name, at the start of a line.
@@ -321,11 +329,9 @@ func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
 			if err != nil {
 				return nil, err
 			}
+			a.someoneCame = false
 			if who := playersHere(room, a.cfg.Name, a.cfg.Siblings); len(who) > 0 {
-				a.avoiding[g.name] = a.now().Add(avoidFor)
-				a.count(func(st *Stats) { st.Avoided++ })
-				a.log("%s is in %s; leaving %s to them", who[0], s.room, g.name)
-				return a.leave(g.homeward(i)), nil
+				return a.yieldGround(g, i, who[0], s.room), nil
 			}
 			for _, p := range g.preyIn(room) {
 				if err := a.engage(ctx, p); err != nil {
@@ -333,6 +339,18 @@ func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
 				}
 				if a.died {
 					return a.dead, nil
+				}
+				// a player walking in mid-hunt gets the ground as surely as
+				// one who was here first
+				if a.someoneCame {
+					a.someoneCame = false
+					text, _, err := a.ask("look", roomRe(s.room))
+					if err != nil {
+						return nil, err
+					}
+					if who := playersHere(text, a.cfg.Name, a.cfg.Siblings); len(who) > 0 {
+						return a.yieldGround(g, i, who[0], s.room), nil
+					}
 				}
 			}
 			if a.attacked {
@@ -357,6 +375,14 @@ func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
 		}
 	}
 	return a.goHome, nil
+}
+
+// yieldGround leaves g to a player who's in its patrol room i, walking off.
+func (a *Adventurer) yieldGround(g *ground, i int, who, room string) stateFn {
+	a.avoiding[g.name] = a.now().Add(avoidFor)
+	a.count(func(st *Stats) { st.Avoided++ })
+	a.log("%s is in %s; leaving %s to them", who, room, g.name)
+	return a.leave(g.homeward(i))
 }
 
 // donate takes what it found to the donation room, east of Temple Square.
@@ -479,13 +505,13 @@ func (a *Adventurer) walk(ctx context.Context, s step) (string, error) {
 // cooldown allows: a bot that died twice in a minute waits it out.
 func (a *Adventurer) recall() error {
 	for range recallTries {
-		text, _, err := a.ask("recall", adventurerRecallRe)
+		_, m, err := a.ask("recall", adventurerRecallRe)
 		switch {
 		case err != nil:
 			return err
-		case strings.Contains(text, noRecallText):
+		case strings.HasPrefix(m[0], noRecallText):
 			return errors.New(noRecallError)
-		case strings.Contains(text, notReadyText):
+		case m[0] == notReadyText:
 			time.Sleep(recallRetry)
 			continue
 		}
@@ -495,9 +521,17 @@ func (a *Adventurer) recall() error {
 	return fmt.Errorf("recall still not ready after %d tries", recallTries)
 }
 
-// adventurerRecallRe is home, or one of recall's refusals.
-var adventurerRecallRe = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(home) + `$|` +
-	regexp.QuoteMeta(notReadyText) + `|` + regexp.QuoteMeta(noRecallText))
+// adventurerRecallRe is home, or one of recall's refusals, each a whole line.
+var adventurerRecallRe = regexp.MustCompile(`(?m)^(?:` + regexp.QuoteMeta(home) + `$|` +
+	regexp.QuoteMeta(notReadyText) + `$|` + regexp.QuoteMeta(noRecallText) + `)`)
+
+// considerRe is consider's answer about one prey -- its line starts with the
+// mob's name, or "You could kill" it, and a player's name can't be a mob's --
+// or the prey being gone.
+func considerRe(p prey) *regexp.Regexp {
+	name := regexp.QuoteMeta(p.name)
+	return regexp.MustCompile(`(?mi)^(?:(?:` + name + ` |You could kill ` + name + ` )[^\n]*\(power (\d+); you are (\d+)\)|You don't see that here\.)$`)
+}
 
 // engage considers one kind of prey and fights it if it's a fair fight or
 // easier: "a real challenge" is for a group, and a bot hasn't got one.
@@ -505,7 +539,7 @@ func (a *Adventurer) engage(ctx context.Context, p prey) error {
 	if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
 		return err
 	}
-	_, m, err := a.ask("consider "+p.keyword, considerOrGoneRe)
+	_, m, err := a.ask("consider "+p.keyword, considerRe(p))
 	if err != nil {
 		return err
 	}
@@ -552,7 +586,7 @@ func (a *Adventurer) fight(ctx context.Context) error {
 				killed++
 			}
 		}
-		if strings.Contains(ch.Text, youFled) {
+		if youFledRe.MatchString(ch.Text) {
 			a.attacked = false
 			return fmt.Errorf("%w: fled", errLost)
 		}
@@ -695,7 +729,7 @@ func (a *Adventurer) exchange(line string, re *regexp.Regexp) (string, []string,
 		if a.died {
 			return ch.Text, nil, errDied
 		}
-		if strings.Contains(ch.Text, busyText) {
+		if busyRe.MatchString(ch.Text) {
 			return ch.Text, nil, errBusy
 		}
 	}
@@ -712,7 +746,14 @@ func (a *Adventurer) notice(ch Chunk) {
 	if attacked(ch.Text) {
 		a.attacked = true
 	}
-	if strings.Contains(ch.Text, youDied) {
+	// someone walking in -- maybe a player, maybe a mob with a one-word
+	// name; hunt looks to see which before it fights again
+	for _, m := range enteredRe.FindAllStringSubmatch(ch.Text, -1) {
+		if !strings.EqualFold(m[1], a.cfg.Name) && !isSibling(m[1], a.cfg.Siblings) {
+			a.someoneCame = true
+		}
+	}
+	if youDiedRe.MatchString(ch.Text) {
 		a.died = true
 	}
 }

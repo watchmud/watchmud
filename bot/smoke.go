@@ -164,8 +164,10 @@ const (
 )
 
 // recallRe is Temple Square, or one of recall's refusals.
+// Each a line of its own, after a prompt perhaps: a player saying the words
+// mustn't count (Adventurer's patterns explain).
 var recallRe = `(?m)(?:^(?:` + prompt + `)?Temple Square\n(?s:.*?)` + prompt + `)|` +
-	regexp.QuoteMeta(notReadyText) + `|` + regexp.QuoteMeta(noRecallText)
+	`^(?:` + prompt + `)?(?:` + regexp.QuoteMeta(notReadyText) + `$|` + regexp.QuoteMeta(noRecallText) + `)`
 
 // recall goes back to Temple Square, waiting out the cooldown if it has to.
 func recall(c *Client) error {

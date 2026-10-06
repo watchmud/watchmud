@@ -222,3 +222,13 @@ func TestRecall_waitsOutTheCooldown(t *testing.T) {
 	require.NoError(t, <-done)
 	assert.Equal(t, home, a.here)
 }
+
+// someone walking in is noted for hunt to look into -- not the bot itself,
+// and not a sibling, who are known not to be players to make way for
+func TestNotice_someoneCame(t *testing.T) {
+	a := NewAdventurer(AdventurerConfig{Name: "Wren", Siblings: []string{"Tansy"}})
+	a.notice(Chunk{Text: "Tansy enters.\nWren enters.\n"})
+	assert.False(t, a.someoneCame)
+	a.notice(Chunk{Text: "Ann enters.\n"})
+	assert.True(t, a.someoneCame)
+}
