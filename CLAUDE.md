@@ -882,7 +882,7 @@ of it out of the world, longest-lying first (`event.Swept`), capped at
 `script.MaxSweepsPerCall` (5) a call -- clamped, like summons. What's junk is the
 engine's (`world/janitor.go`), not the script's: something a player dropped and left
 `JunkAfter` (5 minutes) or longer -- time to drop a thing for a friend -- never a
-`NoTake` thing such as a corpse, never what a reset put down (no `DecaysAt`), and
+`NoTake` thing such as a corpse, never a bag with anything in it, never what a reset put down (no `DecaysAt`), and
 nothing in the donation room.
 
 Adding a hook: a `Runtime` method that calls `fire` with its name, the name in `hooks`

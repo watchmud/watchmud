@@ -140,6 +140,18 @@ Then a review of the night's code (two reviewers, each finding checked before fi
 - Assist dragged sleeping group members into fights.
 - A muted player's typo said "muted"; muting a wizard said "remove it first".
 
+A second review, of the morning's code (groups, give, bags, janitor, scripts):
+- A frozen player still walked after their leader and joined the group's fights.
+- A bag whose definition leaves content took its contents with it at login.
+- The janitor swept a dropped bag and everything in it.
+- A crumbling summon would have taken what it carried (none carry today).
+- Wimpy could run from a fight the bandit's script had already ended.
+
+Not fixed, for you: after a *crash* (not a clean shutdown), an item given, or coins
+split, between two players can exist twice -- the receiver who quits is saved at
+once, the giver only on the next interval. Saving both sides of a transfer would
+close it; it didn't seem worth the writes without a crash to point at.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:
