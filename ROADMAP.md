@@ -154,7 +154,7 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
 
 - ~~**The smoke test.**~~ Done 2026-09-30: `bot/` (a telnet client and one scenario) and
   `cmd/watchmud-bot`, run by `deploy.sh` after every restart and by `go test` against
-  the real content in-process. Load testing is still open; it builds on `bot.Client`.
+  the real content in-process. Load testing: `cmd/watchmud-load` (2026-10-06).
 - ~~**Inhabitants.**~~ Done 2026-09-30: `bot.Adventurer` and `cmd/watchmud-bots`, the
   `bots` compose service -- always-on, listed apart in `who` from a flag on the
   record, hunting the Hollowfields, donating what they find, and honest when told

@@ -68,6 +68,7 @@ inhabitant bots (v0.4.0).
 - `give <item|coins> to <player>`, in the same room
 - `look <thing>` (and `examine`) works at last: an item's stats, how hurt a mob looks,
   what another player has on
+- A load test, `cmd/watchmud-load`; it found the send-queue log spam fixed beside it
 - An explorer bot (`WATCHMUD_EXPLORERS`) that maps everywhere it safely may
 - The town janitor: wanders Wrathrock, can't be fought, sweeps up what's been
   dropped and left 5 minutes (never in the donation room)

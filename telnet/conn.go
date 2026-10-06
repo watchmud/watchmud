@@ -317,6 +317,13 @@ func (c *conn) send(msg any) error {
 		return nil
 	}
 	select {
+	case <-c.quit:
+		// already hung up: the room's chatter has nowhere to go, and saying
+		// so once was enough
+		return errors.New("connection closed")
+	default:
+	}
+	select {
 	case c.sendQueue <- msg:
 		return nil
 	default:

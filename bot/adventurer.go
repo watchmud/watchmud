@@ -76,6 +76,8 @@ type AdventurerConfig struct {
 	DonateAfter int
 	Style       Style
 	Log         func(format string, args ...any) // nil is silent
+	// LocalAddr is the address to connect from, "" for any; see DialFrom.
+	LocalAddr string
 }
 
 // Style is what a bot does with its time. Everything else -- reading the
@@ -191,7 +193,7 @@ type stateFn func(ctx context.Context) (stateFn, error)
 // whoever runs it to log it and try again later.
 func (a *Adventurer) Run(ctx context.Context, addr string) error {
 	dctx, cancel := context.WithTimeout(ctx, time.Minute)
-	c, err := Dial(dctx, addr)
+	c, err := DialFrom(dctx, addr, a.cfg.LocalAddr)
 	cancel()
 	if err != nil {
 		return err

@@ -35,6 +35,7 @@ make generate         # regenerate *_string.go after editing a stringer enum
 make db-up            # start the local mongo (docker compose, host port 27018)
 make test-db          # the mongostore tests that need a real mongo
 go test ./bot         # the smoke bot, including the real world in-process
+go run ./cmd/watchmud-load -players 100 -duration 1m   # load test, in-process only
 make docker-build     # build the deploy image (deploy/README.md for the rest)
 go test ./world -run TestLook_successful          # single test
 go test ./player -run TestPlayerTestSuite/TestX   # testify suite: Suite/Method
@@ -183,7 +184,10 @@ goroutines:
 Two rules that look inconsistent and are not:
 
 - **`Send` must never block.** It runs on the world goroutine, so a slow client would freeze
-  the entire MUD. It does a non-blocking send and hangs up on overflow.
+  the entire MUD. It does a non-blocking send and hangs up on overflow -- once: a send
+  to a connection already hung up is dropped without a word. It used to log the overflow
+  again for every line the room said, on the world goroutine, and under load that
+  logging alone backed up everyone else's queue into more hang-ups.
 - **`emit` is allowed to block.** It runs on the connection's own goroutine, and blocking on
   a full `incomingBuffer` is correct backpressure -- the flooding client waits, no command
   is dropped.
@@ -347,6 +351,16 @@ doors, fights only back, loots nothing. `TestExplorer_mapsTheWorld` runs one aga
 the real content until it has mapped exactly what's reachable. The atlas survives a
 death and a recall, not a reconnect. It is the groundwork for bots that navigate by
 map rather than by `bot/grounds.go`; nothing reads the atlas but the explorer yet.
+
+**`cmd/watchmud-load`** is the load test: the real content in-process on loopback, N
+bots of mixed styles (`-fast` for test pace, a stress rather than a crowd), and a few
+probe characters in Temple Square timing `look` once a second -- it prints p50/p95/p99
+and how many bots the server hung up on. It makes its own characters, so it has **no
+address flag, on purpose**; character creation stays out of the `bot` package's
+exported API for the same reason. Connections are spread over 127.0.0.x
+(`bot.DialFrom`, `AdventurerConfig.LocalAddr`), since the server allows five per
+address. On 2026-10-06: 100 bots at a person's pace, p99 about 25ms, none dropped; at
+test pace, everyone walking through Temple Square, one dropped for a full queue.
 
 **A socialite** (`Style: Socialite`, `bot/socialite.go`, `WATCHMUD_SOCIALITES`) stands in
 Temple Square, welcomes each new character once and answers questions from `faq`
