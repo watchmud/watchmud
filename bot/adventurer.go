@@ -173,6 +173,8 @@ var (
 	okRe             = regexp.MustCompile(`(?m)^Ok\.$`)
 	tellAnswerRe     = regexp.MustCompile(`(?m)^Ok\.$|No one by that name is playing\.`)
 	anyRe            = regexp.MustCompile(``)
+	restRe           = regexp.MustCompile(`You sit back and rest\.|You're already resting\.|Not in the middle of a fight!|You're already doing that\.`)
+	standRe          = regexp.MustCompile(`You stand up\.|You're already on your feet\.|You wake and get to your feet\.`)
 	busyText         = "You're too busy fighting!"
 	killRe           = regexp.MustCompile(`(?m)^Ok\.$|You don't see that here\.|You're already fighting!`)
 	considerOrGoneRe = regexp.MustCompile(`\(power (\d+); you are (\d+)\)|You don't see that here\.`)
@@ -586,6 +588,11 @@ func (a *Adventurer) fight(ctx context.Context) error {
 func (a *Adventurer) rest(ctx context.Context) error {
 	a.log("resting at %d/%d", a.health, a.maxHealth)
 	a.say(momentRest)
+	// off its feet it heals faster, as anyone does; a fight stands it up, and
+	// it sits back down after
+	if err := a.sitDown(); err != nil {
+		return err
+	}
 	for a.maxHealth > 0 && a.health*100 < restUntil*a.maxHealth {
 		if err := a.pause(ctx, [2]time.Duration{a.cfg.Pace.Poll, a.cfg.Pace.Poll}); err != nil {
 			return err
@@ -603,9 +610,20 @@ func (a *Adventurer) rest(ctx context.Context) error {
 			if a.died {
 				return nil
 			}
+			if err := a.sitDown(); err != nil {
+				return err
+			}
 		}
 	}
-	return nil
+	_, _, err := a.ask("stand", standRe)
+	return err
+}
+
+// sitDown is "rest", whatever it's told back: already resting, or still in a
+// fight that rest will come back round to.
+func (a *Adventurer) sitDown() error {
+	_, _, err := a.ask("rest", restRe)
+	return err
 }
 
 // say makes a remark now and then: on one moment in talkOneIn, never twice in

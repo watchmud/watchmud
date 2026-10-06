@@ -177,10 +177,15 @@ func TestRest_pollsUntilRested(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- a.rest(context.Background()) }()
 
+	// it sits down to rest, polls its prompt until it's healed, and gets up
+	assert.Equal(t, "rest", g.heard())
+	g.say("You sit back and rest.\r\n<40/100hp> ")
 	assert.Equal(t, "", g.heard())
 	g.say("<60/100hp> ")
 	assert.Equal(t, "", g.heard())
 	g.say("<95/100hp> ")
+	assert.Equal(t, "stand", g.heard())
+	g.say("You stand up.\r\n<95/100hp> ")
 	require.NoError(t, <-done)
 	assert.Equal(t, 95, a.health)
 }
