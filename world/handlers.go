@@ -25,6 +25,19 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		msg.Fail(event.UnknownCommand)
 		return nil
 	}
+	if p := msg.Player; p != nil {
+		// a frozen player can look around and leave, nothing else
+		if _, ok := msg.Command.(command.Look); !ok && p.Frozen() {
+			if _, quitting := msg.Command.(command.Logout); !quitting {
+				msg.Fail(event.Frozen)
+				return nil
+			}
+		}
+		if _, talk := msg.Command.(command.Talk); talk && p.Muted() {
+			msg.Fail(event.Muted)
+			return nil
+		}
+	}
 	switch cmd := msg.Command.(type) {
 	case command.Abilities:
 		w.handleAbilities(msg, cmd)
@@ -92,6 +105,20 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleWhisper(msg, cmd)
 	case command.Toggle:
 		w.handleToggle(msg, cmd)
+	case command.Goto:
+		w.handleGoto(msg, cmd)
+	case command.Transfer:
+		w.handleTransfer(msg, cmd)
+	case command.Purge:
+		w.handlePurge(msg, cmd)
+	case command.ZReset:
+		w.handleZReset(msg, cmd)
+	case command.Echo:
+		w.handleEcho(msg, cmd)
+	case command.Users:
+		w.handleUsers(msg, cmd)
+	case command.Moderate:
+		w.handleModerate(msg, cmd)
 	case command.GroupTell:
 		w.handleGroupTell(msg, cmd)
 	case command.Open:

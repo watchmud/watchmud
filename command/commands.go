@@ -376,6 +376,81 @@ type Wizard interface {
 	wizard()
 }
 
+// Talk marks a command that speaks to other players: a muted player can't
+// use one. The world checks it before any handler runs, as it does Wizard.
+type Talk interface {
+	Command
+	talk()
+}
+
+func (Say) talk()       {}
+func (Tell) talk()      {}
+func (TellAll) talk()   {}
+func (OOC) talk()       {}
+func (Emote) talk()     {}
+func (Whisper) talk()   {}
+func (Reply) talk()     {}
+func (Social) talk()    {}
+func (GroupTell) talk() {}
+
+// Goto takes a wizard to a room ("zone/room"), a player, or a mob.
+type Goto struct{ Target string }
+
+func (Goto) Verb() string { return "goto" }
+
+// Transfer brings a player to the wizard.
+type Transfer struct{ Target string }
+
+func (Transfer) Verb() string { return "transfer" }
+
+// Purge clears the room of mobs and things on the floor, or one of them.
+type Purge struct{ Target string }
+
+func (Purge) Verb() string { return "purge" }
+
+// ZReset resets a zone now: the wizard's, or one named.
+type ZReset struct{ Zone string }
+
+func (ZReset) Verb() string { return "zreset" }
+
+// Echo puts text in front of the room, or with Global everyone playing.
+type Echo struct {
+	Text   string
+	Global bool
+}
+
+func (e Echo) Verb() string {
+	if e.Global {
+		return "gecho"
+	}
+	return "echo"
+}
+
+// Users lists who is playing and where.
+type Users struct{}
+
+func (Users) Verb() string { return "users" }
+
+// Moderate is mute and freeze, switched for one player.
+type Moderate struct {
+	Target string
+	Freeze bool // else mute
+}
+
+func (m Moderate) Verb() string {
+	if m.Freeze {
+		return "freeze"
+	}
+	return "mute"
+}
+
+func (Goto) wizard()       {}
+func (Transfer) wizard()   {}
+func (Purge) wizard()      {}
+func (ZReset) wizard()     {}
+func (Echo) wizard()       {}
+func (Users) wizard()      {}
+func (Moderate) wizard()   {}
 func (Load) wizard()       {}
 func (Restore) wizard()    {}
 func (RoomStatus) wizard() {}

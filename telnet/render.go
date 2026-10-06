@@ -131,6 +131,17 @@ func render(msg any, self string) string {
 	case event.Swept:
 		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
 
+	case event.Echoed:
+		return m.Text + "\n"
+	case event.UserList:
+		return renderUsers(m)
+	case event.Moderated:
+		return renderModerated(m, self)
+	case event.Purged:
+		return fmt.Sprintf("Purged %d mobs and %d things.\n", m.Mobs, m.Objects)
+	case event.ZoneWasReset:
+		return m.Zone + " is reset.\n"
+
 	case event.Socialized:
 		switch self {
 		case m.Actor:
@@ -1131,4 +1142,32 @@ func renderToggles(m event.Toggles) string {
 		{plainCell("shouts"), onOff(m.Shouts)},
 		{plainCell("assist"), onOff(m.Assist)},
 	}) + "  'toggle <name>' switches one.\n"
+}
+
+func renderUsers(m event.UserList) string {
+	var rows [][]cell
+	for _, u := range m.Users {
+		var flags []string
+		for _, f := range []struct {
+			on   bool
+			name string
+		}{{u.Wizard, "wizard"}, {u.Bot, "bot"}, {u.Muted, "muted"}, {u.Frozen, "frozen"}} {
+			if f.on {
+				flags = append(flags, f.name)
+			}
+		}
+		rows = append(rows, []cell{colored(colorPlayer, u.Name), colored(colorPlace, u.Room), plainCell(u.Zone), plainCell(strings.Join(flags, " "))})
+	}
+	return paint(colorHeading, fmt.Sprintf("Users (%d)", len(m.Users))) + "\n" + table(rows)
+}
+
+func renderModerated(m event.Moderated, self string) string {
+	what := map[[2]bool]string{
+		{false, true}: "muted", {false, false}: "unmuted",
+		{true, true}: "frozen", {true, false}: "thawed",
+	}[[2]bool{m.Freeze, m.On}]
+	if m.Target == self {
+		return "You have been " + what + ".\n"
+	}
+	return m.Target + " is " + what + ".\n"
 }

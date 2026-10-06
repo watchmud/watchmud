@@ -1097,6 +1097,14 @@ table -- damage and healing never pull a mob.
   the only gate: `HandleIncomingMessage` refuses a marked command from anyone whose
   record lacks `Wizard`, before any handler runs. Forget it and the command is open to
   every player. Grant it with `make wizard NAME=...`, while they're logged out.
+  Beside it, **`command.Talk`** marks every command that speaks to other players, and
+  the same check refuses one from a player a wizard has muted (`mute <name>`); a
+  frozen player (`freeze <name>`) can only look and quit. Both are on the record
+  (`Muted`, `Frozen`), so a logout doesn't shake them off; a second `mute`/`freeze`
+  undoes it, and a wizard can't be moderated. A new talking command needs the marker.
+  The wizard's toolkit (`world/h_wiz_admin.go`): `goto` (zone/room, player or mob),
+  `transfer`, `purge [target]`, `zreset [zone]`, `echo`/`gecho` (say a restart is
+  coming), `users`, `mute`, `freeze` -- each logged through `logWizCommand`.
   `Bot` on the record is the same kind of hand-set flag (`make bot NAME=...`); it only
   lists the character among the bots at the bottom of `who`, and nothing may branch on it.
 - **`Send` returns nothing.** `player.Sender` is `Send(msg any)`. The only error any

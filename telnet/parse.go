@@ -215,6 +215,25 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "nohassle":
 		return command.NoHassle{Setting: strings.ToLower(rest)}, nil
 
+	case "goto":
+		return command.Goto{Target: rest}, nil
+	case "transfer", "trans":
+		return command.Transfer{Target: rest}, nil
+	case "purge":
+		return command.Purge{Target: rest}, nil
+	case "zreset":
+		return command.ZReset{Zone: rest}, nil
+	case "echo":
+		return command.Echo{Text: rest}, nil
+	case "gecho":
+		return command.Echo{Text: rest, Global: true}, nil
+	case "users":
+		return command.Users{}, nil
+	case "mute":
+		return command.Moderate{Target: rest}, nil
+	case "freeze":
+		return command.Moderate{Target: rest, Freeze: true}, nil
+
 	case "slay":
 		return command.Slay{Target: rest}, nil
 

@@ -24,6 +24,8 @@ func testRecord() *player.Record {
 		NoOOC:        true,
 		NoTell:       true,
 		NoShout:      true,
+		Muted:        true,
+		Frozen:       true,
 		Coins:        42,
 		CurHealth:    93,
 		MaxHealth:    100,

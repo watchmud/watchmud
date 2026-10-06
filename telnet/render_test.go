@@ -1095,3 +1095,14 @@ func TestSocials_noneShadowed(t *testing.T) {
 		assert.Equal(t, command.Social{Name: s.Name}, cmd, "%s is taken by another command", s.Name)
 	}
 }
+
+func TestRender_wizardAdmin(t *testing.T) {
+	assert.Equal(t, "You have been muted.\n", plain(render(event.Moderated{Target: "ann", On: true}, "ann")))
+	assert.Equal(t, "ann is thawed.\n", plain(render(event.Moderated{Target: "ann", Freeze: true}, "wiz")))
+	assert.Equal(t, "Users (2)\n  wiz  Temple Square  Wrathrock  wizard\n  ann  General Store  Wrathrock  muted\n",
+		plain(render(event.UserList{Users: []event.User{
+			{Name: "wiz", Room: "Temple Square", Zone: "Wrathrock", Wizard: true},
+			{Name: "ann", Room: "General Store", Zone: "Wrathrock", Muted: true},
+		}}, "wiz")))
+	assert.Equal(t, "Restarting soon.\n", plain(render(event.Echoed{Text: "Restarting soon."}, "ann")))
+}

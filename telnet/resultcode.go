@@ -106,6 +106,8 @@ var failureByVerb = map[string]string{
 }
 
 var failureByCode = map[string]string{
+	"MUTED":             "You've been muted: nobody can hear you.",
+	"FROZEN":            "You're frozen solid. You can look around, or quit.",
 	"CANT_FLEE":         "You couldn't get away!",
 	"NO_DONATION_ROOM":  "There's nowhere to donate to.",
 	"OFF_CHANNEL":       "You've left the ooc channel: 'ooc on' to rejoin it first.",

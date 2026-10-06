@@ -29,6 +29,8 @@ type playerDoc struct {
 	NoOOC        bool   `bson:"no_ooc,omitempty"`
 	NoTell       bool   `bson:"no_tell,omitempty"`
 	NoShout      bool   `bson:"no_shout,omitempty"`
+	Muted        bool   `bson:"muted,omitempty"`
+	Frozen       bool   `bson:"frozen,omitempty"`
 	Coins        int    `bson:"coins,omitempty"`
 	CurHealth    int    `bson:"cur_health"`
 	MaxHealth    int    `bson:"max_health"`
@@ -122,6 +124,8 @@ func newPlayerDoc(r *player.Record, now time.Time) playerDoc {
 		NoOOC:        r.NoOOC,
 		NoTell:       r.NoTell,
 		NoShout:      r.NoShout,
+		Muted:        r.Muted,
+		Frozen:       r.Frozen,
 		Coins:        r.Coins,
 		CurHealth:    r.CurHealth,
 		MaxHealth:    r.MaxHealth,
@@ -163,6 +167,8 @@ func (d playerDoc) record() (*player.Record, error) {
 		NoOOC:        d.NoOOC,
 		NoTell:       d.NoTell,
 		NoShout:      d.NoShout,
+		Muted:        d.Muted,
+		Frozen:       d.Frozen,
 		Coins:        d.Coins,
 		CurHealth:    d.CurHealth,
 		MaxHealth:    d.MaxHealth,

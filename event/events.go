@@ -228,6 +228,38 @@ type Swept struct {
 	Item    string
 }
 
+// Echoed is a wizard's echo or gecho: the text, as it is.
+type Echoed struct {
+	Text string
+}
+
+// UserList is "users": everyone playing, and where.
+type UserList struct {
+	Users []User
+}
+
+type User struct {
+	Name, Room, Zone           string
+	Wizard, Bot, Muted, Frozen bool
+}
+
+// Moderated is a mute or freeze switched, told to the wizard and the player.
+type Moderated struct {
+	Target string
+	Freeze bool
+	On     bool
+}
+
+// Purged is how much a purge took out of the room.
+type Purged struct {
+	Mobs, Objects int
+}
+
+// ZoneWasReset answers zreset.
+type ZoneWasReset struct {
+	Zone string
+}
+
 // Socialized is a social done, its lines already filled in: ToActor for the
 // one who did it, ToTarget for a player it was done to, ToRoom for everyone
 // else. Target is empty when it was done alone.

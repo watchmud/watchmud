@@ -34,6 +34,9 @@ type Player struct {
 	noOOC bool
 	// noTell and noShout are tells and shouts switched off, the same way.
 	noTell, noShout bool
+	// muted can't talk to anyone; frozen can only look and quit. A wizard's
+	// doing, kept on the record.
+	muted, frozen bool
 	// coins is the purse. Never negative: Spend refuses what it can't pay.
 	coins int
 	// backfilled is the backfill starting gear this character has been
@@ -262,6 +265,11 @@ func (p *Player) SetColor(on bool) { p.noColor = !on }
 // OOC is whether the player hears the ooc channel.
 func (p *Player) OOC() bool      { return !p.noOOC }
 func (p *Player) SetOOC(on bool) { p.noOOC = !on }
+
+func (p *Player) Muted() bool       { return p.muted }
+func (p *Player) SetMuted(on bool)  { p.muted = on }
+func (p *Player) Frozen() bool      { return p.frozen }
+func (p *Player) SetFrozen(on bool) { p.frozen = on }
 
 // Tells and Shouts are whether the player hears them.
 func (p *Player) Tells() bool       { return !p.noTell }

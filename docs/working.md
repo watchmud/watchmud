@@ -77,6 +77,8 @@ inhabitant bots (v0.4.0).
 - The General Store has a shopkeeper who answers questions about her trade
 - Mobs can flee (`me:flee()`): a losing bandit may run, once, on a coin flip
 - An ooc channel (`ooc`, `newbie`, `nb`; `ooc off`), which the socialite answers on
+- Wizard tools: `goto`, `transfer`, `purge`, `zreset`, `echo`/`gecho` (announce a
+  restart before a deploy), `users`, and moderation that sticks: `mute`, `freeze`
 - Socials (53 of them, `socials`), `emote`/`:`, `reply`, `whisper`/`ask` (mobs can be
   asked), `toggle` (`notell`, `noshout`); failure texts for bags, groups and ooc that
   were filed wrong now show
