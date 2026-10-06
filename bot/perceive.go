@@ -9,7 +9,7 @@ import (
 // writes; when the rendering changes, these are what should notice.
 
 var (
-	tellRe     = regexp.MustCompile(`(?m)^([A-Z][a-z]+) tells you, "`)
+	tellRe     = regexp.MustCompile(`(?m)^([A-Z][a-z]+) tells you, "(.*)"\.$`)
 	attackedRe = regexp.MustCompile(`(?m)^.+ (?:hits you for \d+ damage|misses you)\.$`)
 	blowRe     = regexp.MustCompile(`(?m)^(?:.+ (?:hits you for \d+ damage|misses you)|You (?:hit|miss) .+)\.$`)
 	deathRe    = regexp.MustCompile(`(?m)^(.+) is dead!$`)
@@ -25,11 +25,14 @@ const (
 	youFled = "You flee head over heels."
 )
 
-// tellers is who told this bot something, in order.
-func tellers(text string) []string {
-	var out []string
+// tell is one tell to this bot: who from, and what they said.
+type tell struct{ who, text string }
+
+// tellers is what this bot was told, in order.
+func tellers(text string) []tell {
+	var out []tell
 	for _, m := range tellRe.FindAllStringSubmatch(text, -1) {
-		out = append(out, m[1])
+		out = append(out, tell{m[1], m[2]})
 	}
 	return out
 }

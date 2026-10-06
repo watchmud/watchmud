@@ -401,7 +401,7 @@ func (gs *GameServer) handleCreateHashed(msg *gameserver.HandlerParameter, cmd c
 	gs.world.PlacePlayer(p, gs.world.StartRoom)
 
 	p.Send(event.PlayerCreated{Name: p.Name()})
-	gs.world.Arrive(p)
+	gs.world.ArriveNew(p)
 	gs.world.Welcome(p)
 	return nil
 }

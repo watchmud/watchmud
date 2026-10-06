@@ -308,6 +308,19 @@ new dangerous content needs a door in `keepOut`, not a looser test.
 `WATCHMUD_WANDERERS` names them, beside `WATCHMUD_BOTS`; the five-bot cap is for both
 together, and every bot is every other's sibling.
 
+**A socialite** (`Style: Socialite`, `bot/socialite.go`, `WATCHMUD_SOCIALITES`) stands in
+Temple Square, welcomes each new character once and answers questions from `faq`
+(`bot/faq.go`): keyword topics in order, first match wins, `menu` when none does. It
+knows a newcomer because the server says so -- `event.EnteredGame.First`, set by
+`World.ArriveNew` from creation, renders "X has entered the game for the first time."
+Said in the room, it answers what names it, starts with "help", or is a question it
+has a topic for; a question it can't place, not put to it by name, is someone else's
+conversation. Told, it always answers (a topic or the menu). One answer per person per
+`answerEvery` (20s) either way, never to a sibling. Every command an answer quotes is
+sent to the real game by `TestFAQ_commandsTheGameKnows`, so an answer can't point at a
+verb that's gone. Keep the answers true: they are the game's documentation for the
+newest players.
+
 ### Content loading (loader -> world)
 
 `loader.LoadContent(os.DirFS(contentPath))` reads `content/` into an immutable

@@ -386,3 +386,16 @@ func TestSetTickInterval_setsThePace(t *testing.T) {
 	gs.SetTickInterval(rules.PulseInterval / 10)
 	assert.InDelta(t, 10.0, gs.world.Pace(), 0.001)
 }
+
+// Someone already in the start room hears a new character's first arrival as
+// that -- a login afterwards is an ordinary one.
+func TestCreatePlayer_roomHearsAFirstArrival(t *testing.T) {
+	gs, _ := newTestGameServer(t)
+	old := &testConn{}
+	create(t, gs, old, "oldtimer", "sekrit")
+	old.sent = nil
+
+	create(t, gs, &testConn{}, "newbie", "sekrit")
+
+	assert.Contains(t, old.sent, event.EnteredGame{Actor: "Newbie", First: true})
+}

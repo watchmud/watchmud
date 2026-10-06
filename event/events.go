@@ -56,8 +56,11 @@ type Welcome struct {
 // EnteredGame tells a room that a player just logged in there. Not LoggedIn,
 // which the arriving player's own connection consumes to end its login
 // conversation -- a bystander's connection would do the same with it.
+// EnteredGame is someone appearing in the room by logging in. First is a
+// character's very first time, straight from creation.
 type EnteredGame struct {
 	Actor string
+	First bool
 }
 
 type Pong struct {

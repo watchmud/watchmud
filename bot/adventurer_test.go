@@ -68,24 +68,24 @@ func TestTold_oncePerSenderAndNeverASibling(t *testing.T) {
 	now := time.Date(2026, 9, 30, 12, 0, 0, 0, time.UTC)
 	a.now = func() time.Time { return now }
 
-	a.told("Bob")
-	a.told("Bob")
-	a.told("Pim")
-	a.told("testbot")
-	assert.Equal(t, []string{"Bob"}, a.pendingTells)
+	a.told(tell{"Bob", "hi"})
+	a.told(tell{"Bob", "hi"})
+	a.told(tell{"Pim", "hi"})
+	a.told(tell{"testbot", "hi"})
+	assert.Equal(t, []tell{{"Bob", "hi"}}, a.pendingTells)
 
 	a.pendingTells = nil
 	now = now.Add(9 * time.Minute)
-	a.told("Bob")
+	a.told(tell{"Bob", "hi"})
 	assert.Empty(t, a.pendingTells, "still inside ten minutes")
 	now = now.Add(2 * time.Minute)
-	a.told("Bob")
-	assert.Equal(t, []string{"Bob"}, a.pendingTells)
+	a.told(tell{"Bob", "hi"})
+	assert.Equal(t, []tell{{"Bob", "hi"}}, a.pendingTells)
 }
 
 func TestAsk_answersTellsFirst(t *testing.T) {
 	a, g := adventurer(t)
-	a.pendingTells = []string{"Bob"}
+	a.pendingTells = []tell{{"Bob", "hi"}}
 	done := make(chan error, 1)
 	go func() {
 		_, _, err := a.ask("look", roomRe("Temple Square"))

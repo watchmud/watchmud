@@ -16,6 +16,8 @@ func TestRenderDied(t *testing.T) {
 
 func TestRenderEnteredGame(t *testing.T) {
 	assert.Equal(t, "testdood has entered the game.\n", render(event.EnteredGame{Actor: "testdood"}, "otherdood"))
+	assert.Equal(t, "testdood has entered the game for the first time.\n",
+		render(event.EnteredGame{Actor: "testdood", First: true}, "otherdood"))
 	assert.Equal(t, "Head south.\n", render(event.Welcome{Text: "Head south."}, "testdood"))
 }
 

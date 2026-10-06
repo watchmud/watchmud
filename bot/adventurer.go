@@ -74,12 +74,25 @@ type AdventurerConfig struct {
 	// room; zero is donateAfter. Tests lower it: a world at a hundred times
 	// speed still respawns on the wall clock, so its fields run dry first.
 	DonateAfter int
-	// Wander makes it a wanderer rather than a hunter: it roams wherever the
-	// exits go and is safe, fights only what attacks it, and loots nothing
-	// (wanderer.go).
-	Wander bool
-	Log    func(format string, args ...any) // nil is silent
+	Style       Style
+	Log         func(format string, args ...any) // nil is silent
 }
+
+// Style is what a bot does with its time. Everything else -- reading the
+// world, answering tells, fighting back, resting, recall, dying -- they share.
+type Style int
+
+const (
+	// Hunter goes out to a hunting ground, fights what's fair, loots its
+	// kills and gives them to the donation room.
+	Hunter Style = iota
+	// Wanderer roams wherever the exits go and is safe, fights only what
+	// attacks it, and loots nothing (wanderer.go).
+	Wanderer
+	// Socialite stays in Temple Square, greets new characters and answers
+	// questions (socialite.go).
+	Socialite
+)
 
 // Stats is what an adventurer has done since it started.
 type Stats struct {
@@ -102,8 +115,9 @@ type Adventurer struct {
 	ground            *ground
 	avoiding          map[string]time.Time // ground name -> until
 	toldAt            map[string]time.Time
-	pendingTells      []string
+	pendingTells      []tell
 	saidAt            time.Time
+	greeted           map[string]bool // new characters a socialite has welcomed
 
 	mu    sync.Mutex
 	stats Stats
@@ -228,8 +242,11 @@ func (a *Adventurer) goHome(ctx context.Context) (stateFn, error) {
 		return nil, err
 	}
 	a.say(momentTown)
-	if a.cfg.Wander {
+	switch a.cfg.Style {
+	case Wanderer:
 		return a.wander, nil
+	case Socialite:
+		return a.socialize, nil
 	}
 	return a.town, nil
 }
@@ -602,9 +619,13 @@ func (a *Adventurer) ask(line string, re *regexp.Regexp) (string, []string, erro
 
 func (a *Adventurer) flushTells() error {
 	for len(a.pendingTells) > 0 {
-		who := a.pendingTells[0]
+		t := a.pendingTells[0]
 		a.pendingTells = a.pendingTells[1:]
-		if _, _, err := a.exchange("tell "+who+" "+botReply, tellAnswerRe); err != nil {
+		reply := botReply
+		if a.cfg.Style == Socialite {
+			reply = answer(t.text)
+		}
+		if _, _, err := a.exchange("tell "+t.who+" "+reply, tellAnswerRe); err != nil {
 			return err
 		}
 		a.count(func(st *Stats) { st.TellsAnswered++ })
@@ -651,8 +672,8 @@ func (a *Adventurer) notice(ch Chunk) {
 	if ch.MaxHealth > 0 {
 		a.health, a.maxHealth = ch.Health, ch.MaxHealth
 	}
-	for _, who := range tellers(ch.Text) {
-		a.told(who)
+	for _, t := range tellers(ch.Text) {
+		a.told(t)
 	}
 	if attacked(ch.Text) {
 		a.attacked = true
@@ -662,17 +683,22 @@ func (a *Adventurer) notice(ch Chunk) {
 	}
 }
 
-// told queues an honest answer: once per person per tellEvery, never to itself
-// or a sibling.
-func (a *Adventurer) told(who string) {
-	if strings.EqualFold(who, a.cfg.Name) || isSibling(who, a.cfg.Siblings) {
+// told queues an honest answer: once per person per tellEvery -- a
+// socialite's answers are worth asking again for, so once per answerEvery --
+// never to itself or a sibling.
+func (a *Adventurer) told(t tell) {
+	if strings.EqualFold(t.who, a.cfg.Name) || isSibling(t.who, a.cfg.Siblings) {
 		return
 	}
-	if last, ok := a.toldAt[who]; ok && a.now().Sub(last) < tellEvery {
+	every := tellEvery
+	if a.cfg.Style == Socialite {
+		every = answerEvery
+	}
+	if last, ok := a.toldAt[t.who]; ok && a.now().Sub(last) < every {
 		return
 	}
-	a.toldAt[who] = a.now()
-	a.pendingTells = append(a.pendingTells, who)
+	a.toldAt[t.who] = a.now()
+	a.pendingTells = append(a.pendingTells, t)
 }
 
 // ---- small things -------------------------------------------------------------

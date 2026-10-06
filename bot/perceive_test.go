@@ -8,7 +8,7 @@ import (
 
 func TestTellers(t *testing.T) {
 	text := "Bob tells you, \"hi\".\nangry goose hits you for 2 damage.\nAnn tells you, \"hello\".\n"
-	assert.Equal(t, []string{"Bob", "Ann"}, tellers(text))
+	assert.Equal(t, []tell{{"Bob", "hi"}, {"Ann", "hello"}}, tellers(text))
 	assert.Empty(t, tellers("You say, \"Bob tells you, hi\".\n"), "only at the start of a line")
 }
 

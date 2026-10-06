@@ -62,7 +62,9 @@ Released and deployed: **v0.9.0** (nohassle, slay, smite). Earlier: heal and man
 - Wanderer bots (`WATCHMUD_WANDERERS` in deploy/.env): roam the safe parts of the
   world, linger, fight only back, take nothing. Needs characters made and flagged,
   like the hunters (deploy/README.md, "Bots")
+- A socialite bot (`WATCHMUD_SOCIALITES`): stands in Temple Square, welcomes each new
+  character, answers questions said or told. The room now hears "X has entered the
+  game for the first time." for a brand-new character
 
-**Next, roughly:** a release of the above; content; the bots ROADMAP lists (Socialite,
-explore-and-map, bots that wear what they find). The Barrow-King's AC waits for a real group to try him.
+**Next, roughly:** a release of the above; content; the bots ROADMAP lists (explore-and-map, bots that wear what they find). The Barrow-King's AC waits for a real group to try him.
 Leftovers: `watchmud.games` DNS points nowhere; nothing alerts on an unhealthy game.

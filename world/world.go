@@ -126,9 +126,20 @@ func (w *World) ReturnPlayer(p *player.Player, zoneId, roomId string) {
 // It is also where a wizard's nohassle goes on: every session starts with
 // aggressive mobs leaving them alone, and anyone else with it off.
 func (w *World) Arrive(p *player.Player) {
+	w.arrive(p, false)
+}
+
+// ArriveNew is Arrive for a character just created: the room is told it's
+// their first time, so anyone there -- a socialite bot, say -- knows to
+// make them welcome.
+func (w *World) ArriveNew(p *player.Player) {
+	w.arrive(p, true)
+}
+
+func (w *World) arrive(p *player.Player, first bool) {
 	p.SetNoHassle(p.IsWizard())
 	r := w.playerRoom(p)
-	r.SendExcept(p, event.EnteredGame{Actor: p.Name()})
+	r.SendExcept(p, event.EnteredGame{Actor: p.Name(), First: first})
 	p.Send(event.Color{On: p.Color()}) // ahead of the first thing worth coloring
 	p.Send(r.DescriptionExcept(p))
 	w.backfill(p)

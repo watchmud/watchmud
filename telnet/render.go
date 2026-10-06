@@ -48,6 +48,9 @@ func render(msg any, self string) string {
 		return m.Actor + " has logged out.\n"
 
 	case event.EnteredGame:
+		if m.First {
+			return m.Actor + " has entered the game for the first time.\n"
+		}
 		return m.Actor + " has entered the game.\n"
 
 	case event.Welcome:

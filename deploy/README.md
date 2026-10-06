@@ -184,7 +184,9 @@ Each bot is a character made once by hand -- the bots never create one:
    Do the same for the smoke test's character (Tester): it's a bot too.
 3. In `deploy/.env`: `WATCHMUD_BOTS=Wren,Pim` (hunters), `WATCHMUD_WANDERERS=Odo`
    (wanderers: they roam the safe parts of the world, linger, fight only back and
-   take nothing) and `WATCHMUD_BOTS_PASSWORD=...`, then
+   take nothing), `WATCHMUD_SOCIALITES=Mabel` (one is plenty: it stands in Temple
+   Square welcoming new characters and answering questions) and
+   `WATCHMUD_BOTS_PASSWORD=...`, then
    `docker compose -f deploy/compose.yaml up -d bots`. Either list can be empty; a
    name in both stops the service at startup.
 

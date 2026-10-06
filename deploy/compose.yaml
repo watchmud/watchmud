@@ -60,6 +60,7 @@ services:
     environment:
       WATCHMUD_BOTS: ${WATCHMUD_BOTS:-}
       WATCHMUD_WANDERERS: ${WATCHMUD_WANDERERS:-}
+      WATCHMUD_SOCIALITES: ${WATCHMUD_SOCIALITES:-}
       WATCHMUD_BOTS_PASSWORD: ${WATCHMUD_BOTS_PASSWORD:-}
     logging:
       driver: json-file

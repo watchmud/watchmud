@@ -41,7 +41,7 @@ func TestPickExit(t *testing.T) {
 // takes nothing from what it killed.
 func TestWander_walksAndFightsBack(t *testing.T) {
 	a, g := adventurer(t)
-	a.cfg.Wander = true
+	a.cfg.Style = Wanderer
 	go func() { _, _ = a.wander(context.Background()) }()
 
 	assert.Equal(t, "look", g.heard())
@@ -128,7 +128,7 @@ func TestKeepOut_safe(t *testing.T) {
 func TestWanderer_roams(t *testing.T) {
 	addr := startGame(t, 10*time.Millisecond)
 	createCharacter(t, addr, "Rover", "correcthorse")
-	a := runAdventurer(t, addr, "Rover", func(a *Adventurer) { a.cfg.Wander = true })
+	a := runAdventurer(t, addr, "Rover", func(a *Adventurer) { a.cfg.Style = Wanderer })
 
 	ok := assert.Eventually(t, func() bool { return a.Stats().Steps >= 30 }, 60*time.Second, 50*time.Millisecond)
 	st := a.Stats()
