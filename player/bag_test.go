@@ -78,3 +78,17 @@ func TestRecord_bagThatIsNoLongerABag(t *testing.T) {
 	_, loose := back.Inventory().Get(knifeId)
 	assert.True(t, loose)
 }
+
+// Nor does a satchel content no longer has at all.
+func TestRecord_bagThatIsGone(t *testing.T) {
+	defs := newBagDefs(t)
+	cat, err := rules.NewTestCatalog()
+	require.NoError(t, err)
+	rec, knifeId := packed(t, defs)
+
+	rec.Inventory[0].DefinitionId = "a_satchel_nobody_makes_any_more"
+	back, err := FromRecord(rec, &Recorder{}, cat, defs)
+	require.NoError(t, err)
+	_, loose := back.Inventory().Get(knifeId)
+	assert.True(t, loose)
+}

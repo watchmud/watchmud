@@ -98,22 +98,22 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 	p.backfilled = slices.Clone(rec.Backfilled)
 
 	for _, ir := range rec.Inventory {
-		i, ok := instanceFromRecord(rec.Name, ir, defs)
-		if !ok {
-			continue
+		i, loaded := instanceFromRecord(rec.Name, ir, defs)
+		if loaded {
+			if err := p.inventory.Add(i); err != nil {
+				p.Log().Error().Err(err).Msg("loading inventory")
+			}
 		}
-		if err := p.inventory.Add(i); err != nil {
-			p.Log().Error().Err(err).Msg("loading inventory")
-		}
+		// a bag content no longer knows still has what was in it
 		for _, cr := range ir.Contents {
 			c, ok := instanceFromRecord(rec.Name, cr, defs)
 			if !ok {
 				continue
 			}
-			// a bag content no longer calls a container: what was in it is
-			// carried loose rather than lost
+			// a bag content no longer calls a container, or no longer has:
+			// what was in it is carried loose rather than lost
 			into := p.inventory
-			if i.Contents != nil {
+			if loaded && i.Contents != nil {
 				into = i.Contents
 			}
 			if err := into.Add(c); err != nil {

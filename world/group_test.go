@@ -238,6 +238,20 @@ func (s *groupSuite) TestAssist_notTheSleeping() {
 	s.Assert().Equal(player.Sleeping, s.ann.Position())
 }
 
+// frozen is frozen: a wizard's hold isn't undone by the leader walking off,
+// or by the group's fight
+func (s *groupSuite) TestFrozenStays() {
+	s.as(s.ann, command.Follow{Target: "testdood"})
+	s.ann.SetFrozen(true)
+
+	s.as(s.p, command.Kill{Target: "target"})
+	s.Assert().False(s.w.fightLedger.InFight(s.ann), "no assist")
+
+	s.w.fightLedger.EndAllFightsWith(s.p.Id())
+	s.as(s.p, command.Move{Direction: rules.DirectionSouth})
+	s.Assert().Same(s.w.StartRoom, s.w.playerRoom(s.ann), "no following")
+}
+
 func (s *groupSuite) TestAssistSetting() {
 	s.as(s.ann, command.Assist{})
 	s.Assert().False(sent[event.AssistSet](s.T(), s.annRec, 0).On, "on by default, so a bare assist turns it off")

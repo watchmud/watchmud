@@ -24,7 +24,8 @@ func (w *World) junk(room *spaces.Room, now time.Time) []*object.Instance {
 }
 
 // leftLying is what a player dropped on room's floor and left there for at
-// least after: never a corpse or anything else that can't be taken, never what
+// least after: never a corpse or anything else that can't be taken, nor a bag
+// with anything in it, never what
 // a reset put down, and nothing at all in the donation room -- leaving things
 // there is what it's for. What a mob may help itself to.
 func (w *World) leftLying(room *spaces.Room, now time.Time, after time.Duration) []*object.Instance {
@@ -34,6 +35,11 @@ func (w *World) leftLying(room *spaces.Room, now time.Time, after time.Duration)
 	var found []*object.Instance
 	for item := range room.Inventory.All() {
 		if item.DecaysAt.IsZero() || item.Definition.NoTake() {
+			continue
+		}
+		// nor a bag with things in it: junk refuses that loss to its owner,
+		// and nobody else may cause it either
+		if item.Contents != nil && item.Contents.Len() > 0 {
 			continue
 		}
 		droppedAt := item.DecaysAt.Add(-rules.DroppedDecay)

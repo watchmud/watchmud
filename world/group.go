@@ -117,7 +117,7 @@ func (w *World) assist(member, foe combat.Combatant) {
 		// nor anyone off their feet: a healer asleep to get their mana back
 		// isn't dragged into the leader's next kill
 		if other == p || w.playerRoom(other) != room || w.fightLedger.InFight(other) ||
-			w.groups.noAssist[other] || other.Position() != player.Standing {
+			w.groups.noAssist[other] || other.Position() != player.Standing || other.Frozen() {
 			continue
 		}
 		if err := w.joinFight(other, mob); err != nil {
@@ -248,7 +248,8 @@ func (w *World) handleGroupTell(msg *gameserver.HandlerParameter, cmd command.Gr
 // follower in a fight stays behind, still following, and is told.
 func (w *World) followersCome(leader *player.Player, from *spaces.Room, dir rules.Direction, dest *spaces.Room) {
 	for _, f := range slices.Clone(w.groups.followers[leader]) {
-		if w.playerRoom(f) != from {
+		// a frozen follower stays where a wizard put them
+		if w.playerRoom(f) != from || f.Frozen() {
 			continue
 		}
 		if w.fightLedger.InFight(f) {

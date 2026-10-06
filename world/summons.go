@@ -1,9 +1,12 @@
 package world
 
 import (
+	"slices"
+
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/mobile"
+	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/spaces"
 )
@@ -72,7 +75,22 @@ func (w *World) crumble(mob *mobile.Instance) {
 		room.Notify(event.Crumbled{Name: mob.Name()})
 	}
 	w.fightLedger.EndAllFightsWith(mob.Id())
+	w.dropCarried(mob)
 	w.RemoveMobile(mob)
+}
+
+// dropCarried leaves what a mob picked up on its floor: a mob that goes
+// without a corpse mustn't take anyone's things out of the world with it.
+func (w *World) dropCarried(mob *mobile.Instance) {
+	room := w.mobileRoom(mob)
+	if room == nil {
+		return
+	}
+	for _, item := range slices.Collect(mob.Inventory.All()) {
+		if err := object.Move(item, mob.Inventory, room.Inventory); err != nil {
+			log.Error().Err(err).Msgf("dropCarried: %s's %s", mob.Definition.Id, item.Definition.Name)
+		}
+	}
 }
 
 // crumbleSummonsOf crumbles everything summoner called up.

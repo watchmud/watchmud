@@ -60,6 +60,18 @@ func (s *janitorSuite) TestWhatIsJunk() {
 	s.Assert().Equal([]*object.Instance{old}, s.w.junk(s.market, s.now))
 }
 
+// a bag with things in it isn't junk: junk itself refuses that loss
+func (s *janitorSuite) TestNotAFullBag() {
+	bag := s.lay(s.market, "satchel", time.Hour)
+	bag.Contents = object.NewList()
+	empty := s.lay(s.market, "sack", time.Hour)
+	empty.Contents = object.NewList()
+	pelt := object.NewInstance(uuid.New(), bag.Definition)
+	s.Require().NoError(bag.Contents.Add(pelt))
+
+	s.Assert().Equal([]*object.Instance{empty}, s.w.junk(s.market, s.now))
+}
+
 // what's left in the donation room is left for someone
 func (s *janitorSuite) TestNeverTheDonationRoom() {
 	donation, found := s.w.findRoomById("wrathrock", "donation_room")

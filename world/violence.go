@@ -98,7 +98,8 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 				w.combatantDied(fight.Fightee, room)
 				// TODO award points or other reward
 			} else if p, ok := fight.Fightee.(*player.Player); ok && fightResult.WasHit &&
-				p.Wimpy() > 0 && p.CurrentHealth() < p.Wimpy() {
+				p.Wimpy() > 0 && p.CurrentHealth() < p.Wimpy() && w.fightLedger.InFight(p) {
+				// still in a fight: the mob's script may have run already
 				// wimpy: under the line the player set, they run on their own
 				p.Send(event.Panicked{})
 				w.flee(p)
