@@ -19,7 +19,7 @@ production, and nothing here is released.
   problems"): a spec first, then the refactor in steps, each green. *Spec only -- see
   notes.*
 
-- [ ] **7. FAQ answers for the new commands** (give, look/examine, bags), so the
+- [x] **7. FAQ answers for the new commands** (give, look/examine, bags), so the
   socialite documents them for the newest players.
 - [ ] **8. Hunt the two flaky tests** seen once each earlier (a bot game test,
   `TestMoveWhileFighting`): run the suite many times, root-cause what fails.
@@ -58,3 +58,5 @@ Feel and tuning calls met along the way are noted below rather than decided.
   isn't immutable (the world plays in its rooms) -- but the writers are loader-only,
   so nothing is broken. ~150 call sites; a design to agree before doing, with a
   recommendation to wait until something needs it.
+- **7.** Two socialite topics: give (before shops, so "give coins" isn't a shop
+  question) and examining things (`look <name>`). Bags got theirs with the bags commit.
