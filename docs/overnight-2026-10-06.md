@@ -209,6 +209,12 @@ which commits carry them, for a `hotfix/` branch off the release tag:
   the Barrow fix; the rest is the mill (not in v0.10.0).
 - `516e354` -- only `server/gameserver.go`'s `recovering` answering a failed login is
   the hung-login fix; the pacing and limits came with it and could ride along.
+Later in the night, two more fixes for v0.10.0 bugs (not tried on the tag):
+- `42d9643` -- the login lookup off the world goroutine (a mongo blip froze the game
+  per login). A bigger change to `server/`; would need the login tests reworked.
+- `71e9c95` -- hand-overs save everyone in the room at once (crash duplicates).
+  Small: `world/handlers.go` and `world/playersave.go`.
+
 Tried in a scratch worktree off `v0.10.0` (not pushed): the first two cherry-pick
 cleanly once the docs are dropped; the Barrow and hung-login parts (and their
 tests, `world/zone_activity_test.go`, `server/recover_test.go`) go in by hand; and
