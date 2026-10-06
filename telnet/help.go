@@ -74,11 +74,13 @@ type helpTopic struct {
 }
 
 var helpTopics = map[string]helpTopic{
-	"bots": {"who the [bot] characters are",
-		"The characters marked [bot] in 'who' are programs, not people. They hunt\n" +
-			"the Hollowfields, rest when they're hurt, and give what they find to the\n" +
-			"donation room, east of Temple Square. They leave any hunting ground a\n" +
-			"player is using, and they can't chat: a tell gets you an automatic answer.\n"},
+	"bots": {"who the bots are",
+		"The characters listed under Bots in 'who' are programs, not people. Most\n" +
+			"hunt the Hollowfields, rest when they're hurt, and give what they find to\n" +
+			"the donation room, east of Temple Square; they leave any hunting ground a\n" +
+			"player is using. Some just wander, stopping a while here and there: they\n" +
+			"fight only what attacks them and take nothing. None of them can chat: a\n" +
+			"tell gets you an automatic answer.\n"},
 }
 
 // helpText is built once: the sections never change while the server runs.

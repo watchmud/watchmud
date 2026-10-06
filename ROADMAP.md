@@ -159,7 +159,8 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
   `bots` compose service -- always-on, listed apart in `who` from a flag on the
   record, hunting the Hollowfields, donating what they find, and honest when told
   to. Dropped items decay after 30 minutes, so the donation room turns over.
-  Future: a **Wanderer** (roams, fights only when attacked, never loots), a
+  Future: ~~a **Wanderer** (roams, fights only when attacked, never loots)~~ done
+  2026-10-06 (`bot/wanderer.go`, spec in `docs/superpowers/specs/`), a
   **Socialite** (greets new characters in town, answers newbie questions), bots that
   **explore and map** the world instead of following hand-written hunting grounds
   (needs room names to stay unique -- true today, not enforced), and bots that **wear

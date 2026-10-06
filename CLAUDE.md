@@ -295,6 +295,19 @@ at random among the grounds its power suits and nobody is using, so bots spread 
 player on one sends them to the other. `cmd/watchmud-bots` runs up to 5 (one address, the server's
 cap), reconnecting forever.
 
+**A wanderer is an `Adventurer` with `Wander` set** (`bot/wanderer.go`): home leads to
+`wander` instead of `town`. It takes a random exit from each room's `[ Exits: ]` line,
+never straight back unless it's a dead end, lingers in one room in four
+(`Pace.Linger`), fights only what attacks it, and loots nothing -- `fight` loots only a
+ground's prey, and a wanderer has no ground. Everything else is the hunter's code:
+tells, fleeing, resting, recall, dying. It is power 1 too, so **`keepOut`** lists the
+doors it never takes (today: south from the Edge of the Old Wood, which shuts off the
+wolves and the whole Barrow). `TestKeepOut_safe` walks the real content from the start
+room without those doors and fails if anything aggressive above power 2 is in reach --
+new dangerous content needs a door in `keepOut`, not a looser test.
+`WATCHMUD_WANDERERS` names them, beside `WATCHMUD_BOTS`; the five-bot cap is for both
+together, and every bot is every other's sibling.
+
 ### Content loading (loader -> world)
 
 `loader.LoadContent(os.DirFS(contentPath))` reads `content/` into an immutable

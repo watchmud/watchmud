@@ -49,6 +49,7 @@ type Pace struct {
 	Poll   time.Duration    // how often a resting bot looks at its health
 	Answer time.Duration    // how long the server has to reply
 	Idle   time.Duration    // how long a bot with nowhere to hunt waits in town
+	Linger [2]time.Duration // how long a wanderer stops in a room, when it does
 }
 
 // HumanPace is a person at a keyboard.
@@ -59,6 +60,7 @@ var HumanPace = Pace{
 	Poll:   5 * time.Second,
 	Answer: 10 * time.Second,
 	Idle:   3 * time.Minute,
+	Linger: [2]time.Duration{30 * time.Second, 2 * time.Minute},
 }
 
 // AdventurerConfig is one bot. Siblings are the other bots run beside it:
@@ -72,12 +74,16 @@ type AdventurerConfig struct {
 	// room; zero is donateAfter. Tests lower it: a world at a hundred times
 	// speed still respawns on the wall clock, so its fields run dry first.
 	DonateAfter int
-	Log         func(format string, args ...any) // nil is silent
+	// Wander makes it a wanderer rather than a hunter: it roams wherever the
+	// exits go and is safe, fights only what attacks it, and loots nothing
+	// (wanderer.go).
+	Wander bool
+	Log    func(format string, args ...any) // nil is silent
 }
 
 // Stats is what an adventurer has done since it started.
 type Stats struct {
-	Kills, Looted, Donations, TellsAnswered, Avoided, Deaths int
+	Kills, Looted, Donations, TellsAnswered, Avoided, Deaths, Steps int
 }
 
 // Adventurer is a bot that plays like a player: out to a hunting ground, fights
@@ -222,6 +228,9 @@ func (a *Adventurer) goHome(ctx context.Context) (stateFn, error) {
 		return nil, err
 	}
 	a.say(momentTown)
+	if a.cfg.Wander {
+		return a.wander, nil
+	}
 	return a.town, nil
 }
 
@@ -386,28 +395,40 @@ func (a *Adventurer) fightThen(next stateFn) stateFn {
 // carries on to next.
 func (a *Adventurer) waitThen(d time.Duration, next stateFn) stateFn {
 	return func(ctx context.Context) (stateFn, error) {
-		end := time.Now().Add(d)
-		for time.Now().Before(end) {
-			if ctx.Err() != nil {
-				return nil, ctx.Err()
-			}
-			ch, err := a.c.ReadChunk(min(time.Until(end), a.cfg.Pace.Poll))
-			if err != nil {
-				return nil, err
-			}
-			a.notice(ch)
-			if a.died {
-				return a.dead, nil
-			}
-			if a.attacked {
-				return a.fightThen(next), nil
-			}
-			if err := a.flushTells(); err != nil {
-				return nil, err
-			}
+		if err := a.idle(ctx, d); err != nil {
+			return nil, err
+		}
+		if a.died {
+			return a.dead, nil
+		}
+		if a.attacked {
+			return a.fightThen(next), nil
 		}
 		return next, nil
 	}
+}
+
+// idle reads the world for d, answering tells, and stops early if it's
+// attacked or dies: the caller sees which.
+func (a *Adventurer) idle(ctx context.Context, d time.Duration) error {
+	end := time.Now().Add(d)
+	for time.Now().Before(end) {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		ch, err := a.c.ReadChunk(min(time.Until(end), a.cfg.Pace.Poll))
+		if err != nil {
+			return err
+		}
+		a.notice(ch)
+		if a.died || a.attacked {
+			return nil
+		}
+		if err := a.flushTells(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // ---- procedures -------------------------------------------------------------
@@ -691,12 +712,18 @@ func (a *Adventurer) below(pct int) bool {
 	return a.maxHealth > 0 && a.health*100 < pct*a.maxHealth
 }
 
-// pause waits a random while in span, or until ctx is done.
-func (a *Adventurer) pause(ctx context.Context, span [2]time.Duration) error {
+// span is a random while in [min, max).
+func (a *Adventurer) span(span [2]time.Duration) time.Duration {
 	d := span[0]
 	if span[1] > span[0] {
 		d += time.Duration(a.rng.Int64N(int64(span[1] - span[0])))
 	}
+	return d
+}
+
+// pause waits a random while in span, or until ctx is done.
+func (a *Adventurer) pause(ctx context.Context, span [2]time.Duration) error {
+	d := a.span(span)
 	select {
 	case <-ctx.Done():
 		return ctx.Err()
