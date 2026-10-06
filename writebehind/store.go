@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 	"uuid"
 
 	"github.com/rs/zerolog/log"
@@ -19,6 +20,10 @@ type Store struct {
 	mu      sync.Mutex
 	pending map[uuid.UUID]*player.Record // newest unwritten record per player; guarded by mu
 	written map[uuid.UUID]*player.Record // last record that reached inner; writer goroutine only
+
+	// retry is the first wait before trying again what failed to write,
+	// doubling to maxRetry while it keeps failing.
+	retry time.Duration
 
 	wake chan struct{} // buffered 1: "there is something to write"
 	quit chan struct{} // closed by Close
@@ -35,11 +40,15 @@ type batchSaver interface {
 	SaveAll(recs []*player.Record) (failed []int, err error)
 }
 
-func New(inner player.Store) *Store {
+func New(inner player.Store) *Store { return newRetrying(inner, time.Second) }
+
+// newRetrying is New with retry's first wait chosen: tests don't wait seconds.
+func newRetrying(inner player.Store, retry time.Duration) *Store {
 	s := &Store{
 		inner:   inner,
 		pending: make(map[uuid.UUID]*player.Record),
 		written: make(map[uuid.UUID]*player.Record),
+		retry:   retry,
 		wake:    make(chan struct{}, 1), // doorbell pattern
 		quit:    make(chan struct{}),
 		done:    make(chan struct{}),
@@ -48,20 +57,45 @@ func New(inner player.Store) *Store {
 	return s
 }
 
+// maxRetry is the longest wait between tries at a store that keeps failing.
+const maxRetry = 30 * time.Second
+
+// closeTries is how many more times Close's last flush is tried.
+const closeTries = 5
+
+// run writes whenever there's something new, and tries again on its own
+// whatever failed: the last player out quitting during a database blip has
+// nobody after them whose save would ring the bell. Closing, it keeps
+// trying until everything is written, or Close stops waiting.
 func (s *Store) run() {
 	defer close(s.done)
+	wait := s.retry
+	var again <-chan time.Time // nil: nothing to retry
 	for {
 		select {
 		case <-s.wake:
-			s.flush()
+		case <-again:
 		case <-s.quit:
-			s.flush()
+			// a few more tries, a second apart at most: a database that's
+			// briefly away gets its records; one refusing a record for good
+			// doesn't hold the shutdown up
+			for tries := 0; s.flush() && tries < closeTries; tries++ {
+				time.Sleep(min(wait, time.Second))
+				wait *= 2
+			}
 			return
+		}
+		if s.flush() {
+			again = time.After(wait)
+			wait = min(wait*2, maxRetry)
+		} else {
+			again, wait = nil, s.retry
 		}
 	}
 }
 
-func (s *Store) flush() {
+// flush writes what's pending, and answers whether anything failed to write.
+func (s *Store) flush() (failedAny bool) {
 	// copy queue under the lock
 	s.mu.Lock()
 	batch := make([]*player.Record, 0, len(s.pending))
@@ -90,23 +124,33 @@ func (s *Store) flush() {
 		}
 		for i, r := range changed {
 			if unwritten[i] {
-				continue // stays pending; next wake tries again
+				// Stays pending, to try again. And whatever the store holds
+				// for them is unknown now -- the write may have landed and
+				// said otherwise -- so the next record is written whatever
+				// it looks like: compared to the last known one, a change
+				// undone would be skipped, leaving the store the change.
+				delete(s.written, r.Id)
+				failedAny = true
+				continue
 			}
 			s.written[r.Id] = r
 			s.forget(r)
 		}
-		return
+		return failedAny
 	}
 	// save one at a time
 	for _, r := range changed {
 		if err := s.inner.Save(r); err != nil {
-			// left in pending; next wake tries again
+			// left in pending, to try again; unknown in the store, as above
 			log.Error().Err(err).Str("player", r.Name).Msg("writebehind: save failed")
+			delete(s.written, r.Id)
+			failedAny = true
 			continue
 		}
 		s.written[r.Id] = r
 		s.forget(r)
 	}
+	return failedAny
 }
 
 // Forget takes r out of the queue, unless a newer record replaced it

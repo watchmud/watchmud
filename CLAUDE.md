@@ -138,7 +138,12 @@ is set, so `make check` still passes with no docker.
 In the server, either one is wrapped in **`writebehind.Store`**, so `Save` only queues and
 returns: one background goroutine writes, keeping the newest unwritten record per player,
 skipping records identical to the last one written, and using `SaveAll` (one mongo
-`BulkWrite`) when the inner store has it. `Load` answers from that queue first, which is
+`BulkWrite`) when the inner store has it. What fails to write is tried again on its own,
+from 1s doubling to 30s -- the last player out quitting during a database blip has
+nobody after them to wake the writer -- and `Close` gives it five more tries. A failed
+write also forgets what was last written for that player: it may have landed, so the
+next record is written even if it matches the old one, or a change undone in between
+(remove a sword, wield it again) would be skipped and the store left with the change. `Load` answers from that queue first, which is
 what makes quit-and-log-straight-back-in safe. Two consequences:
 
 - **Nothing on the world goroutine hears a save fail.** In particular mongo's unique name

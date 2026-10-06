@@ -3,7 +3,9 @@ package writebehind
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
+	"time"
 	"uuid"
 
 	"github.com/stretchr/testify/assert"
@@ -108,7 +110,7 @@ func (b *batchStore) SaveAll(recs []*player.Record) ([]int, error) {
 // they are written and leave the queue, and only the bad one is left.
 func TestBatch_oneBadRecordOnlyFailsItself(t *testing.T) {
 	inner := &batchStore{Store: memstore.New(), reject: map[string]bool{"bad": true}}
-	s := New(inner)
+	s := newRetrying(inner, time.Millisecond)
 
 	require.NoError(t, s.Save(&player.Record{Id: uuid.New(), Name: "good"}))
 	require.NoError(t, s.Save(&player.Record{Id: uuid.New(), Name: "bad"}))
@@ -124,4 +126,88 @@ func TestBatch_oneBadRecordOnlyFailsItself(t *testing.T) {
 	}
 	_, found, _ := inner.Store.Load("bad")
 	assert.False(t, found)
+}
+
+// flakyStore fails its first n writes, then works -- a database blip.
+type flakyStore struct {
+	*memstore.Store
+	mu    sync.Mutex
+	fails int
+}
+
+func (f *flakyStore) Save(r *player.Record) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.fails > 0 {
+		f.fails--
+		return errors.New("blip")
+	}
+	return f.Store.Save(r)
+}
+
+func (f *flakyStore) Load(name string) (*player.Record, bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.Store.Load(name)
+}
+
+// A save that fails is tried again on its own: the last player out
+// quitting during a blip has nobody after them to ring the bell.
+func TestRetriesWithoutAnotherSave(t *testing.T) {
+	inner := &flakyStore{Store: memstore.New(), fails: 2}
+	s := newRetrying(inner, time.Millisecond)
+	require.NoError(t, s.Save(&player.Record{Id: uuid.New(), Name: "last"}))
+
+	assert.Eventually(t, func() bool {
+		_, found, _ := inner.Load("last")
+		return found
+	}, 2*time.Second, 5*time.Millisecond)
+	require.NoError(t, s.Close(context.Background()))
+}
+
+// unsureStore says a write failed, having written it -- a timeout after the
+// database had done it -- while lie is set.
+type unsureStore struct {
+	flakyStore
+	lie bool
+}
+
+func (u *unsureStore) Save(r *player.Record) error {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	_ = u.Store.Save(r)
+	if u.lie {
+		u.lie = false
+		return errors.New("timed out, maybe")
+	}
+	return nil
+}
+
+func (u *unsureStore) lieOnce() {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	u.lie = true
+}
+
+// After a write it can't be sure of, the next record is written even if it
+// matches the last one known to be: a change undone in between (remove a
+// sword, wield it again) mustn't leave the store with the change.
+func TestAnUnsureWriteIsNotTrusted(t *testing.T) {
+	inner := &unsureStore{flakyStore: flakyStore{Store: memstore.New()}}
+	s := newRetrying(inner, time.Hour) // the test does its own retrying, through Save
+	id := uuid.New()
+	wielding := &player.Record{Id: id, Name: "dood", CurHealth: 1}
+
+	require.NoError(t, s.Save(wielding))
+	require.Eventually(t, func() bool { _, ok, _ := inner.Load("dood"); return ok }, time.Second, time.Millisecond)
+
+	inner.lieOnce()
+	require.NoError(t, s.Save(&player.Record{Id: id, Name: "dood", CurHealth: 2})) // lands, "fails"
+	require.Eventually(t, func() bool { r, _, _ := inner.Load("dood"); return r.CurHealth == 2 }, time.Second, time.Millisecond)
+
+	again := *wielding
+	require.NoError(t, s.Save(&again))
+	require.NoError(t, s.Close(context.Background()))
+	got, _, _ := inner.Store.Load("dood")
+	assert.Equal(t, 1, got.CurHealth, "the store has what the player has")
 }

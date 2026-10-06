@@ -175,6 +175,15 @@ A review of the first night's code (doors, chests, the mill, abilities):
 - The strongbox key came back every reset and sold for ~16 coins: keys are `noSell`.
 - A stun outlasted its fight when the stunner fled or fell.
 
+A review of saving (write-behind, mongo, the record), which found every field
+round-trips and nothing aliased, and two real bugs, both in production today:
+- **A failed save waited for some other save to be retried.** The last player out
+  quitting during a mongo blip sat in memory only, for hours if nobody came; and
+  Close tried once. Now retried on its own (1s doubling to 30s), five times at close.
+- **A write reported failed that had landed** could make a later, real change be
+  skipped as "identical" -- remove a sword, wield it again, and the store kept the
+  removal. A failed write now forgets what was last written for that player.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:
