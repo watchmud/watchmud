@@ -58,7 +58,12 @@ func (w *World) handleSplit(msg *gameserver.HandlerParameter, cmd command.Split)
 	for _, p := range here {
 		p.AddCoins(each)
 	}
-	room.Send(event.SplitCoins{Actor: msg.Player.Name(), Each: each, Among: among})
+	// only to those who got some: a bystander would read "you get"
+	split := event.SplitCoins{Actor: msg.Player.Name(), Each: each, Among: among}
+	msg.Player.Send(split)
+	for _, p := range here {
+		p.Send(split)
+	}
 }
 
 // handleWhere lists the players in the same zone, and the room each is in.

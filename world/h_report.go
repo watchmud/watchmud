@@ -14,6 +14,15 @@ import (
 // since the last restart. The log and the store keep every one.
 const keptReports = 50
 
+// reportEvery is how often one player may file a report. Each is a log line
+// and a database write, and a loop of them would push every real one out of
+// the latest few a wizard reads.
+const reportEvery = 10 * time.Second
+
+// reportCooldown is the key it's kept under on the player, beside ability
+// cooldowns: not an ability id, which can't start with a colon.
+const reportCooldown = ":report"
+
 // SetReportFiler is what keeps a report beyond the log and the latest few in
 // memory -- mongo, in the server. It's called on the world goroutine, so it
 // mustn't block: hand the report to a goroutine of its own.
@@ -31,6 +40,12 @@ func (w *World) handleReport(msg *gameserver.HandlerParameter, cmd command.Repor
 		msg.Fail(event.TooLong)
 		return
 	}
+	now := w.now()
+	if now.Before(msg.Player.ReadyAt(reportCooldown)) {
+		msg.Fail(event.NotReady)
+		return
+	}
+	msg.Player.StartCooldown(reportCooldown, now.Add(reportEvery))
 	r := report.Report{Kind: cmd.Kind, Player: msg.Player.Name(), Text: cmd.Text, At: time.Now().UTC()}
 	if room := w.playerRoom(msg.Player); room != nil {
 		r.Room = room.Zone.Id + "/" + room.Id

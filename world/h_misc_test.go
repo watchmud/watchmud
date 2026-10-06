@@ -41,7 +41,13 @@ func (s *miscSuite) TestSplit() {
 	s.Assert().Equal(event.NoOneToSplit, sent[event.Failed](s.T(), s.r, 0).Code, "not in a group")
 
 	s.as(s.ann, command.Follow{Target: "testdood"})
+	carl := &player.Recorder{}
+	s.w.PlacePlayer(player.NewTestPlayer(uuid.New(), "carl", carl), s.w.StartRoom)
 	s.as(s.p, command.Split{Amount: "31"})
+	for _, m := range carl.Sent {
+		_, told := m.(event.SplitCoins)
+		s.Assert().False(told, "carl, not in the group, got nothing and isn't told he did")
+	}
 	s.Assert().Equal(event.SplitCoins{Actor: "testdood", Each: 15, Among: 2}, sent[event.SplitCoins](s.T(), s.annRec, 0))
 	s.Assert().Equal(15, s.ann.Coins())
 	s.Assert().Equal(16, s.p.Coins(), "the odd coin stays with the splitter")
