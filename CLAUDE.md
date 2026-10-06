@@ -147,12 +147,20 @@ next record is written even if it matches the old one, or a change undone in bet
 what makes quit-and-log-straight-back-in safe. Two consequences:
 
 - **Nothing on the world goroutine hears a save fail.** In particular mongo's unique name
-  index can no longer refuse a duplicate at creation, so `handleCreatePlayer` checks
-  `store.Load` itself (`event.NameTaken`). Creation spans two dispatches -- bcrypt runs on
-  a goroutine in between -- so `handleCreateHashed` checks again when the hash comes back;
-  each check alone is race-free because dispatch is one command at a time. `handleLogin`
-  likewise refuses a character already in the world (`event.AlreadyPlaying`), and checks
-  again in `handleLoginChecked` -- two sessions of one character save over each other.
+  index can no longer refuse a duplicate at creation, so creation checks `store.Load`
+  itself (`event.NameTaken`).
+- **The world goroutine never calls `store.Load`.** It's a database -- mongo gives up
+  after five seconds -- and a login is a lookup for every name typed. So `handleLogin`
+  hands the name to `lookUp`, a goroutine, whose answer comes back through the queue as
+  `loginLooked`; a password is then checked by bcrypt on another, as `loginChecked`,
+  carrying the record. Creation looks the name up and hashes on one goroutine, back as
+  `createHashed`. What a check on the world goroutine used to cover is held there
+  instead: `GameServer.creating` refuses a second creation of a name still being made,
+  and `GameServer.logouts` counts each name's logouts, so a record loaded before a
+  logout of that character -- another session quitting meanwhile -- is loaded again
+  before it's played. `handleLogin` refuses a character already in the world
+  (`event.AlreadyPlaying`), and `handleLoginChecked` checks again -- two sessions of one
+  character save over each other.
 
 **A name has one stored form.** `player.CanonicalName` turns whatever was typed into it
 ("bOB" is "Bob") or refuses it, at the top of `handleLogin` and `handleCreatePlayer`;

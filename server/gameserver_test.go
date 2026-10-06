@@ -66,24 +66,39 @@ func settle(t *testing.T, gs *GameServer) {
 	}
 }
 
-// create and login are the whole two-step conversation.
-func create(t *testing.T, gs *GameServer, c gameserver.Conn, name, password string) {
-	t.Helper()
-	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.CreatePlayer{
-		Name:     name,
-		Lineage:  "human",
-		Password: command.Secret(password),
-	})))
-	settle(t, gs)
+// answers counts what the login conversation waits on: the four events it
+// ends on.
+func answers(c *testConn) int {
+	n := 0
+	for _, m := range c.sent {
+		switch m.(type) {
+		case event.LoggedIn, event.PlayerCreated, event.LoginFailed, event.CreateFailed:
+			n++
+		}
+	}
+	return n
 }
 
-func login(t *testing.T, gs *GameServer, c gameserver.Conn, name, password string) {
+// ask sends cmd from c and does what Run would until c has its answer: the
+// store lookup and the hashing each come back through the queue.
+func ask(t *testing.T, gs *GameServer, c *testConn, cmd command.Command) {
 	t.Helper()
-	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Login{
-		Name:     name,
-		Password: command.Secret(password),
-	})))
-	settle(t, gs)
+	before := answers(c)
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, cmd)))
+	for answers(c) == before {
+		settle(t, gs)
+	}
+}
+
+// create and login are the whole conversation.
+func create(t *testing.T, gs *GameServer, c *testConn, name, password string) {
+	t.Helper()
+	ask(t, gs, c, command.CreatePlayer{Name: name, Lineage: "human", Password: command.Secret(password)})
+}
+
+func login(t *testing.T, gs *GameServer, c *testConn, name, password string) {
+	t.Helper()
+	ask(t, gs, c, command.Login{Name: name, Password: command.Secret(password)})
 }
 
 // A brand new character arrives dressed, and the record written for them says
@@ -147,7 +162,7 @@ func TestPrompt_reachesPlayersInTheWorld(t *testing.T) {
 func TestPrompt_skipsAFailedLogin(t *testing.T) {
 	gs, _ := newTestGameServer(t)
 	c := &testConn{}
-	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Login{Name: "nobody"})))
+	ask(t, gs, c, command.Login{Name: "nobody"})
 
 	gs.prompt()
 
@@ -190,7 +205,7 @@ func TestCreatePlayer_nameTaken(t *testing.T) {
 	create(t, gs, &testConn{}, "bob", "sekrit")
 
 	second := &testConn{}
-	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(second, command.CreatePlayer{Name: "bob", Password: "other"})))
+	ask(t, gs, second, command.CreatePlayer{Name: "bob", Password: "other"})
 
 	assert.Nil(t, second.Player(), "no second bob")
 	require.Len(t, second.sent, 1)
@@ -205,7 +220,7 @@ func TestLogin_alreadyPlaying(t *testing.T) {
 	create(t, gs, first, "bob", "sekrit")
 
 	second := &testConn{}
-	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(second, command.Login{Name: "bob", Password: "sekrit"})))
+	ask(t, gs, second, command.Login{Name: "bob", Password: "sekrit"})
 	assert.Nil(t, second.Player())
 	require.Len(t, second.sent, 1)
 	assert.Equal(t, event.LoginFailed{Reason: event.AlreadyPlaying}, second.sent[0])
@@ -238,20 +253,14 @@ func TestLogin_wrongPassword(t *testing.T) {
 func TestCreatePlayer_nameTakenWhileHashing(t *testing.T) {
 	gs, _ := newTestGameServer(t)
 	first, second := &testConn{}, &testConn{}
-	for _, c := range []*testConn{first, second} {
-		require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.CreatePlayer{Name: "bob", Password: "sekrit"})))
-	}
-	settle(t, gs)
-	settle(t, gs)
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(first, command.CreatePlayer{Name: "bob", Password: "sekrit"})))
+	ask(t, gs, second, command.CreatePlayer{Name: "bob", Password: "sekrit"})
+	assert.Equal(t, []any{event.CreateFailed{Reason: event.NameTaken}}, second.sent, "the first is still being made")
 
-	// either may have come back first
-	winner, loser := first, second
-	if first.Player() == nil {
-		winner, loser = second, first
+	for first.Player() == nil {
+		settle(t, gs)
 	}
-	assert.NotNil(t, winner.Player())
-	assert.Nil(t, loser.Player())
-	assert.Equal(t, []any{event.CreateFailed{Reason: event.NameTaken}}, loser.sent)
+	assert.Nil(t, second.Player())
 }
 
 // A name sent without a password is how the login conversation finds out
@@ -264,7 +273,7 @@ func TestLogin_noPasswordAsksForOne(t *testing.T) {
 	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(first, command.Logout{})))
 
 	c := &testConn{}
-	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Login{Name: "bob"})))
+	ask(t, gs, c, command.Login{Name: "bob"})
 
 	assert.Nil(t, c.Player())
 	assert.Equal(t, []any{event.LoginFailed{Reason: event.PasswordRequired}}, c.sent)
@@ -287,11 +296,11 @@ func TestName_caseFolded(t *testing.T) {
 
 	// same character, whatever the case: taken to a creation, playing to a login
 	dup := &testConn{}
-	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(dup, command.CreatePlayer{Name: "BOB", Password: "other"})))
+	ask(t, gs, dup, command.CreatePlayer{Name: "BOB", Password: "other"})
 	assert.Equal(t, []any{event.CreateFailed{Reason: event.NameTaken}}, dup.sent)
 
 	second := &testConn{}
-	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(second, command.Login{Name: "bob", Password: "sekrit"})))
+	ask(t, gs, second, command.Login{Name: "bob", Password: "sekrit"})
 	assert.Equal(t, []any{event.LoginFailed{Reason: event.AlreadyPlaying}}, second.sent)
 
 	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(first, command.Logout{})))
@@ -307,11 +316,11 @@ func TestName_invalid(t *testing.T) {
 	gs, store := newTestGameServer(t)
 	for _, name := range []string{"bo", "bob2", "bob the great", ""} {
 		c := &testConn{}
-		require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Login{Name: name})))
+		ask(t, gs, c, command.Login{Name: name})
 		assert.Equal(t, []any{event.LoginFailed{Reason: event.InvalidName}}, c.sent, "login %q", name)
 
 		c = &testConn{}
-		require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.CreatePlayer{Name: name, Password: "sekrit"})))
+		ask(t, gs, c, command.CreatePlayer{Name: name, Password: "sekrit"})
 		assert.Equal(t, []any{event.CreateFailed{Reason: event.InvalidName}}, c.sent, "create %q", name)
 		assert.Empty(t, gs.incomingBuffer, "nothing went to bcrypt for %q", name)
 	}
@@ -326,11 +335,11 @@ func TestName_reserved(t *testing.T) {
 	gs, _ := newTestGameServer(t)
 	for _, name := range []string{"self", "All", "rabbit", "drone"} {
 		c := &testConn{}
-		require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Login{Name: name})))
+		ask(t, gs, c, command.Login{Name: name})
 		assert.Equal(t, []any{event.LoginFailed{Reason: event.NameReserved}}, c.sent, "login %q", name)
 
 		c = &testConn{}
-		require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.CreatePlayer{Name: name, Password: "sekrit"})))
+		ask(t, gs, c, command.CreatePlayer{Name: name, Password: "sekrit"})
 		assert.Equal(t, []any{event.CreateFailed{Reason: event.NameReserved}}, c.sent, "create %q", name)
 	}
 }
@@ -398,4 +407,61 @@ func TestCreatePlayer_roomHearsAFirstArrival(t *testing.T) {
 	create(t, gs, &testConn{}, "newbie", "sekrit")
 
 	assert.Contains(t, old.sent, event.EnteredGame{Actor: "Newbie", First: true})
+}
+
+// blockingStore's Load waits until the test lets it through: a database
+// having a bad few seconds.
+type blockingStore struct {
+	player.Store
+	release chan struct{}
+}
+
+func (b *blockingStore) Load(name string) (*player.Record, bool, error) {
+	<-b.release
+	return b.Store.Load(name)
+}
+
+// The world goroutine never waits on the store: a name typed at the door is
+// looked up on a goroutine of its own, so a slow database slows that one
+// login, not the game.
+func TestLogin_theWorldDoesntWaitOnTheStore(t *testing.T) {
+	gs, store := newTestGameServer(t)
+	slow := &blockingStore{Store: store, release: make(chan struct{})}
+	gs.store = slow
+
+	done := make(chan error, 1)
+	c := &testConn{}
+	go func() { done <- gs.dispatch(gameserver.NewHandlerParameter(c, command.Login{Name: "bob"})) }()
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(2 * time.Second):
+		t.Fatal("the world goroutine waited on the store")
+	}
+
+	close(slow.release)
+	settle(t, gs)
+	assert.Equal(t, []any{event.LoginFailed{Reason: event.NoSuchPlayer}}, c.sent)
+}
+
+// A record loaded before the password was checked is stale if the character
+// logged out meanwhile -- another session quitting with newer gear. It's
+// loaded again, and that's the one that comes in.
+func TestLogin_reloadsARecordLoggedOutMeanwhile(t *testing.T) {
+	gs, store := newTestGameServer(t)
+	first := &testConn{}
+	create(t, gs, first, "bob", "sekrit")
+	stale := first.Player().Record()
+	first.Player().AddCoins(99)
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(first, command.Logout{})))
+	fresh, _, err := store.Load("Bob")
+	require.NoError(t, err)
+	require.Equal(t, 99, fresh.Coins)
+
+	c := &testConn{}
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, loginChecked{Name: "Bob", Ok: true, Rec: stale, Gen: 0})))
+	for c.Player() == nil {
+		settle(t, gs)
+	}
+	assert.Equal(t, 99, c.Player().Coins(), "the record from after the logout")
 }

@@ -159,8 +159,10 @@ A security review of the connection and login layer (the injection fix held up):
   A name asked again now waits 1s; a wrong password 2s; bcrypt one per CPU.
 - Logins must finish in 5 minutes; 200 connections at most; IPv6 counted by /64.
 - Unicode format characters (right-to-left override) dropped from typed lines.
-- Not done: moving the login lookup off the world goroutine entirely (the pause makes
-  it one lookup a second a connection); a per-name lockout after failed passwords
+- Done since: the login lookup is off the world goroutine entirely (a mongo blip
+  froze the whole game for up to 5s per login); the record is reloaded if the
+  character logged out while the password was checked. Not done: a per-name lockout
+  after failed passwords
   (it would let anyone lock a player out). Creations are capped since: 10 a day per
   address.
 - Seen once since, not reproduced in 4 more runs: `TestAdventurer_answersATell`
