@@ -5,7 +5,7 @@
 Everything below is on PR #36's branch, CI green, nothing released or deployed.
 
 **Wants you:**
-1. **A hotfix for v0.10.0?** Ten fixes are for bugs live today -- telnet injection
+1. **A hotfix for v0.10.0?** Eleven fixes are for bugs live today -- telnet injection
    (anyone can hide what the room types), saves that are never retried after a mongo
    blip, a login freezing the game during one, the Barrow resetting mid-fight, crash
    duplicates, players able to knock bots off by talking, ghost logins, `kill wild
@@ -228,7 +228,7 @@ reach from here): nothing found that would stop it loading, but --
 
 ### If you want a hotfix before this PR ships
 
-Ten of the night's fixes are for bugs in v0.10.0. Releasing is yours; this is only
+Eleven of the night's fixes are for bugs in v0.10.0. Releasing is yours; this is only
 which commits carry them, for a `hotfix/` branch off the release tag:
 - `bd01955` -- typed lines cleaned, IAC doubled (telnet/conn.go). Self-contained.
 - `2e59676` -- write-behind retries and distrusts failed writes (writebehind/).
@@ -246,7 +246,7 @@ Later in the night, two more fixes for v0.10.0 bugs (not tried on the tag):
   the same hole in its bcrypt window; the fix there would be the same idea (note
   connections that log out with a hash away, drop what comes back for them) without
   the lookup changes it's written against here.
-- the commit after `3ab69cb` -- `parseTarget` refuses `-1.x`, `2.` and `0 coins`
+- `3f51f88` -- `parseTarget` refuses `-1.x`, `2.` and `0 coins`
   (`world/target_parser.go` only).
 - `3ab69cb` -- `kill` takes the whole name (one line in `telnet/parse.go`; the rest of
   the commit is smaller fixes that can ride along or not).
