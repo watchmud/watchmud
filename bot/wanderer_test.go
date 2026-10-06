@@ -19,6 +19,7 @@ import (
 func TestParseExits(t *testing.T) {
 	assert.Equal(t, []string{"north", "east", "up"}, parseExits("North, East, Up"))
 	assert.Empty(t, parseExits("None"))
+	assert.Equal(t, []string{"north"}, parseExits("North, West (closed)"), "a wanderer doesn't open doors")
 }
 
 // never through a keepOut door, never straight back while there's another way

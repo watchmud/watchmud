@@ -98,6 +98,18 @@ type Repair struct {
 
 func (Repair) Verb() string { return "repair" }
 
+// Open, Close, Lock and Unlock act on a door: its name, an alias, or the
+// direction it's in. Lock and Unlock need its key in hand.
+type Open struct{ Target string }
+type Close struct{ Target string }
+type Lock struct{ Target string }
+type Unlock struct{ Target string }
+
+func (Open) Verb() string   { return "open" }
+func (Close) Verb() string  { return "close" }
+func (Lock) Verb() string   { return "lock" }
+func (Unlock) Verb() string { return "unlock" }
+
 // ---- trading -----------------------------------------------------------------
 
 // List is what a shop has for sale.

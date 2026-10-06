@@ -4,10 +4,16 @@ import (
 	"github.com/watchmud/watchmud/rules"
 )
 
-// RoomExit is a direction to another room.
+// RoomExit is a direction to another room, and the door in it if it has one.
 type RoomExit struct {
 	Direction rules.Direction
 	Room      *Room
+	Door      *Door
+}
+
+// Passable is whether something can walk through it now: no door, or an open one.
+func (re RoomExit) Passable() bool {
+	return re.Door == nil || !re.Door.Closed
 }
 
 type roomExitHolder struct {

@@ -34,7 +34,7 @@ func (w *World) handleFlee(msg *gameserver.HandlerParameter, cmd command.Flee) {
 			return
 		}
 		dir := rules.AllUsableDirections[i]
-		if src.HasExit(dir) {
+		if src.Passable(dir) {
 			// success!
 			src.Send(event.Fled{Who: msg.Player.Name()})
 			w.movePlayer(msg.Player, dir, src.DestinationRoom(dir))

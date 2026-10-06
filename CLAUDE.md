@@ -858,6 +858,21 @@ instead of leaving a ghost. `World.movePlayer` / `moveMobile` / `RemovePlayer` a
 in -- a map range made that different every pulse. Objects are not in it: where an object is forms a tree (floor,
 inventory, equipment, container) and nothing asks the reverse question yet.
 
+**Doors** (`spaces/door.go`) stand in exits, one shared by both sides: the loader
+(`loader/doors.go`) reads a `"door"` on one exit in rooms.json and hangs the same
+`*spaces.Door` on the exit back, refusing a door declared twice, a locked one that isn't
+closed or has no key, and a key that isn't an object. Its state and rules are a
+`lock.Lock` (`lock/`, a leaf: open, close, lock, unlock, each answering why not), which
+is what a chest will carry too. `Room.Passable` is the question movement asks --
+`handleMove` (`DOOR_CLOSED`), flee, both kinds of mob wandering -- while `HasExit` and
+`DestinationRoom` still answer whether a way exists at all. A closed door shows as
+"West (closed)" in the exits line and `exits`, and the wanderer bot won't take one.
+`open`/`close`/`lock`/`unlock` are one handler (`world/h_door.go`): `Room.FindDoor` by
+direction, name, alias or plain "door"; the key is anything in the inventory whose
+`ObjectId.Ref()` ("zone/id") is the lock's; `event.DoorChanged` goes to both rooms, the
+far side without an actor. `Zone.Reset` resets the doors its content declared. Door
+state isn't saved: a restart puts every door back how content says.
+
 A fight has no location of its own. Nobody can leave a fight without ending it (`move`
 and `recall` refuse, `flee` ends it first), so `DoViolence` reports each swing to
 `World.roomOf(fighter)` -- wherever the fighter is standing now.

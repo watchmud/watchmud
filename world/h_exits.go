@@ -13,6 +13,7 @@ func (w *World) handleExits(msg *gameserver.HandlerParameter, cmd command.Exits)
 		exits = append(exits, event.Exit{
 			Direction: rexit.Direction,
 			RoomName:  rexit.Room.Name,
+			Closed:    !rexit.Passable(),
 		})
 	}
 	msg.Player.Send(event.Exits{Exits: exits})

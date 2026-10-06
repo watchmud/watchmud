@@ -23,6 +23,10 @@ type Content struct {
 	Catalog  *rules.Catalog
 	// Scripts is every script some mob names, compiled, by "zone/name".
 	Scripts map[string]*script.Program
+
+	// pendingDoors are doors read with the rooms, waiting for the objects
+	// their keys name (doors.go).
+	pendingDoors []pendingDoor
 }
 
 func NewContent(settings *Settings, catalog *rules.Catalog, zones []*spaces.Zone) *Content {
@@ -70,6 +74,10 @@ func LoadContent(fsys fs.FS) (*Content, error) {
 		return nil, err
 	}
 	if err := c.loadObjectDefinitions(worldFS); err != nil {
+		return nil, err
+	}
+	// after objects: a door's key is one
+	if err := c.hangDoors(); err != nil {
 		return nil, err
 	}
 	if err := c.loadMobileDefinitions(worldFS); err != nil {
@@ -180,6 +188,9 @@ func (c *Content) loadRooms(fsys fs.FS) error {
 					exit.DestinationRoomId,
 				); err != nil {
 					return err
+				}
+				if exit.Door != nil {
+					c.pendingDoors = append(c.pendingDoors, pendingDoor{zonename, entry.Id, exit.Direction, *exit.Door})
 				}
 			}
 		}

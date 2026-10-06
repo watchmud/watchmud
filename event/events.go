@@ -108,6 +108,26 @@ type Exits struct {
 type Exit struct {
 	Direction rules.Direction
 	RoomName  string
+	Closed    bool // a closed door stands in it
+}
+
+// DoorChange is what happened to a door.
+type DoorChange string
+
+const (
+	DoorOpened   DoorChange = "opened"
+	DoorClosed   DoorChange = "closed"
+	DoorLocked   DoorChange = "locked"
+	DoorUnlocked DoorChange = "unlocked"
+)
+
+// DoorChanged goes to both rooms a door joins. Direction is the door's from
+// the room hearing it; Actor is empty on the far side, where nobody saw who.
+type DoorChanged struct {
+	Actor     string
+	Door      string
+	Direction rules.Direction
+	Change    DoorChange
 }
 
 // ---- objects ---------------------------------------------------------------

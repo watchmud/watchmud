@@ -54,6 +54,9 @@ inhabitant bots (v0.4.0).
   release. Nobody has run it in a real Mudlet yet: try it before telling players
 - The Drowned Mill (power 4-7), west of the Millpond, with the Drowned Miller (power 8);
   six new items; the socialite knows where to send players who've outgrown the farms
+- Doors, locks and keys: `open`/`close`/`lock`/`unlock`; "(closed)" in the exits line.
+  The first is the mill's iron grate, locked, in front of the miller; the rusted key
+  drops from drowned millhands (25%). Chests next, on the same lock
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

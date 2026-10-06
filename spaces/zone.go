@@ -26,6 +26,9 @@ type Zone struct {
 	Power rules.PowerBand
 	// Shops is the rooms that trade, by room id.
 	Shops map[string]*Shop
+	// Doors is the doors this zone's content declared, which its resets put
+	// back how they started.
+	Doors []*Door
 }
 
 func NewZone(id string, name string, resetMode rules.ZoneReset, lifetime time.Duration) *Zone {
@@ -82,6 +85,10 @@ func (z *Zone) Reset(o *Occupancy) []error {
 			errs = append(errs, fmt.Errorf("zone %s unhandled Zone Command Type: %s", z.Id, cmd))
 		}
 
+	}
+
+	for _, d := range z.Doors {
+		d.Reset()
 	}
 
 	// Set the last reset time, even if there were errors. Whatever

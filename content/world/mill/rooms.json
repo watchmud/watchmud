@@ -30,10 +30,12 @@
   {
     "id": "flooded_cellar",
     "name": "The Flooded Cellar",
-    "description": "Cold water stands knee deep, still and black. The wheel's axle runs overhead into the west wall, and the dripping from it is the only sound -- almost. West, a breach in the wall opens on the wheel pit.",
+    "description": "Cold water stands knee deep, still and black. The wheel's axle runs overhead into the west wall, and the dripping from it is the only sound -- almost. West, an iron grate closes off the wheel pit.",
     "exits": [
       { "direction": "up", "dest_room": "mill_house" },
-      { "direction": "west", "dest_room": "wheel_pit" }
+      { "direction": "west", "dest_room": "wheel_pit",
+        "door": { "name": "iron grate", "aliases": [ "grate", "bars" ],
+                  "closed": true, "locked": true, "key": "rusted_key" } }
     ]
   },
   {

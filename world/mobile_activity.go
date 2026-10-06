@@ -95,6 +95,9 @@ func (w *World) doMobFollowPathWander(mob *mobile.Instance) error {
 			return errors.New(fmt.Sprintf("doMobFollowPathWander: mobile ID '%s' can't figure out next place to go to (current '%s', path '%s')",
 				mob.Definition.Id, mobRoom.Id, mob.Definition.Wandering.Path))
 		}
+		if !mobRoom.Passable(dir) {
+			return nil // a closed door on its path: it waits
+		}
 		if changeDirection {
 			mob.WanderingForward = !mob.WanderingForward
 		}

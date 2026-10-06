@@ -62,6 +62,14 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleRecall(msg, cmd)
 	case command.Repair:
 		w.handleRepair(msg, cmd)
+	case command.Open:
+		w.handleDoor(msg, cmd.Target, event.DoorOpened)
+	case command.Close:
+		w.handleDoor(msg, cmd.Target, event.DoorClosed)
+	case command.Lock:
+		w.handleDoor(msg, cmd.Target, event.DoorLocked)
+	case command.Unlock:
+		w.handleDoor(msg, cmd.Target, event.DoorUnlocked)
 	case command.List:
 		w.handleList(msg, cmd)
 	case command.Buy:

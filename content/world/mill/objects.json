@@ -64,5 +64,13 @@
     "equipment_slot": "hands",
     "armor_type": "plate",
     "abilities": [ "provoke" ]
+  },
+  {
+    "id": "rusted_key",
+    "name": "rusted key",
+    "category": "OTHER",
+    "aliases": [ "key", "rusted" ],
+    "short_description": "a rusted key",
+    "description_on_ground": "A heavy key, rusted orange, lies here in a puddle."
   }
 ]

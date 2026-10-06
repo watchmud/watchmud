@@ -53,6 +53,18 @@ const (
 	NotEnoughMana  ResultCode = "NOT_ENOUGH_MANA"
 	NoFoe          ResultCode = "NO_FOE"
 
+	// doors
+	NoDoor        ResultCode = "NO_DOOR"
+	DoorShut      ResultCode = "DOOR_CLOSED"
+	AlreadyOpen   ResultCode = "ALREADY_OPEN"
+	AlreadyClosed ResultCode = "ALREADY_CLOSED"
+	AlreadyLocked ResultCode = "ALREADY_LOCKED"
+	NotLocked     ResultCode = "NOT_LOCKED"
+	Locked        ResultCode = "LOCKED"
+	NotClosed     ResultCode = "NOT_CLOSED"
+	NoKey         ResultCode = "NO_KEY"
+	NoKeyhole     ResultCode = "NO_KEYHOLE"
+
 	// movement and combat
 	CantGoThatWay   ResultCode = "CANT_GO_THAT_WAY"
 	NoFightRoom     ResultCode = "NO_FIGHT_ROOM"

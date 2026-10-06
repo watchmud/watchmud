@@ -124,11 +124,15 @@ func kept(room, dir string) bool {
 	return false
 }
 
-// parseExits reads "North, East, Up" into what's typed to take them.
+// parseExits reads "North, East (closed), Up" into what's typed to take the
+// ones open: a wanderer doesn't open doors.
 func parseExits(s string) []string {
 	var out []string
 	for _, e := range strings.Split(s, ",") {
 		e = strings.ToLower(strings.TrimSpace(e))
+		if strings.HasSuffix(e, "(closed)") {
+			continue
+		}
 		if e != "" && e != "none" {
 			out = append(out, e)
 		}

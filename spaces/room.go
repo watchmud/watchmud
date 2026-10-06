@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"slices"
 	"sort"
+	"strings"
 	"time"
 	"uuid"
 
@@ -26,6 +27,7 @@ type Room struct {
 	Inventory   *object.List
 	mobs        *ordered.List[uuid.UUID, *mobile.Instance]
 	directions  map[rules.Direction]*Room
+	doors       map[rules.Direction]*Door
 	flags       map[rules.RoomFlag]bool
 }
 
@@ -41,6 +43,7 @@ func NewRoom(zone *Zone, id string, name string, description string) *Room {
 		Inventory:   object.NewFloor(),
 		mobs:        ordered.NewList[uuid.UUID, *mobile.Instance]((*mobile.Instance).Id),
 		directions:  make(map[rules.Direction]*Room),
+		doors:       make(map[rules.Direction]*Door),
 		flags:       make(map[rules.RoomFlag]bool),
 	}
 }
@@ -222,28 +225,75 @@ func (r *Room) FindPlayer(target string) (*player.Player, bool) {
 
 // ExitString returns all the valid exits from this room as a string.
 func (r *Room) ExitString() string {
-	// TODO: exits can be locked and/or closed, this doesn't handle that.
-	var exits []rules.Direction
-	for _, exit := range r.Exits(false) {
-		exits = append(exits, exit.Direction)
+	exits := r.Exits(false)
+	if len(exits) == 0 {
+		return rules.FormatDirection(nil)
 	}
-	return rules.FormatDirection(exits)
+	var names []string
+	for _, exit := range exits {
+		name := exit.Direction.String()
+		if !exit.Passable() {
+			name += " (closed)"
+		}
+		names = append(names, name)
+	}
+	return strings.Join(names, ", ")
 }
 
-// HasExit determines if there is a valid exit in this direction
-// usable for 'standard, normal' sorts of movement (not magical,
-// can't run through closed doors or walls, etc.)
+// HasExit is whether there's a way out in this direction at all, door or no
+// door. Whether it can be walked through now is Passable.
 func (r *Room) HasExit(dir rules.Direction) bool {
-	// TODO what about exits that are locked or closed?
-	// this should also consider that.
 	_, ok := r.directions[dir]
 	return ok
 }
 
-// DestinationRoom returns the room in this direction or nil if there isn't one.
+// Passable is whether something can walk out this way now: there's an exit,
+// and no closed door in it.
+func (r *Room) Passable(dir rules.Direction) bool {
+	if !r.HasExit(dir) {
+		return false
+	}
+	d := r.doors[dir]
+	return d == nil || !d.Closed
+}
+
+// DestinationRoom returns the room in this direction or nil if there isn't one,
+// whether or not a door stands in the way: Passable says that.
 func (r *Room) DestinationRoom(dir rules.Direction) (dest *Room) {
-	// TODO what about exits that are locked or closed?
 	return r.directions[dir]
+}
+
+// DoorTo is the door in this direction, or nil.
+func (r *Room) DoorTo(dir rules.Direction) *Door {
+	return r.doors[dir]
+}
+
+// SetDoor puts a door in the exit this way. Loader use only, like Connect: the
+// loader gives the same door to the exit back, so both sides share it.
+func (r *Room) SetDoor(dir rules.Direction, d *Door) {
+	r.doors[dir] = d
+}
+
+// FindDoor is the door a player means: by direction ("west", "w"), by name or
+// alias ("grate"), or by "door" when the room has just one.
+func (r *Room) FindDoor(target string) (rules.Direction, *Door, bool) {
+	if dir, err := rules.ParseDirectionPrefix(target); err == nil {
+		if d := r.doors[dir]; d != nil {
+			return dir, d, true
+		}
+		return rules.DirectionNone, nil, false
+	}
+	for _, exit := range r.Exits(false) {
+		if exit.Door != nil && exit.Door.Matches(target) {
+			return exit.Direction, exit.Door, true
+		}
+	}
+	if strings.EqualFold(strings.TrimSpace(target), "door") && len(r.doors) == 1 {
+		for dir, d := range r.doors {
+			return dir, d, true
+		}
+	}
+	return rules.DirectionNone, nil, false
 }
 
 // Connect this room to the destination room in this direction.
@@ -257,7 +307,12 @@ func (r *Room) Connect(dir rules.Direction, destRoom *Room) {
 // If there aren't any, return direction.None.
 func (r *Room) PickRandomDirection(limitToZone bool) rules.Direction {
 	// TODO should this return a room and not a direction?
-	exits := r.Exits(limitToZone)
+	var exits []RoomExit
+	for _, re := range r.Exits(limitToZone) {
+		if re.Passable() {
+			exits = append(exits, re)
+		}
+	}
 	if len(exits) == 0 {
 		return rules.DirectionNone
 	} else {
@@ -278,12 +333,13 @@ func (r *Room) PickRandomDirection(limitToZone bool) rules.Direction {
 
 // Exits returns the exits from this room.
 // Uses the direction.Direction ordering.
-// Does not take locks, doors, closures, etc. into account.
+// Every exit, a closed door's included: RoomExit.Passable says which can be
+// walked through.
 func (r *Room) Exits(limitToZone bool) []RoomExit {
 	holder := roomExitHolder{}
 	for dir, dest := range r.directions {
 		if !limitToZone || r.Zone == dest.Zone {
-			holder.dirs = append(holder.dirs, RoomExit{dir, dest})
+			holder.dirs = append(holder.dirs, RoomExit{dir, dest, r.doors[dir]})
 		}
 	}
 	sort.Sort(holder)

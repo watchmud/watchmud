@@ -262,6 +262,9 @@ func render(msg any, self string) string {
 	case event.Staggered:
 		return m.Name + " staggers, stunned.\n"
 
+	case event.DoorChanged:
+		return renderDoorChanged(m, self)
+
 	case event.Assessed:
 		return renderAssessed(m, self)
 
@@ -367,7 +370,11 @@ func renderExits(exits []event.Exit) string {
 	} else {
 		var exitStrs []string
 		for _, exit := range exits {
-			exitStrs = append(exitStrs, strings.ToLower(exit.Direction.String()))
+			s := strings.ToLower(exit.Direction.String())
+			if exit.Closed {
+				s += " (closed)"
+			}
+			exitStrs = append(exitStrs, s)
 		}
 		b.WriteString(strings.Join(exitStrs, ", ") + "\n")
 	}
@@ -409,6 +416,34 @@ func renderInventory(items []event.InventoryItem) string {
 		})
 	}
 	return paint(colorHeading, "Inventory") + "\n" + table(rows)
+}
+
+// renderDoorChanged: the one who did it, the room that watched, and the far
+// side, which heard the door but saw nobody.
+func renderDoorChanged(m event.DoorChanged, self string) string {
+	verb := map[event.DoorChange]string{
+		event.DoorOpened: "open", event.DoorClosed: "close",
+		event.DoorLocked: "lock", event.DoorUnlocked: "unlock",
+	}[m.Change]
+	switch {
+	case m.Actor == self:
+		return "You " + verb + " the " + m.Door + ".\n"
+	case m.Actor != "":
+		return m.Actor + " " + verb + "s the " + m.Door + ".\n"
+	}
+	where := strings.ToLower(m.Direction.String())
+	if m.Direction == rules.DirectionUp || m.Direction == rules.DirectionDown {
+		where = map[rules.Direction]string{rules.DirectionUp: "above", rules.DirectionDown: "below"}[m.Direction]
+	} else {
+		where = "to the " + where
+	}
+	switch m.Change {
+	case event.DoorOpened:
+		return capitalize("the "+m.Door+" "+where+" opens.") + "\n"
+	case event.DoorClosed:
+		return capitalize("the "+m.Door+" "+where+" closes.") + "\n"
+	}
+	return "You hear a click from the " + m.Door + " " + where + ".\n"
 }
 
 // renderAssessed gives the numbers to whoever cast it; the rest of the room

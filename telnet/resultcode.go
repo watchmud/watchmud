@@ -60,6 +60,10 @@ var failureByVerb = map[string]string{
 	"remove/NO_TARGET":        "Remove what?",
 	"slay/NO_TARGET":          "Slay what?",
 	"consider/NO_TARGET":      "Consider what?",
+	"open/NO_TARGET":          "Open what?",
+	"close/NO_TARGET":         "Close what?",
+	"lock/NO_TARGET":          "Lock what?",
+	"unlock/NO_TARGET":        "Unlock what?",
 	"look/NO_TARGET":          "Look in what?",
 	"drop/NO_TARGET":          "Drop what?",
 	"get/NO_TARGET":           "Get what?",
@@ -105,6 +109,18 @@ var failureByCode = map[string]string{
 	"LOCATION_IN_USE": "You're already using that slot.",
 	"CANT_WEAR_THAT":  "You can't wear that.",
 	"CANT_WEAR_THERE": "You can't wear that there.",
+
+	// doors
+	"NO_DOOR":        "You don't see a door like that here.",
+	"DOOR_CLOSED":    "The way is shut.",
+	"ALREADY_OPEN":   "It's already open.",
+	"ALREADY_CLOSED": "It's already closed.",
+	"ALREADY_LOCKED": "It's already locked.",
+	"NOT_LOCKED":     "It isn't locked.",
+	"LOCKED":         "It's locked.",
+	"NOT_CLOSED":     "You'll have to close it first.",
+	"NO_KEY":         "You don't have the key.",
+	"NO_KEYHOLE":     "It has no lock.",
 
 	// movement and combat
 	"CANT_GO_THAT_WAY": "You can't go that way.",

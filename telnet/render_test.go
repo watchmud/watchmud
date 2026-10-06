@@ -837,3 +837,22 @@ func TestRenderInventory_groups(t *testing.T) {
 		"  a long goose feather       power 3\n"+
 		"You have 12 coins.\n", got)
 }
+
+// A door: the one who did it, the room that watched, and the far side, which
+// hears it without seeing who.
+func TestRender_doorChanged(t *testing.T) {
+	opened := event.DoorChanged{Actor: "testdood", Door: "iron grate", Direction: rules.DirectionWest, Change: event.DoorOpened}
+	assert.Equal(t, "You open the iron grate.\n", plain(render(opened, "testdood")))
+	assert.Equal(t, "testdood opens the iron grate.\n", plain(render(opened, "otherdood")))
+
+	far := event.DoorChanged{Door: "iron grate", Direction: rules.DirectionEast, Change: event.DoorOpened}
+	assert.Equal(t, "The iron grate to the east opens.\n", plain(render(far, "otherdood")))
+	far.Change = event.DoorUnlocked
+	assert.Equal(t, "You hear a click from the iron grate to the east.\n", plain(render(far, "otherdood")))
+	far.Direction, far.Change = rules.DirectionUp, event.DoorClosed
+	assert.Equal(t, "The iron grate above closes.\n", plain(render(far, "otherdood")))
+
+	assert.Equal(t, "Exits:\neast, west (closed)\n", plain(render(event.Exits{Exits: []event.Exit{
+		{Direction: rules.DirectionEast}, {Direction: rules.DirectionWest, Closed: true},
+	}}, "testdood")))
+}

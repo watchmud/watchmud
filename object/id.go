@@ -21,3 +21,8 @@ func NewObjectId(id string, zoneId string) Id {
 func (id *Id) String() string {
 	return fmt.Sprintf("%s:%s", id.ZoneId, id.DefinitionId)
 }
+
+// Ref is the id the way content names an object: "zone/id".
+func (id Id) Ref() string {
+	return id.ZoneId + "/" + id.DefinitionId
+}

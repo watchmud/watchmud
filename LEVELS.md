@@ -147,8 +147,9 @@ whose Barrow-King (power 15) is the first boss.
 millhands, and the Drowned Miller (power 8, 90 health, 2d6) in the wheel pit, a boss
 for two. It drops mid-tier gear for every kind of player, one ability each -- the
 stalker's spear (smite), the river-stone pendant (heal), the miller's mallet (stun),
-iron gauntlets (provoke) -- plus eelskin boots and millhand's gloves. Every number is a
-first guess.
+iron gauntlets (provoke) -- plus eelskin boots and millhand's gloves. The miller is
+behind a locked iron grate; the rusted key drops from millhands (25%), so reaching him
+is a hunt first. Every number is a first guess.
 
 **The Barrow-King is a group fight, and it takes all three kinds of gear.** Nothing may
 branch on a role, so each has to be something the gear actually does:

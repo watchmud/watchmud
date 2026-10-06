@@ -24,6 +24,10 @@ func (w *World) handleMove(msg *gameserver.HandlerParameter, cmd command.Move) {
 		msg.Fail(event.CantGoThatWay)
 		return
 	}
+	if !src.Passable(dir) {
+		msg.Fail(event.DoorShut)
+		return
+	}
 	w.movePlayer(msg.Player, dir, dest)
 	msg.Player.Send(dest.DescriptionExcept(msg.Player))
 }

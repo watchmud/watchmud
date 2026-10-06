@@ -41,7 +41,8 @@
     "aggressive": true,
     "loot": [
       { "object": "millhand_gloves", "chance": 20 },
-      { "object": "river_stone_pendant", "chance": 10 }
+      { "object": "river_stone_pendant", "chance": 10 },
+      { "object": "rusted_key", "chance": 25 }
     ]
   },
   {
