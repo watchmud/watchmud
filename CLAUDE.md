@@ -800,8 +800,10 @@ Rules that hold across a wait:
   find its call gone. `fire` queues it on `Runtime.pending` while a hook is running
   (`sb.current` set), and `run` drains the queue once that hook ends or pauses.
 
-**A bad script mustn't hurt the server.** Every call runs under `script.CallTimeout`
-(10ms), a capped call stack and registry, gopher-lua's protected call and a `recover`.
+**A bad script mustn't hurt the server.** Every hook call runs under `script.CallTimeout`
+(10ms) -- a program's top level, once at load, under the roomier `script.LoadTimeout`
+(500ms), since a busy machine once took the shopkeeper's table-building past 10ms and
+the world refused to build -- a capped call stack and registry, gopher-lua's protected call and a `recover`.
 A failure is logged and the mob carries on; after `script.MaxFailures` (3) the program is
 switched off until restart. Only base, string, table and math are open, minus anything
 that loads code or prints. Three limits exist because of what the deadline can't see:
@@ -1090,7 +1092,9 @@ teach `sim.Fight` the same or say what it leaves out.
   `Id() uuid.UUID`, `Dead()`, `TakeMeleeDamage()`. The ledger and `World.DoViolence` work
   in these terms.
 
-`combat.FightLedger` holds `Fight` records keyed on `uuid.UUID`. `Fight(A, B)` writes *two*
+`combat.FightLedger` holds `Fight` records keyed on `uuid.UUID`; `GetFights` hands them
+back in the order they started (`seq`), so who swings first in a round is the same
+every round -- it was a map's whim. `Fight(A, B)` writes *two*
 entries, `A->B` and `B->A`, so an attacker can be killed mid-round by their own target --
 which is why `DoViolence` checks `Fighter.Dead()` before letting anyone swing. Both
 `*player.Player` and `*mobile.Instance` satisfy `Combatant`, which is what keeps the melee

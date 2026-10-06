@@ -13,10 +13,17 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-// CallTimeout is how long one hook call -- or a program's top level, at load
-// -- may run before it is stopped. Huge for a taunt; a script that needs
-// longer is doing something a script shouldn't.
+// CallTimeout is how long one hook call may run before it is stopped. Huge
+// for a taunt; a script that needs longer is doing something a script
+// shouldn't.
 const CallTimeout = 10 * time.Millisecond
+
+// LoadTimeout is the same for a program's top level, run once when content
+// loads. Roomier: it builds a script's tables, off the world's clock, and a
+// busy machine at startup -- or a test under the race detector -- once took a
+// shopkeeper's past 10ms and refused to build the world. A loop that never
+// ends still fails the load.
+const LoadTimeout = 500 * time.Millisecond
 
 const (
 	// callStackSize caps Lua call depth, so runaway recursion is a Lua error
@@ -236,11 +243,11 @@ func cappedRep(L *lua.LState) int {
 	return 1
 }
 
-// call runs fn protected, under CallTimeout, with h as the hook in progress
-// (nil for a top level). An error, a timeout, a stack overflow or a panic
+// call runs a program's top level protected, under LoadTimeout, with h as
+// the hook in progress (nil for a top level). An error, a timeout, a stack overflow or a panic
 // inside gopher-lua all come back as an error; none of them escape.
 func (s *sandbox) call(fn *lua.LFunction, h *hookCall, args ...lua.LValue) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), LoadTimeout)
 	defer cancel()
 	s.L.SetContext(ctx)
 	s.current = h

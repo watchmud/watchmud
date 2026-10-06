@@ -76,7 +76,8 @@ func (s *miscSuite) TestWimpy() {
 	s.Require().NoError(s.w.startFight(mob, s.p))
 	s.p.TakeMeleeDamage(s.p.CurrentHealth() - 52)
 	dice := testdice.New()
-	// the mob's swing: a 20 and 5 damage, to 47; then the first way out works
+	// the mob swings first -- it started the fight, and fights go in the
+	// order they began -- a 20 and 5, to 47; then the flee's rolls
 	dice.Load([]int{20, 5, 0, 0, 0, 0, 0, 0})
 	s.w.roller = dice
 	s.r.Clear()

@@ -1,7 +1,9 @@
 package combat
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"uuid"
 )
 
@@ -101,10 +103,13 @@ func (f *FightLedger) GetFight(fighter Combatant) *Fight {
 	return f.fightMap[fighter.Id()]
 }
 
+// GetFights is every fight, in the order they started: who swings first in
+// a round was a map's whim, different every round and every run.
 func (f *FightLedger) GetFights() (result []*Fight) {
 	for _, v := range f.fightMap {
 		result = append(result, v)
 	}
+	slices.SortFunc(result, func(a, b *Fight) int { return cmp.Compare(a.seq, b.seq) })
 	return result
 }
 
