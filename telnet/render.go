@@ -94,6 +94,21 @@ func render(msg any, self string) string {
 		}
 		return m.Actor + " drops " + m.Item + ".\n"
 
+	case event.Following:
+		return renderFollowing(m, self)
+	case event.Followed:
+		if m.Fighting {
+			return m.Leader + " leaves " + strings.ToLower(m.Direction.String()) + ", but you can't follow in the middle of a fight.\n"
+		}
+		return "You follow " + m.Leader + " " + strings.ToLower(m.Direction.String()) + ".\n"
+	case event.GroupList:
+		return renderGroupList(m)
+	case event.GroupTold:
+		if m.Speaker == self {
+			return paint(colorTell, "You tell the group, '"+m.Value+"'") + "\n"
+		}
+		return paint(colorTell, m.Speaker+" tells the group, '"+m.Value+"'") + "\n"
+
 	case event.Gave:
 		switch self {
 		case m.Actor:
@@ -979,4 +994,34 @@ func article(word string) string {
 		return "an"
 	}
 	return "a"
+}
+
+func renderFollowing(m event.Following, self string) string {
+	switch {
+	case self == m.Follower && m.Stopped:
+		return "You stop following " + m.Leader + ".\n"
+	case self == m.Follower:
+		return "You now follow " + m.Leader + ".\n"
+	case m.Stopped:
+		return m.Follower + " stops following you.\n"
+	}
+	return m.Follower + " now follows you.\n"
+}
+
+// renderGroupList is "group": who, how they're doing, and where.
+func renderGroupList(m event.GroupList) string {
+	var rows [][]cell
+	for _, p := range m.Members {
+		name := colored(colorPlayer, p.Name)
+		if p.Leader {
+			name = colored(colorPlayer, p.Name+" (leader)")
+		}
+		rows = append(rows, []cell{
+			name,
+			number(fmt.Sprintf("%d/%dhp", p.Health, p.MaxHealth)),
+			number(fmt.Sprintf("%d/%dm", p.Mana, p.MaxMana)),
+			colored(colorPlace, p.Room),
+		})
+	}
+	return paint(colorHeading, "Group") + "\n" + table(rows)
 }

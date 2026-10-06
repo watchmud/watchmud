@@ -156,6 +156,43 @@ type Put struct {
 	Into  string
 }
 
+// Following is a follow starting or stopping, told to both ends of it.
+type Following struct {
+	Follower string
+	Leader   string
+	Stopped  bool
+}
+
+// Followed is a follower walking after their leader, or -- Fighting -- being
+// left behind by a fight.
+type Followed struct {
+	Leader    string
+	Direction rules.Direction
+	Fighting  bool
+}
+
+// GroupList is "group": the leader first, then followers in the order they
+// joined.
+type GroupList struct {
+	Members []GroupMember
+}
+
+type GroupMember struct {
+	Name      string
+	Leader    bool
+	Health    int
+	MaxHealth int
+	Mana      int
+	MaxMana   int
+	Room      string
+}
+
+// GroupTold is a gtell, to everyone in the group, the speaker included.
+type GroupTold struct {
+	Speaker string
+	Value   string
+}
+
 // Gave is one thing, or some coins, passed from Actor to Recipient: the
 // giver, the one given to and the room each see it their own way.
 type Gave struct {

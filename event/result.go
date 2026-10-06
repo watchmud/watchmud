@@ -75,6 +75,13 @@ const (
 	CantNest      ResultCode = "CANT_NEST"
 	CoinsInPurse  ResultCode = "COINS_IN_PURSE"
 	NotEmpty      ResultCode = "NOT_EMPTY"
+	// groups
+	NotInGroup       ResultCode = "NOT_IN_GROUP"
+	NotFollowing     ResultCode = "NOT_FOLLOWING"
+	NotFollowingYou  ResultCode = "NOT_FOLLOWING_YOU"
+	AlreadyFollowing ResultCode = "ALREADY_FOLLOWING"
+	NoFollowers      ResultCode = "NO_FOLLOWERS"
+	FollowsYou       ResultCode = "FOLLOWS_YOU"
 	// give: to whom, and not to yourself
 	NoRecipient ResultCode = "NO_RECIPIENT"
 	GiveSelf    ResultCode = "GIVE_SELF"

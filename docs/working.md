@@ -68,6 +68,8 @@ inhabitant bots (v0.4.0).
 - `give <item|coins> to <player>`, in the same room
 - `look <thing>` (and `examine`) works at last: an item's stats, how hurt a mob looks,
   what another player has on
+- Groups: `follow`, `group`, `gt`, `ungroup` -- followers walk after their leader
+- An outside uptime check (`.github/workflows/uptime.yaml`), live once on master
 - Scripts hear: `on_hear(me, speaker, said)`; ask the hedge-witch about healing
 
 The site guide's rows for all of this are drafted in `docs/site-next-release.md`, to go

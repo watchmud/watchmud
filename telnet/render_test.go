@@ -945,3 +945,42 @@ func TestRender_lookedAt(t *testing.T) {
 		assert.Equal(t, command.Look{Target: "knife"}, cmd, line)
 	}
 }
+
+// groups: follow, the walk after, the list, and gtell
+func TestRender_groups(t *testing.T) {
+	f := event.Following{Follower: "ann", Leader: "bob"}
+	assert.Equal(t, "You now follow bob.\n", plain(render(f, "ann")))
+	assert.Equal(t, "ann now follows you.\n", plain(render(f, "bob")))
+	f.Stopped = true
+	assert.Equal(t, "You stop following bob.\n", plain(render(f, "ann")))
+	assert.Equal(t, "ann stops following you.\n", plain(render(f, "bob")))
+
+	assert.Equal(t, "You follow bob north.\n", plain(render(event.Followed{Leader: "bob", Direction: rules.DirectionNorth}, "ann")))
+	assert.Equal(t, "bob leaves north, but you can't follow in the middle of a fight.\n",
+		plain(render(event.Followed{Leader: "bob", Direction: rules.DirectionNorth, Fighting: true}, "ann")))
+
+	list := event.GroupList{Members: []event.GroupMember{
+		{Name: "bob", Leader: true, Health: 97, MaxHealth: 100, Mana: 80, MaxMana: 100, Room: "The Mill Yard"},
+		{Name: "ann", Health: 5, MaxHealth: 100, Mana: 100, MaxMana: 100, Room: "Temple Square"},
+	}}
+	assert.Equal(t, "Group\n"+
+		"  bob (leader)  97/100hp   80/100m  The Mill Yard\n"+
+		"  ann            5/100hp  100/100m  Temple Square\n", plain(render(list, "ann")))
+
+	told := event.GroupTold{Speaker: "ann", Value: "ready?"}
+	assert.Equal(t, "You tell the group, 'ready?'\n", plain(render(told, "ann")))
+	assert.Equal(t, "ann tells the group, 'ready?'\n", plain(render(told, "bob")))
+
+	for line, want := range map[string]command.Command{
+		"follow bob":   command.Follow{Target: "bob"},
+		"follow":       command.Follow{},
+		"ungroup ann":  command.Ungroup{Target: "ann"},
+		"group":        command.Group{},
+		"gt on my way": command.GroupTell{Value: "on my way"},
+		"gtell ready?": command.GroupTell{Value: "ready?"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err, line)
+		assert.Equal(t, want, cmd, line)
+	}
+}

@@ -30,4 +30,5 @@ func (w *World) handleMove(msg *gameserver.HandlerParameter, cmd command.Move) {
 	}
 	w.movePlayer(msg.Player, dir, dest)
 	msg.Player.Send(dest.DescriptionExcept(msg.Player))
+	w.followersCome(msg.Player, src, dir, dest)
 }

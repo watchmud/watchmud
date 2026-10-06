@@ -76,6 +76,15 @@ func parseCommand(tokens []string) (command.Command, error) {
 		}
 		return command.Put{Target: rest}, nil
 
+	case "follow", "fol":
+		return command.Follow{Target: rest}, nil
+	case "ungroup":
+		return command.Ungroup{Target: rest}, nil
+	case "group":
+		return command.Group{}, nil
+	case "gtell", "gt":
+		return command.GroupTell{Value: rest}, nil
+
 	case "give":
 		// "give knife to bob"; a missing recipient is the handler's to answer
 		if target, to, ok := strings.Cut(rest, " to "); ok {

@@ -94,6 +94,33 @@ type Give struct {
 
 func (Give) Verb() string { return "give" }
 
+// Follow is "follow ann": walk where they walk. No target, or your own name,
+// stops following.
+type Follow struct {
+	Target string
+}
+
+func (Follow) Verb() string { return "follow" }
+
+// Ungroup is the leader's: "ungroup bob" stops one follower, "ungroup" all.
+type Ungroup struct {
+	Target string
+}
+
+func (Ungroup) Verb() string { return "ungroup" }
+
+// Group lists the group you're in.
+type Group struct{}
+
+func (Group) Verb() string { return "group" }
+
+// GroupTell is "gtell hello": to everyone in your group, wherever they are.
+type GroupTell struct {
+	Value string
+}
+
+func (GroupTell) Verb() string { return "gtell" }
+
 type Drop struct {
 	Target string
 }

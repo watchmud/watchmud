@@ -905,6 +905,16 @@ in the room (`Room.FindPlayer`, any case): coins too, always with a number (`giv
 to bob` is refused, unlike `put` -- every coin is too easy a mistake), worn things
 stay on, and a bag goes
 with what's in it. One `event.Gave` renders three ways -- giver, recipient, room.
+**Groups** (`world/group.go`, spec in `docs/superpowers/specs/`): `follow <player>` in
+the room, `group`, `gtell`/`gt`, `ungroup [player]` for the leader. One level -- a
+leader and a flat list of followers in join order; following a follower follows their
+leader, so there are no chains or cycles -- held in `World.groups`, in memory, and only
+`follow`/`unfollow`/`disband` write it. `handleMove` calls `followersCome` after the
+leader's step: each follower still in the room left and not fighting walks after them
+(`event.Followed`, then the room), a fighting one stays behind and is told. Only
+walking pulls: recall, flee, death and wizard moves move one player. `RemovePlayer`
+takes a player out of any group from either end.
+
 `look <thing>` (and `examine`/`exa`; `world/look_at.go`) looks at one thing, only the
 looker told: a player in the room (`event.LookedAtPlayer`: lineage, role, how hurt, what
 they wear), a mob (`LookedAtMob`: how hurt it looks and who it's fighting -- words from a

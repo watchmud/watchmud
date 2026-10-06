@@ -43,6 +43,8 @@ type World struct {
 	pace float64
 
 	reservedNames map[string]bool // by player.NameKey; see IsReservedName
+
+	groups *groups // who follows whom; see world/group.go
 }
 
 // New creates a brand-new World based on this content
@@ -52,6 +54,7 @@ func New(c *loader.Content, s player.Store, roller rules.Roller) (w *World, err 
 		playerList:  player.NewList(),
 		occupancy:   spaces.NewOccupancy(),
 		fightLedger: combat.NewFightLedger(),
+		groups:      newGroups(),
 		now:         time.Now,
 		pace:        1,
 		roller:      roller,
@@ -163,6 +166,7 @@ func (w *World) PlacePlayer(p *player.Player, r *spaces.Room) {
 func (w *World) RemovePlayer(p *player.Player) {
 	p.Log().Debug().Msg("Removing player")
 	w.fightLedger.EndAllFightsWith(p.Id())
+	w.leaveGroups(p)
 	w.occupancy.RemovePlayer(p)
 	w.playerList.Remove(p)
 }
