@@ -242,6 +242,41 @@ type PositionChanged struct {
 	Woke  bool
 }
 
+// SplitCoins is coins shared out: Each to every one of Among, the actor
+// included, what's left over kept by the actor.
+type SplitCoins struct {
+	Actor string
+	Each  int
+	Among int
+}
+
+// WhereList is "where": players in the same zone, by room.
+type WhereList struct {
+	Zone    string
+	Players []WhereEntry
+}
+
+type WhereEntry struct{ Name, Room string }
+
+// CommandList is "commands": the telnet side knows them, so this just asks.
+type CommandList struct{}
+
+// TimeOfDay is "time": Wrathrock's clock, which is Seattle's.
+type TimeOfDay struct {
+	Clock string // "9:41 pm"
+	Day   string // "Tuesday, October 6"
+	Part  string // "night", "morning", ...
+}
+
+// WimpySet answers wimpy: the health under which you'll flee, 0 for never.
+type WimpySet struct {
+	At      int
+	Changed bool
+}
+
+// Panicked is wimpy at work: health under the line, so the player runs.
+type Panicked struct{}
+
 // Reported thanks a player for a report.
 type Reported struct {
 	Kind string

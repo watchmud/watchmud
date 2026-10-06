@@ -39,6 +39,9 @@ type Player struct {
 	muted, frozen bool
 	// position is standing, sitting, resting or sleeping; see position.go.
 	position Position
+	// wimpy is the health under which the player flees a fight on their
+	// own; 0 is never. Kept on the record.
+	wimpy int
 	// coins is the purse. Never negative: Spend refuses what it can't pay.
 	coins int
 	// backfilled is the backfill starting gear this character has been
@@ -268,6 +271,8 @@ func (p *Player) SetColor(on bool) { p.noColor = !on }
 func (p *Player) OOC() bool      { return !p.noOOC }
 func (p *Player) SetOOC(on bool) { p.noOOC = !on }
 
+func (p *Player) Wimpy() int        { return p.wimpy }
+func (p *Player) SetWimpy(at int)   { p.wimpy = max(at, 0) }
 func (p *Player) Muted() bool       { return p.muted }
 func (p *Player) SetMuted(on bool)  { p.muted = on }
 func (p *Player) Frozen() bool      { return p.frozen }

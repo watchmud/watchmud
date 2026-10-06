@@ -47,12 +47,13 @@ var helpSections = []helpSection{
 		{"open, close, unlock, lock", "doors and chests, by name or way; keys as needed",
 			[]string{"open", "close", "unlock", "lock"}},
 		{"repair <item>", "mend worn gear, at the smithy; repair all", []string{"repair"}},
-		{"list, buy <item>", "the General Store's stock, and buying it", []string{"list", "buy"}},
-		{"sell <item>, value <item>", "sell it there (sell all.pelt), or ask first", []string{"sell", "value"}},
+		{"list, buy, sell, value", "at the General Store: its stock; trade; prices",
+			[]string{"list", "buy", "sell", "value"}},
 		{"inventory, equipment", "what you carry (i), and wear (eq)", []string{"inventory", "i", "equipment", "eq"}},
 	}},
 	{"Fighting", []helpEntry{
-		{"kill <mob>, flee", "start a fight, or get out of one", []string{"kill", "flee"}},
+		{"kill <mob>, flee, wimpy", "fight; run; run on your own below some health",
+			[]string{"kill", "flee", "wimpy"}},
 		{"cast <ability> [target]", "gear's spells: cast heal bob, cast smite goose (c)", []string{"cast", "c"}},
 	}},
 	{"You", []helpEntry{
@@ -66,11 +67,12 @@ var helpSections = []helpSection{
 		{"tell <who> <words>, reply", "to one player, anywhere; reply to the last", []string{"tell", "reply"}},
 		{"whisper, ask <who> <words>", "to one in the room, player or mob", []string{"whisper", "ask"}},
 		{"shout, ooc <words>", "to everyone; ooc is chat, for questions (ooc off)", []string{"shout", "ooc"}},
-		{"follow <who>, group, gt", "walk and fight as one; gt talks (assist, ungroup)",
-			[]string{"follow", "group", "gt", "gtell", "ungroup", "assist"}},
+		{"follow <who>, group, gt", "walk and fight as one; gt talks (assist, split)",
+			[]string{"follow", "group", "gt", "gtell", "ungroup", "assist", "split"}},
 		{"socials, toggle", "smile, bow, wave and more; what you hear", []string{"socials", "toggle"}},
 		{"bug, idea, typo <words>", "tell whoever runs the game", []string{"bug", "idea", "typo"}},
-		{"who, quit", "who's playing; save and leave", []string{"who", "quit"}},
+		{"who, where, time", "who's playing; who's near you; the hour", []string{"who", "where", "time"}},
+		{"commands, quit", "every command there is; save and leave", []string{"commands", "quit"}},
 	}},
 }
 

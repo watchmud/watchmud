@@ -77,6 +77,7 @@ inhabitant bots (v0.4.0).
 - The General Store has a shopkeeper who answers questions about her trade
 - Mobs can flee (`me:flee()`): a losing bandit may run, once, on a coin flip
 - An ooc channel (`ooc`, `newbie`, `nb`; `ooc off`), which the socialite answers on
+- `wimpy`, `split`, `where`, `time` (Seattle's), `commands`, and `hit`/`hold`/`score`
 - Positions: `sit`, `rest`, `sleep`, `stand`, `wake` -- faster regen off your feet
 - `bug`, `idea`, `typo`: player reports, logged and kept in mongo; wizards read `reports`
 - Wizard tools: `goto`, `transfer`, `purge`, `zreset`, `echo`/`gecho` (announce a

@@ -989,6 +989,14 @@ stays behind (`Followed.Down`). The room description says how each player is
 (`RoomDescription.PlayerPositions`), so "Ann is resting here." -- and the bots' `hereRe`
 reads that as a player too.
 
+**The small ones** (`world/h_misc.go`): `split <n>` shares coins among the group in the
+room (the odd coin stays put); `where` lists players in your zone; `commands` lists
+every verb help knows; `time` is **Wrathrock's clock, which is Seattle's**
+(`America/Los_Angeles`, with `time/tzdata` embedded because the image is distroless);
+`wimpy <health>` (on the record) makes `DoViolence` run a player who's hit below it
+through `World.flee` -- the same code the `flee` command uses. `hit`, `hold`/`grab` and
+`score` are aliases of `kill`, `wear` and `stat`.
+
 **Socials** are content, `content/rules/socials.json` (`rules.Social`, checked by
 `Catalog.SetSocials`): lines for doing it alone (self, room) and, optionally, at a player
 or mob in the room (self, victim, room), with `$n` the doer and `$N` the target -- our own

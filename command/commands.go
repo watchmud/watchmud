@@ -407,6 +407,32 @@ func (p Position) Verb() string {
 	return p.To
 }
 
+// Split shares coins out among the group in the room: "split 30".
+type Split struct{ Amount string }
+
+func (Split) Verb() string { return "split" }
+
+// Where is who's playing in your part of the world, and where.
+type Where struct{}
+
+func (Where) Verb() string { return "where" }
+
+// Commands lists every command a player can type.
+type Commands struct{}
+
+func (Commands) Verb() string { return "commands" }
+
+// Time is the time in Wrathrock -- the Pacific Northwest's own.
+type Time struct{}
+
+func (Time) Verb() string { return "time" }
+
+// Wimpy is "wimpy 20": flee on your own when health drops below it in a
+// fight. "wimpy" alone says what it's set to; "wimpy 0" is never.
+type Wimpy struct{ Amount string }
+
+func (Wimpy) Verb() string { return "wimpy" }
+
 // Report is bug, idea or typo: a note for whoever runs the game.
 type Report struct {
 	Kind string

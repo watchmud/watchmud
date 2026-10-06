@@ -26,6 +26,7 @@ func testRecord() *player.Record {
 		NoShout:      true,
 		Muted:        true,
 		Frozen:       true,
+		Wimpy:        25,
 		Coins:        42,
 		CurHealth:    93,
 		MaxHealth:    100,

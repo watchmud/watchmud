@@ -145,7 +145,7 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "remove", "rem", "unwear", "unwield":
 		return command.Remove{Target: rest}, nil
 
-	case "wear":
+	case "wear", "hold", "grab":
 		return command.Wear{Target: rest}, nil
 
 	case "wield":
@@ -178,7 +178,7 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "color", "colour":
 		return command.Color{Setting: strings.ToLower(rest)}, nil
 
-	case "stat", "stats":
+	case "stat", "stats", "score":
 		return command.Stat{}, nil
 
 	case "role", "roles":
@@ -197,7 +197,7 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "consider", "con":
 		return command.Consider{Target: rest}, nil
 
-	case "kill", "attack":
+	case "kill", "attack", "hit":
 		if len(tokens) < 2 {
 			return nil, errors.New("What do you want to attack?")
 		}
@@ -215,6 +215,16 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "nohassle":
 		return command.NoHassle{Setting: strings.ToLower(rest)}, nil
 
+	case "split":
+		return command.Split{Amount: rest}, nil
+	case "where":
+		return command.Where{}, nil
+	case "commands":
+		return command.Commands{}, nil
+	case "time":
+		return command.Time{}, nil
+	case "wimpy":
+		return command.Wimpy{Amount: rest}, nil
 	case "sit", "rest", "sleep", "stand":
 		return command.Position{To: verb}, nil
 	case "wake":

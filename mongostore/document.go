@@ -31,6 +31,7 @@ type playerDoc struct {
 	NoShout      bool   `bson:"no_shout,omitempty"`
 	Muted        bool   `bson:"muted,omitempty"`
 	Frozen       bool   `bson:"frozen,omitempty"`
+	Wimpy        int    `bson:"wimpy,omitempty"`
 	Coins        int    `bson:"coins,omitempty"`
 	CurHealth    int    `bson:"cur_health"`
 	MaxHealth    int    `bson:"max_health"`
@@ -126,6 +127,7 @@ func newPlayerDoc(r *player.Record, now time.Time) playerDoc {
 		NoShout:      r.NoShout,
 		Muted:        r.Muted,
 		Frozen:       r.Frozen,
+		Wimpy:        r.Wimpy,
 		Coins:        r.Coins,
 		CurHealth:    r.CurHealth,
 		MaxHealth:    r.MaxHealth,
@@ -169,6 +171,7 @@ func (d playerDoc) record() (*player.Record, error) {
 		NoShout:      d.NoShout,
 		Muted:        d.Muted,
 		Frozen:       d.Frozen,
+		Wimpy:        d.Wimpy,
 		Coins:        d.Coins,
 		CurHealth:    d.CurHealth,
 		MaxHealth:    d.MaxHealth,

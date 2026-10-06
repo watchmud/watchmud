@@ -128,6 +128,16 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleReport(msg, cmd)
 	case command.Position:
 		w.handlePosition(msg, cmd)
+	case command.Split:
+		w.handleSplit(msg, cmd)
+	case command.Where:
+		w.handleWhere(msg, cmd)
+	case command.Commands:
+		w.handleCommands(msg, cmd)
+	case command.Time:
+		w.handleTime(msg, cmd)
+	case command.Wimpy:
+		w.handleWimpy(msg, cmd)
 	case command.Reports:
 		w.handleReports(msg, cmd)
 	case command.GroupTell:

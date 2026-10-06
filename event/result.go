@@ -93,6 +93,8 @@ const (
 	NotStanding     ResultCode = "NOT_STANDING"
 	Asleep          ResultCode = "ASLEEP"
 	AlreadyPosition ResultCode = "ALREADY_POSITION"
+	// split: nobody to split with
+	NoOneToSplit ResultCode = "NO_ONE_TO_SPLIT"
 	// moderation: what a muted or frozen player is told
 	Muted  ResultCode = "MUTED"
 	Frozen ResultCode = "FROZEN"

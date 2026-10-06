@@ -1117,3 +1117,19 @@ func TestRender_positions(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, command.Position{Wake: true}, cmd)
 }
+
+func TestRender_smallCommands(t *testing.T) {
+	assert.Equal(t, "It's 9:41 pm in Wrathrock, Tuesday, October 6: night.\n",
+		plain(render(event.TimeOfDay{Clock: "9:41 pm", Day: "Tuesday, October 6", Part: "night"}, "ann")))
+	assert.Equal(t, "bob splits some coins 2 ways: you get 15 coins.\n", plain(render(event.SplitCoins{Actor: "bob", Each: 15, Among: 2}, "ann")))
+	assert.Contains(t, plain(render(event.CommandList{}, "ann")), "wimpy")
+	for line, want := range map[string]command.Command{
+		"hit rat":    command.Kill{Target: "rat"},
+		"hold torch": command.Wear{Target: "torch"},
+		"score":      command.Stat{},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, want, cmd, line)
+	}
+}

@@ -134,6 +134,31 @@ func render(msg any, self string) string {
 	case event.Swept:
 		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
 
+	case event.SplitCoins:
+		if m.Actor == self {
+			return fmt.Sprintf("You split the coins %d ways: %s each.\n", m.Among, coinWord(m.Each))
+		}
+		return fmt.Sprintf("%s splits some coins %d ways: you get %s.\n", m.Actor, m.Among, coinWord(m.Each))
+	case event.WhereList:
+		var rows [][]cell
+		for _, p := range m.Players {
+			rows = append(rows, []cell{colored(colorPlayer, p.Name), colored(colorPlace, p.Room)})
+		}
+		return paint(colorHeading, "Players in "+m.Zone) + "\n" + table(rows)
+	case event.CommandList:
+		return renderCommands()
+	case event.TimeOfDay:
+		return fmt.Sprintf("It's %s in Wrathrock, %s: %s.\n", m.Clock, m.Day, m.Part)
+	case event.WimpySet:
+		switch {
+		case m.At == 0 && m.Changed:
+			return "You'll fight to the end.\n"
+		case m.At == 0:
+			return "Wimpy is off: you'll fight to the end. 'wimpy 20' flees below 20 health.\n"
+		}
+		return fmt.Sprintf("You'll flee when your health drops below %d.\n", m.At)
+	case event.Panicked:
+		return "You panic and try to run!\n"
 	case event.PositionChanged:
 		return renderPositionChanged(m, self)
 	case event.Reported:
@@ -1213,4 +1238,28 @@ func renderPositionChanged(m event.PositionChanged, self string) string {
 		return pick("You wake and get to your feet.", "wakes and gets up.")
 	}
 	return pick("You stand up.", "stands up.")
+}
+
+func coinWord(n int) string {
+	if n == 1 {
+		return "1 coin"
+	}
+	return fmt.Sprintf("%d coins", n)
+}
+
+// renderCommands is every verb help knows, in help's order, each once.
+func renderCommands() string {
+	var verbs []string
+	seen := map[string]bool{}
+	for _, section := range helpSections {
+		for _, e := range section.entries {
+			for _, v := range e.verbs {
+				if !seen[v] && len(v) > 1 {
+					seen[v] = true
+					verbs = append(verbs, v)
+				}
+			}
+		}
+	}
+	return paint(colorHeading, "Commands") + "\n" + wrapWords(verbs, 76) + "  'help' says what they do.\n"
 }
