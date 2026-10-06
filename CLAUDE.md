@@ -739,8 +739,8 @@ change. An object naming a role the catalog doesn't define is a hard load failur
 ### Scripts (Lua)
 
 **Go is the engine; a script decides *when*.** A script composes actions the engine
-already has -- today `me:say`, `me:summon`, `me:junk`, `me:sweep` and `me:flee` -- and
-never does the math. An action a script needs
+already has -- today `me:say`, `me:summon`, `me:junk`, `me:sweep`, `me:flee` and
+`me:take` -- and never does the math. An action a script needs
 that the engine lacks is a Go feature first.
 
 A mob names a script in mobs.json, `"script": "barrow_king"` (bare is its zone,
@@ -842,7 +842,14 @@ room. And because `DoViolence` ranges over a snapshot, a fighter `roomOf` can't 
 skipped: a summon crumbled earlier in the round must not swing from nowhere.
 
 The world reaches a script through `script.Actions` (`Say`, `Summon`, `Summons`, `Junk`,
-`Sweep`, `Flee`), filled in by `world.New`; a test fills it with recorders.
+`Sweep`, `Flee`, `Take`), filled in by `world.New`; a test fills it with recorders.
+
+**Mobs carry things.** `mobile.Instance.Inventory` (an `object.List`) is what a mob has
+picked up with `me:take()` (`world/scavenge.go`): one thing a call, the longest-lying on
+its floor that's been left `TakeAfter` (1 minute) -- `World.leftLying`, the janitor's
+rule with a shorter wait, never a bag -- and at most `MaxCarried` (10). It stops
+decaying once carried. `becomeMobileCorpse` moves it all into the corpse. First user:
+the Hollowfields' crows (`hollowfield/crow`, power 1, wandering), who take on arrival.
 
 **`me:flee()`** (`world/mob_flee.go`) breaks off every fight the mob is in and runs it
 through an open exit that keeps it in its zone, picked through `w.roller`, the room

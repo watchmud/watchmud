@@ -51,5 +51,5 @@ And one for the janitor:
 
 ```html
 <dt>Something I dropped vanished</dt>
-<dd>The town janitor sweeps up what's been left lying in Wrathrock for five minutes or more. Give it to someone instead, or leave it in the donation room, east of Temple Square, which he never touches.</dd>
+<dd>The town janitor sweeps up what's been left lying in Wrathrock for five minutes or more. Give it to someone instead, or leave it in the donation room, east of Temple Square, which he never touches. Out in the Hollowfields it may have been a crow: catch it, and whatever it took is in its corpse.</dd>
 ```
