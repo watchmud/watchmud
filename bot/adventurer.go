@@ -571,6 +571,11 @@ func (a *Adventurer) fight(ctx context.Context) error {
 		return err
 	}
 	n := looted(text)
+	if n == 0 {
+		// what it found instead; a hunter that kills and never loots is a
+		// question the log should be able to answer
+		a.log("nothing looted after %d kills: %q", killed, firstLine(text))
+	}
 	a.carrying += n
 	a.count(func(st *Stats) { st.Looted += n })
 	return nil
@@ -767,4 +772,12 @@ func (a *Adventurer) pause(ctx context.Context, span [2]time.Duration) error {
 	case <-time.After(d):
 		return nil
 	}
+}
+
+// firstLine is a chunk's first line, for a log.
+func firstLine(text string) string {
+	if i := strings.IndexByte(text, '\n'); i >= 0 {
+		return text[:i]
+	}
+	return text
 }
