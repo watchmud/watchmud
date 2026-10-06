@@ -118,7 +118,11 @@ Calls made without the owner (cheap to change):
   night is 6 pm to 6 am Seattle time.
 - `give`'s, `whisper`'s and `ask`'s room lines say only that something was said.
 
-Still open:
-- `TestAdventurer_huntsLootsAndDonates` failed once under -race (10 kills, 1 looted).
-  Not chance; not reproduced in sixteen runs since. The hunter now logs what an empty
-  loot attempt saw, so the next failure explains itself.
+The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
+race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
+back it explains itself. Chasing it found two real problems, both fixed:
+- **Who swings first in a round was random** -- `FightLedger.GetFights` ranged a map.
+  It now returns fights in the order they began. (CI caught this through a test.)
+- **The world could fail to build on a busy machine**: a script's top level ran under
+  the 10ms a hook gets, and the shopkeeper's table-building once took longer under the
+  race detector. Top levels now get `script.LoadTimeout` (500ms).
