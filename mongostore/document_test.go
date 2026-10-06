@@ -34,6 +34,9 @@ func testRecord() *player.Record {
 		Inventory: []player.InventoryRecord{
 			{InstanceId: knifeId, ZoneId: "wrathrock", DefinitionId: "training_dagger", Durability: intp(17), Power: intp(5)},
 			{InstanceId: uuid.New(), ZoneId: "wrathrock", DefinitionId: "waterskin"},
+			{InstanceId: uuid.New(), ZoneId: "wrathrock", DefinitionId: "leather_satchel", Contents: []player.InventoryRecord{
+				{InstanceId: uuid.New(), ZoneId: "hollowfields", DefinitionId: "goose_feather", Power: intp(1)},
+			}},
 		},
 		Backfilled: []string{"wrathrock/temple_token"},
 	}
@@ -96,6 +99,15 @@ func TestPlayerDoc_badIdIsAnError(t *testing.T) {
 func TestPlayerDoc_badInstanceIdIsAnError(t *testing.T) {
 	doc := newPlayerDoc(testRecord(), time.Now())
 	doc.Inventory[1].InstanceId = "nope"
+
+	_, err := doc.record()
+	assert.ErrorContains(t, err, "bad instance id")
+}
+
+// and inside a bag
+func TestPlayerDoc_badInstanceIdInABagIsAnError(t *testing.T) {
+	doc := newPlayerDoc(testRecord(), time.Now())
+	doc.Inventory[2].Contents[0].InstanceId = "nope"
 
 	_, err := doc.record()
 	assert.ErrorContains(t, err, "bad instance id")

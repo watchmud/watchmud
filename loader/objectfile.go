@@ -41,4 +41,8 @@ type containerEntry struct {
 	Closed bool   `json:"closed"`
 	Locked bool   `json:"locked"`
 	Key    string `json:"key"`
+	// Portable makes it a bag: carried, no lid, saved with its carrier.
+	Portable bool `json:"portable"`
+	// Capacity is how many things fit; zero, no limit.
+	Capacity int `json:"capacity"`
 }

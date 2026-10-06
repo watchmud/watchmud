@@ -4,6 +4,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
+	"github.com/watchmud/watchmud/object"
 )
 
 func (w *World) handleInventory(msg *gameserver.HandlerParameter, cmd command.Inventory) {
@@ -18,8 +19,17 @@ func (w *World) handleInventory(msg *gameserver.HandlerParameter, cmd command.In
 				Durability:       instPtr.Durability,
 				MaxDurability:    instPtr.Definition.MaxDurability,
 				Broken:           instPtr.Broken(),
+				Bag:              instPtr.Contents != nil,
+				Holding:          bagHolding(instPtr),
 			})
 		}
 	}
 	msg.Player.Send(event.Inventory{Items: items, Coins: msg.Player.Coins()})
+}
+
+func bagHolding(inst *object.Instance) int {
+	if inst.Contents == nil {
+		return 0
+	}
+	return inst.Contents.Len()
 }

@@ -281,8 +281,9 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 			}
 
 			if obj.Container != nil {
-				// a chest is furniture: it stays where it is (chests.go)
-				if !d.NoTake() {
+				// a chest is furniture: it stays where it is (chests.go);
+				// a bag is carried
+				if !obj.Container.Portable && !d.NoTake() {
 					d.Behaviors = append(d.Behaviors, rules.ObjectBehaviorNoTake)
 				}
 				c.pendingChests = append(c.pendingChests, pendingChest{zonename, d, *obj.Container})

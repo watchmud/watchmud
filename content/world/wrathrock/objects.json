@@ -90,5 +90,15 @@
     "equipment_slot": "neck",
     "durability": 0,
     "abilities": [ "recall" ]
+  },
+  {
+    "id": "leather_satchel",
+    "name": "leather satchel",
+    "category": "OTHER",
+    "aliases": [ "satchel", "bag" ],
+    "short_description": "a leather satchel",
+    "description_on_ground": "A leather satchel with a long strap lies here.",
+    "durability": 0,
+    "container": { "portable": true, "capacity": 10 }
   }
 ]

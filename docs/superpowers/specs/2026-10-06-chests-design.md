@@ -57,5 +57,6 @@ you to the miller; the loft gets you into his strongbox.
 
 ## Not now
 
-Carried containers (bags); trapped or breakable chests. (`put <item> in <chest>` came
-straight after: get-from backwards, coins included.)
+Trapped or breakable chests. (`put <item> in <chest>` came straight after: get-from
+backwards, coins included. Then bags: `"portable": true`, no lid, carried and saved one
+level deep -- containers don't nest -- with a `"capacity"`; see CLAUDE.md.)

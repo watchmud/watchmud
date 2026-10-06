@@ -406,11 +406,13 @@ func renderInventory(items []event.InventoryItem) string {
 		desc               string
 		power, dur, maxDur int
 		broken             bool
+		bag                bool
+		holding            int
 	}
 	var order []key
 	count := map[key]int{}
 	for _, it := range items {
-		k := key{it.ShortDescription, it.Power, it.Durability, it.MaxDurability, it.Broken}
+		k := key{it.ShortDescription, it.Power, it.Durability, it.MaxDurability, it.Broken, it.Bag, it.Holding}
 		if count[k] == 0 {
 			order = append(order, k)
 		}
@@ -421,6 +423,12 @@ func renderInventory(items []event.InventoryItem) string {
 		desc := k.desc
 		if n := count[k]; n > 1 {
 			desc += fmt.Sprintf(" (x%d)", n)
+		}
+		switch {
+		case k.bag && k.holding == 0:
+			desc += " (empty)"
+		case k.bag:
+			desc += fmt.Sprintf(" (%d inside)", k.holding)
 		}
 		rows = append(rows, []cell{
 			colored(colorObject, desc),

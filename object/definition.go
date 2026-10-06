@@ -62,10 +62,14 @@ type Definition struct {
 }
 
 // ContainerSpec is how a chest starts: open or closed, locked or not, and the
-// key that fits ("zone/object"; empty for a lid with no lock).
+// key that fits ("zone/object"; empty for a lid with no lock). A Portable one
+// is a bag: carried, always open, its contents saved with whoever carries it.
+// Capacity is how many things fit; zero is no limit.
 type ContainerSpec struct {
-	Initial lock.State
-	Key     string
+	Initial  lock.State
+	Key      string
+	Portable bool
+	Capacity int
 }
 
 func NewDefinition(

@@ -37,8 +37,8 @@ var helpSections = []helpSection{
 	}},
 	{"Things", []helpEntry{
 		{"get <item>", "pick it up; get all, get 2.knife", []string{"get"}},
-		{"get <item> from <corpse>", "loot, or take from a chest", []string{"get"}},
-		{"put <item> in <chest>", "put it away; put all.pelt in chest", []string{"put"}},
+		{"get <item> from <corpse>", "loot, or take from a bag or chest", []string{"get"}},
+		{"put <item> in <bag|chest>", "put it away; put all.pelt in satchel", []string{"put"}},
 		{"drop <item>", "put it down", []string{"drop"}},
 		{"wear <item>, wield <item>", "put it on, take up a weapon", []string{"wear", "wield"}},
 		{"remove <item>", "take it off", []string{"remove"}},

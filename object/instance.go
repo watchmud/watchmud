@@ -62,7 +62,9 @@ func NewInstance(id uuid.UUID, d *Definition) *Instance {
 	}
 	if d.Container != nil {
 		inst.Contents = NewList()
-		inst.Lock = lock.New(d.Container.Initial, d.Container.Key)
+		if !d.Container.Portable {
+			inst.Lock = lock.New(d.Container.Initial, d.Container.Key)
+		}
 	}
 	return inst
 }

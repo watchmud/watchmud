@@ -77,8 +77,8 @@ func tryLock(l *lock.Lock, p *player.Player, change event.DoorChange) error {
 	return nil
 }
 
-// carriesKey is whether anything the player has -- carried or worn, since
-// what's worn is in the inventory too -- is the object that key names.
+// carriesKey is whether anything the player has -- carried, worn (what's
+// worn is in the inventory too), or in a bag -- is the object that key names.
 func carriesKey(p *player.Player, key string) bool {
 	if key == "" {
 		return false
@@ -86,6 +86,14 @@ func carriesKey(p *player.Player, key string) bool {
 	for inst := range p.Inventory().All() {
 		if inst.Definition.ObjectId.Ref() == key {
 			return true
+		}
+		// a key in a bag is still carried
+		if inst.Contents != nil {
+			for in := range inst.Contents.All() {
+				if in.Definition.ObjectId.Ref() == key {
+					return true
+				}
+			}
 		}
 	}
 	return false

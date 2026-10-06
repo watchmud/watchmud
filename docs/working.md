@@ -62,6 +62,9 @@ inhabitant bots (v0.4.0).
   `instance_max` instead of adding one more each time: the Sample Zone's fountains have
   been piling up in production since it launched
 - `put <item> in <chest>` (and coins): get-from backwards
+- Bags: a leather satchel (holds 10) at the General Store; `put`/`get from`/`look in`
+  work on one you carry, and what's in it is saved with you. Bags don't nest, coins stay
+  in the purse, and `inventory` shows how full each one is
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

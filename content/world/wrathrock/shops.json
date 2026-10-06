@@ -7,7 +7,8 @@
       { "object": "leather_boots", "power": 2 },
       { "object": "work_gloves", "power": 2 },
       { "object": "waterskin", "power": 1 },
-      { "object": "temple_token", "power": 1 }
+      { "object": "temple_token", "power": 1 },
+      { "object": "leather_satchel", "power": 1 }
     ]
   }
 ]

@@ -268,6 +268,9 @@ type InventoryItem struct {
 	Durability    int
 	MaxDurability int
 	Broken        bool
+	// Bag is whether it holds things, and Holding how many it does.
+	Bag     bool
+	Holding int
 }
 
 type Equipment struct {

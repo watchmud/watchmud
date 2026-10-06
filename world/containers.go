@@ -10,9 +10,8 @@ import (
 	"github.com/watchmud/watchmud/object"
 )
 
-// findContainer is the container a player named, on the floor of the room
-// they're in -- the only place a corpse can be. A bag in your inventory will
-// want the inventory searched too.
+// findContainer is the container a player named: one they carry -- a bag --
+// first, then one on the floor of the room they're in.
 func (w *World) findContainer(msg *gameserver.HandlerParameter, name string) (*object.Instance, bool) {
 	target, err := parseTarget(name)
 	if err != nil {
@@ -20,7 +19,10 @@ func (w *World) findContainer(msg *gameserver.HandlerParameter, name string) (*o
 		msg.Fail(event.ParseError)
 		return nil, false
 	}
-	found := targetsIn(target, w.playerRoom(msg.Player).Inventory.All())
+	found := targetsIn(target, msg.Player.Inventory().All())
+	if len(found) == 0 || found[0].Contents == nil {
+		found = targetsIn(target, w.playerRoom(msg.Player).Inventory.All())
+	}
 	if len(found) == 0 {
 		msg.Fail(event.TargetNotFound)
 		return nil, false

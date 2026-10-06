@@ -69,6 +69,12 @@ const (
 	// put: where to, and not into itself
 	NoContainer    ResultCode = "NO_CONTAINER"
 	NotEnoughCoins ResultCode = "NOT_ENOUGH_COINS"
+	// bags: full, nothing inside a container, coins stay in the purse, and a
+	// shop won't buy one with things in it
+	ContainerFull ResultCode = "CONTAINER_FULL"
+	CantNest      ResultCode = "CANT_NEST"
+	CoinsInPurse  ResultCode = "COINS_IN_PURSE"
+	NotEmpty      ResultCode = "NOT_EMPTY"
 
 	// movement and combat
 	CantGoThatWay   ResultCode = "CANT_GO_THAT_WAY"

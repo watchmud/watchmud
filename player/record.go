@@ -53,6 +53,10 @@ type InventoryRecord struct {
 	// reason as Durability, though here a missing number and zero agree:
 	// before power existed everything was power 0.
 	Power *int
+
+	// Contents is what's in it, for a bag. One level: nothing that holds
+	// things goes inside another.
+	Contents []InventoryRecord
 }
 
 type DefinitionSource interface {
@@ -86,27 +90,27 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 	p.backfilled = slices.Clone(rec.Backfilled)
 
 	for _, ir := range rec.Inventory {
-		//Missing definitions. A saved InventoryRecord can reference a zone or object id that content no longer defines — you edit content/, and last week's save now points at nothing. Erroring means an unlucky
-		//content edit locks a player out of the game permanently. Log and skip the item so the login succeeds; that's the behavior you want at 2am.
-		d, found := defs.ObjectDefinition(ir.ZoneId, ir.DefinitionId)
-		if !found {
-			log.Warn().Str("player", rec.Name).Msgf("definition not found for %s / %s, dropping it", ir.ZoneId, ir.DefinitionId)
+		i, ok := instanceFromRecord(rec.Name, ir, defs)
+		if !ok {
 			continue
-		}
-		i := object.NewInstance(ir.InstanceId, d)
-		if ir.Durability != nil {
-			// what it had left when it was saved. Clamped to the current max,
-			// so lowering a durability table in content doesn't leave items
-			// in the world tougher than anything you can get now.
-			i.Durability = min(*ir.Durability, d.MaxDurability)
-		}
-		if ir.Power != nil {
-			// nothing makes negative power; a record claiming it is damaged,
-			// and shouldn't drag the average of what the player wears down.
-			i.Power = max(*ir.Power, 0)
 		}
 		if err := p.inventory.Add(i); err != nil {
 			p.Log().Error().Err(err).Msg("loading inventory")
+		}
+		for _, cr := range ir.Contents {
+			c, ok := instanceFromRecord(rec.Name, cr, defs)
+			if !ok {
+				continue
+			}
+			// a bag content no longer calls a container: what was in it is
+			// carried loose rather than lost
+			into := p.inventory
+			if i.Contents != nil {
+				into = i.Contents
+			}
+			if err := into.Add(c); err != nil {
+				p.Log().Error().Err(err).Msg("loading a bag")
+			}
 		}
 	}
 
@@ -127,6 +131,34 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 		}
 	}
 	return p, nil
+}
+
+// instanceFromRecord makes the item a record describes, or says it can't.
+//
+// Missing definitions. A saved InventoryRecord can reference a zone or object
+// id that content no longer defines -- you edit content/, and last week's save
+// now points at nothing. Erroring means an unlucky content edit locks a player
+// out of the game permanently. Log and skip the item so the login succeeds;
+// that's the behavior you want at 2am.
+func instanceFromRecord(name string, ir InventoryRecord, defs DefinitionSource) (*object.Instance, bool) {
+	d, found := defs.ObjectDefinition(ir.ZoneId, ir.DefinitionId)
+	if !found {
+		log.Warn().Str("player", name).Msgf("definition not found for %s / %s, dropping it", ir.ZoneId, ir.DefinitionId)
+		return nil, false
+	}
+	i := object.NewInstance(ir.InstanceId, d)
+	if ir.Durability != nil {
+		// what it had left when it was saved. Clamped to the current max,
+		// so lowering a durability table in content doesn't leave items
+		// in the world tougher than anything you can get now.
+		i.Durability = min(*ir.Durability, d.MaxDurability)
+	}
+	if ir.Power != nil {
+		// nothing makes negative power; a record claiming it is damaged,
+		// and shouldn't drag the average of what the player wears down.
+		i.Power = max(*ir.Power, 0)
+	}
+	return i, true
 }
 
 func (p *Player) Record() *Record {
@@ -164,6 +196,9 @@ func inventoryRecord(l *object.List) []InventoryRecord {
 		if item.Power > 0 {
 			power := item.Power
 			r.Power = &power
+		}
+		if item.Contents != nil {
+			r.Contents = inventoryRecord(item.Contents)
 		}
 		records = append(records, r)
 	}

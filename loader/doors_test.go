@@ -92,3 +92,28 @@ func TestFitChests(t *testing.T) {
 		assert.ErrorContains(t, c.fitChests(), name, name)
 	}
 }
+
+// A bag: carried, no lid, and room for so many things.
+func TestFitChests_portable(t *testing.T) {
+	c := lootContent(t)
+	bag := object.NewDefinition("bag", "bag", "caves", rules.ObjectCategoryOther, nil,
+		"a bag", "A bag is here.", rules.SlotNone, rules.ArmorTypeNone, nil)
+	c.pendingChests = []pendingChest{{"caves", bag, containerEntry{Portable: true, Capacity: 5}}}
+
+	require.NoError(t, c.fitChests())
+	assert.Equal(t, &object.ContainerSpec{Portable: true, Capacity: 5}, bag.Container)
+
+	for name, e := range map[string]containerEntry{
+		"no lid or lock": {Portable: true, Closed: true},
+		"capacity -1":    {Portable: true, Capacity: -1},
+	} {
+		c.pendingChests = []pendingChest{{"caves", bag, e}}
+		assert.ErrorContains(t, c.fitChests(), name, name)
+	}
+
+	stuck := object.NewDefinition("bag", "bag", "caves", rules.ObjectCategoryOther, nil,
+		"a bag", "A bag is here.", rules.SlotNone, rules.ArmorTypeNone,
+		[]rules.ObjectBehavior{rules.ObjectBehaviorNoTake})
+	c.pendingChests = []pendingChest{{"caves", stuck, containerEntry{Portable: true}}}
+	assert.ErrorContains(t, c.fitChests(), "portable, and noTake")
+}

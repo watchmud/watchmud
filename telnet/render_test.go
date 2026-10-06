@@ -839,6 +839,17 @@ func TestRenderInventory_groups(t *testing.T) {
 		"You have 12 coins.\n", got)
 }
 
+// A bag says how much it holds, so two empty ones fold and a full one doesn't.
+func TestRenderInventory_bags(t *testing.T) {
+	empty := event.InventoryItem{ShortDescription: "a leather satchel", Power: 1, Bag: true}
+	full := event.InventoryItem{ShortDescription: "a leather satchel", Power: 1, Bag: true, Holding: 3}
+	got := plain(render(event.Inventory{Items: []event.InventoryItem{empty, full, empty}}, "testdood"))
+
+	assert.Equal(t, "Inventory\n"+
+		"  a leather satchel (x2) (empty)  power 1\n"+
+		"  a leather satchel (3 inside)    power 1\n", got)
+}
+
 // A door: the one who did it, the room that watched, and the far side, which
 // hears it without seeing who.
 func TestRender_doorChanged(t *testing.T) {

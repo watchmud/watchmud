@@ -36,6 +36,10 @@ func (w *World) handlePut(msg *gameserver.HandlerParameter, cmd command.Put) {
 	into := container.Definition.ShortDescription
 
 	if isCoins(target.Name) {
+		if container.Definition.Container != nil && container.Definition.Container.Portable {
+			msg.Fail(event.CoinsInPurse)
+			return
+		}
 		n := target.Quantity
 		if n == 0 {
 			n = msg.Player.Coins()
@@ -55,6 +59,7 @@ func (w *World) handlePut(msg *gameserver.HandlerParameter, cmd command.Put) {
 		return
 	}
 	put := 0
+	refused := event.TargetInUse
 	for _, item := range items {
 		if msg.Player.Equipment().ItemEquipped(item) {
 			if !target.All {
@@ -62,6 +67,21 @@ func (w *World) handlePut(msg *gameserver.HandlerParameter, cmd command.Put) {
 				return
 			}
 			continue
+		}
+		// one level of containers: a bag doesn't go in a bag, or in itself
+		if item.Contents != nil {
+			if !target.All {
+				msg.Fail(event.CantNest)
+				return
+			}
+			refused = event.CantNest
+			continue
+		}
+		if full(container) {
+			if put == 0 {
+				msg.Fail(event.ContainerFull)
+			}
+			return
 		}
 		if err := object.Move(item, msg.Player.Inventory(), container.Contents); err != nil {
 			log.Error().Err(err).Str("player", msg.Player.Name()).Str("room", room.Location().String()).Msg("put")
@@ -72,6 +92,12 @@ func (w *World) handlePut(msg *gameserver.HandlerParameter, cmd command.Put) {
 		put++
 	}
 	if put == 0 {
-		msg.Fail(event.TargetInUse)
+		msg.Fail(refused)
 	}
+}
+
+// full is whether a container with a capacity has reached it.
+func full(c *object.Instance) bool {
+	spec := c.Definition.Container
+	return spec != nil && spec.Capacity > 0 && c.Contents.Len() >= spec.Capacity
 }

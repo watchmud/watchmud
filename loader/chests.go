@@ -20,13 +20,26 @@ type pendingChest struct {
 func (c *Content) fitChests() error {
 	for _, p := range c.pendingChests {
 		where := fmt.Sprintf("%s/%s", p.zone, p.defn.ObjectId.DefinitionId)
+		if p.entry.Capacity < 0 {
+			return fmt.Errorf("container %s: capacity %d", where, p.entry.Capacity)
+		}
+		if p.entry.Portable && (p.entry.Closed || p.entry.Locked || p.entry.Key != "") {
+			// a lid's state would have to be saved with the carrier; a bag is
+			// always open
+			return fmt.Errorf("container %s: a portable container has no lid or lock", where)
+		}
+		if p.entry.Portable && p.defn.NoTake() {
+			return fmt.Errorf("container %s: portable, and noTake", where)
+		}
 		key, err := c.lockKey(p.zone, p.entry.Closed, p.entry.Locked, p.entry.Key)
 		if err != nil {
 			return fmt.Errorf("container %s: %w", where, err)
 		}
 		p.defn.Container = &object.ContainerSpec{
-			Initial: lock.State{Closed: p.entry.Closed, Locked: p.entry.Locked},
-			Key:     key,
+			Initial:  lock.State{Closed: p.entry.Closed, Locked: p.entry.Locked},
+			Key:      key,
+			Portable: p.entry.Portable,
+			Capacity: p.entry.Capacity,
 		}
 	}
 	c.pendingChests = nil

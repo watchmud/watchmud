@@ -646,7 +646,7 @@ against its chance, and a drop is made at **the mob's power**, plus `rules.LootP
 from a second d100. Never the killer's power: out-levelling a boss makes his drops not
 worth having, on purpose.
 
-The drops go into the corpse, which is the only container so far. A container is an
+The drops go into the corpse, the first container (chests and bags came later). A container is an
 `object.Instance` with non-nil `Contents` (an `object.List`, like the floor and inventory);
 nil means "not a container", so check that rather than the category. Corpses are
 `NoTake`, answer to `corpse`, and have a `DecaysAt`: `World.DecayFloors` runs on the
@@ -654,7 +654,7 @@ mobile pulse and removes them, contents and all, after `rules.CorpseDecay`. The 
 `DecaysAt` means never. Anything a character drops gets a `DecaysAt` too
 (`rules.DroppedDecay`, 30 minutes), and `get` clears it -- so the donation room the
 bots fill turns over. Zone resets and wizard `load`s never go through `drop`. `get <item> from <container>` and `look in <container>` live in
-`world/containers.go`, and only search the room's floor.
+`world/containers.go`, and search what the player carries, then the room's floor.
 
 ### Economy
 
@@ -669,7 +669,7 @@ at most 40% and a full repair costs 50%, so no loop of buy, repair and sell make
 `TestSell_noProfitInBuyingAndSellingBack` pins one; keep it that way when tuning.
 
 Coins are a number, not objects: `Player.coins` (on the record), and `Instance.Coins` on a
-container, which only a corpse is. `get all from corpse` takes them, `get [n] coins from
+corpse or a chest (never a bag: coins stay in the purse). `get all from corpse` takes them, `get [n] coins from
 corpse` just them; they go with the corpse when it crumbles, and a player keeps theirs on
 death. A shop is a zone's `shops.json` (room, and objects at a power, named the way loot
 names them) loaded into `spaces.Zone.Shops`; it sells new instances of its stock without
@@ -887,8 +887,20 @@ looks for a lidded container on the floor (`findLidded`) and answers with
 `event.ContainerChanged`; `findContainer` refuses a closed one (`CONTAINER_CLOSED`), so
 `get from` and `look in` need it open. A corpse is a container with no lid: always open.
 `put <item> in <container>` (`world/h_put.go`) is get-from run backwards: get's target
-grammar, coins included, into an open container on the floor; worn things stay on the
-way `drop` leaves them, and nothing put away decays.
+grammar, coins included, into an open container; worn things stay on the way `drop`
+leaves them, and nothing put away decays.
+
+**Bags** are containers with `"portable": true` (and an optional `"capacity"`): not
+`noTake`, and no lid or lock -- the loader refuses either, since a lid's state would have
+to be saved with the carrier. `findContainer` searches what the player carries before the
+floor, so `put`/`get from`/`look in` reach a bag in the pack. **Containers don't nest**:
+`put` refuses a container into anything (`CANT_NEST`; `put all` skips them), which is what
+keeps a bag's contents one level deep in `player.InventoryRecord.Contents` and
+`mongostore`'s `inventoryDoc.Contents`. A record whose bag content no longer calls a
+container loads what was in it loose, rather than losing it. Coins stay in the purse
+(`COINS_IN_PURSE`); a full bag is `CONTAINER_FULL`; a shop won't buy one with anything
+in it (`NOT_EMPTY`); and `carriesKey` looks inside bags. `inventory` shows "(3 inside)"
+or "(empty)". The General Store sells a leather satchel (capacity 10).
 
 A fight has no location of its own. Nobody can leave a fight without ending it (`move`
 and `recall` refuse, `flee` ends it first), so `DoViolence` reports each swing to
