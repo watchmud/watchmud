@@ -27,9 +27,13 @@ func (w *World) DoMobileActivity() {
 		} else {
 			// actions where the mob is NOT in a fight.
 
-			if mob.Definition.HasFlag(rules.MobileFlagAggressive) ||
-				(mob.Definition.HasFlag(rules.MobileFlagMoonstruck) && w.fullMoonNight()) {
-				w.doMobAggro(mob)
+			moonstruck := mob.Definition.HasFlag(rules.MobileFlagMoonstruck) && w.fullMoonNight()
+			if mob.Definition.HasFlag(rules.MobileFlagAggressive) || moonstruck {
+				// a moonstruck mob still roams, hunting: frozen in one room
+				// all night it would be the safest thing out there
+				if !w.doMobAggro(mob) && moonstruck && mob.CanWander() {
+					w.doMobWander(mob)
+				}
 			} else if mob.CanWander() {
 				w.doMobWander(mob)
 			}
@@ -40,7 +44,8 @@ func (w *World) DoMobileActivity() {
 // doMobAggro attacks the first player in the room it can see. A wizard with
 // nohassle on isn't one of them, and doesn't shield whoever is standing next
 // to them: the mob goes for the next player instead.
-func (w *World) doMobAggro(mob *mobile.Instance) {
+// It answers whether there was anyone to go for.
+func (w *World) doMobAggro(mob *mobile.Instance) bool {
 	for _, p := range w.mobileRoom(mob).Players() {
 		if p.IsWizard() && p.NoHassle() {
 			continue
@@ -48,8 +53,9 @@ func (w *World) doMobAggro(mob *mobile.Instance) {
 		if err := w.startFight(mob, p); err != nil {
 			log.Warn().Msgf("World.doMobAggro: %s error starting fight: %s", mob.Definition.Id, err)
 		}
-		return
+		return true
 	}
+	return false
 }
 
 func (w *World) doMobWander(mob *mobile.Instance) {

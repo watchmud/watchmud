@@ -985,7 +985,7 @@ walking pulls: recall, flee, death and wizard moves move one player. `RemovePlay
 takes a player out of any group from either end.
 **Assist**: `startFight` is `joinFight` (the ledger and the openers) and then
 `assist` for each side -- the rest of a player's group in the room, not fighting and
-without `assist off` (`groups.noAssist`, in memory), join against the mob through
+without `assist off` (`groups.noAssist`, in memory), and on their feet, join against the mob through
 `joinFight`, which assists no one, so there's no chain. Kill, aggro, smite and summons
 all start fights through `startFight`, so a group fights together however one began.
 
@@ -1013,9 +1013,11 @@ step, then track again. It's how you chase a bandit that ran.
 **The moon** (`moon/`, `world/moon.go`): its phase from the date (a mean synodic month
 from a known new moon, checked against the almanac), and night from Seattle's clock --
 the moon over Wrathrock is the one over the Pacific Northwest. A full-moon night
-(6 pm to 6 am) turns `moonstruck` mobs aggressive (the Hollowfields' wild dogs) and
-doubles the chance of a loot power bump; anyone arriving on a full-moon day is told
-"Full moon tonight. Be careful." `time` names the phase. The moon reads its own clock,
+(6 pm to 6 am) turns `moonstruck` mobs aggressive (the Hollowfields' wild dogs, which
+still roam when nobody's there to go for) and doubles the chance of a loot power bump;
+anyone arriving that day or night is told "Full moon tonight. Be careful." Whether a
+night is full is the phase at its middle, midnight (`tonight`), so the warning, the dogs
+and the loot agree from 6 pm to 6 am. `time` names the phase. The moon reads its own clock,
 `World.SetMoonClock`: `NewTestWorld` and the bot tests pin it to `world.NewMoon`, so a
 full moon never changes what a test sees, and a moon test sets `world.FullMoonNight`.
 

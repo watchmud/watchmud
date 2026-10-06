@@ -165,7 +165,7 @@ func (w *World) arrive(p *player.Player, first bool) {
 	p.Send(event.Color{On: p.Color()}) // ahead of the first thing worth coloring
 	p.Send(r.DescriptionExcept(p))
 	w.backfill(p)
-	if w.fullMoon() {
+	if w.fullMoonTonight() {
 		p.Send(event.MoonWarning{})
 	}
 }

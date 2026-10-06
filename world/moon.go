@@ -25,17 +25,34 @@ func (w *World) moonTime() time.Time {
 //   - a "moonstruck" mob turns aggressive on a full-moon night (the
 //     Hollowfields' wild dogs);
 //   - loot's chance of a power bump doubles on a full-moon night;
-//   - on a full-moon day, anyone arriving is warned.
+//   - on the day before a full-moon night, and during it, anyone arriving
+//     is warned.
 
-// fullMoon is whether the moon is full now, day or night.
-func (w *World) fullMoon() bool {
-	return moon.PhaseAt(w.moonTime()) == moon.Full
+// A night is 6 pm to 6 am in Seattle, and whether it's a full-moon night is
+// the moon's phase at its middle, midnight: a property of the whole night,
+// so the dogs don't calm down at 11 pm because the phase ticked over, and
+// "full moon tonight" said at breakfast is still true after dark.
+
+// tonight is the midnight in the middle of tonight -- the night under way
+// before 6 am, the coming one after.
+func tonight(t time.Time) time.Time {
+	t = t.In(wrathrockTime)
+	day := t
+	if t.Hour() >= 6 {
+		day = t.AddDate(0, 0, 1)
+	}
+	return time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, wrathrockTime)
 }
 
-// fullMoonNight is a full moon and dark in Seattle: 6 pm to 6 am.
+// fullMoonTonight is whether tonight -- see tonight -- is a full-moon night.
+func (w *World) fullMoonTonight() bool {
+	return moon.PhaseAt(tonight(w.moonTime())) == moon.Full
+}
+
+// fullMoonNight is a full-moon night, and dark now.
 func (w *World) fullMoonNight() bool {
 	h := w.moonTime().In(wrathrockTime).Hour()
-	return w.fullMoon() && (h >= 18 || h < 6)
+	return (h >= 18 || h < 6) && w.fullMoonTonight()
 }
 
 // NewMoon and FullMoonNight are moments to pin the moon at: a new moon, and a

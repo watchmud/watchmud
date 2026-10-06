@@ -226,6 +226,18 @@ func (s *groupSuite) TestAssistGoesBothWays() {
 	s.Assert().False(s.w.fightLedger.InFight(s.bob))
 }
 
+// someone off their feet isn't dragged in: asleep for their mana, they stay
+// asleep
+func (s *groupSuite) TestAssist_notTheSleeping() {
+	s.as(s.ann, command.Follow{Target: "testdood"})
+	s.ann.SetPosition(player.Sleeping)
+
+	s.as(s.p, command.Kill{Target: "target"})
+
+	s.Assert().False(s.w.fightLedger.InFight(s.ann))
+	s.Assert().Equal(player.Sleeping, s.ann.Position())
+}
+
 func (s *groupSuite) TestAssistSetting() {
 	s.as(s.ann, command.Assist{})
 	s.Assert().False(sent[event.AssistSet](s.T(), s.annRec, 0).On, "on by default, so a bare assist turns it off")

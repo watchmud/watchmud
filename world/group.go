@@ -114,7 +114,10 @@ func (w *World) assist(member, foe combat.Combatant) {
 	}
 	room := w.playerRoom(p)
 	for _, other := range w.groups.members(p) {
-		if other == p || w.playerRoom(other) != room || w.fightLedger.InFight(other) || w.groups.noAssist[other] {
+		// nor anyone off their feet: a healer asleep to get their mana back
+		// isn't dragged into the leader's next kill
+		if other == p || w.playerRoom(other) != room || w.fightLedger.InFight(other) ||
+			w.groups.noAssist[other] || other.Position() != player.Standing {
 			continue
 		}
 		if err := w.joinFight(other, mob); err != nil {
