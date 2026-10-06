@@ -23,6 +23,8 @@ production, and nothing here is released.
   socialite documents them for the newest players.
 - [x] **9. Draft the site guide's rows** for the release (`docs/site-next-release.md`):
   `site/` publishes on reaching master, so it can't go in the PR.
+- [x] **10. Enforce unique room names** in content: the bots navigate by them, and
+  ROADMAP noted it was "true today, not enforced".
 - [ ] **8. Hunt the two flaky tests** seen once each earlier (a bot game test,
   `TestMoveWhileFighting`): run the suite many times, root-cause what fails.
 

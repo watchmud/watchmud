@@ -164,7 +164,8 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
   **Socialite** (greets new characters in town, answers newbie questions)~~ done
   2026-10-06 (`bot/socialite.go`, `bot/faq.go`), bots that
   **explore and map** the world instead of following hand-written hunting grounds
-  (needs room names to stay unique -- true today, not enforced), and bots that **wear
+  (needs room names to stay unique -- enforced since 2026-10-06 by
+  `TestRoomNames_uniqueInTheWorld`), and bots that **wear
   the upgrades they find** and grow into the Barrow.
 
 The Context section below describes the tree as it was in September 2026, before any of
