@@ -207,7 +207,10 @@ which commits carry them, for a `hotfix/` branch off the release tag:
   the Barrow fix; the rest is the mill (not in v0.10.0).
 - `516e354` -- only `server/gameserver.go`'s `recovering` answering a failed login is
   the hung-login fix; the pacing and limits came with it and could ride along.
-I haven't built or tested such a branch.
+Tried in a scratch worktree off `v0.10.0` (not pushed): the first two cherry-pick
+cleanly once the docs are dropped; the Barrow and hung-login parts (and their
+tests, `world/zone_activity_test.go`, `server/recover_test.go`) go in by hand; and
+`go vet` and the whole of `go test ./...` pass on the result.
 
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
