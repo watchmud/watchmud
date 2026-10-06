@@ -2,6 +2,7 @@ package telnet
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -51,4 +52,18 @@ func TestAddressLimit_full(t *testing.T) {
 	l.release("a")
 	ok, _ = l.acquire("b")
 	assert.True(t, ok)
+}
+
+// an address makes a household's worth of characters a day, not a script's
+func TestAddressLimit_creations(t *testing.T) {
+	l := &addressLimit{max: maxConnsPerAddress, open: map[string]int{}}
+	now := time.Date(2026, 10, 6, 12, 0, 0, 0, time.UTC)
+	for range createsPerWindow {
+		require.True(t, l.mayCreate("a", now))
+		l.created("a", now)
+	}
+	assert.False(t, l.mayCreate("a", now))
+	assert.True(t, l.mayCreate("b", now), "another address is its own")
+	assert.True(t, l.mayCreate("a", now.Add(createWindow)), "a day on")
+	assert.Empty(t, l.made, "and the old ones are forgotten")
 }

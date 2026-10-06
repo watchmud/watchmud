@@ -203,7 +203,9 @@ waits `nameAgain` (1s) and a wrong password `wrongPassword` (2s), both on the
 connection's own goroutine -- every name is a store lookup on the world's; a whole
 login must finish within `loginWithin` (5 minutes) whatever it answers; bcrypt runs at
 most one per CPU (`GameServer.bcryptSlots`); and `addressLimit` caps everyone together
-at `maxConns` as well as five per address, an IPv6 one counted by its /64 (`hostKey`).
+at `maxConns` as well as five per address, an IPv6 one counted by its /64 (`hostKey`)
+-- which also caps `cmd/watchmud-load` at about 200 bots -- and lets an address
+create `createsPerWindow` (10) characters a day.
 A pre-login handler that returns an error still answers (`LoginFailed{Unknown}`, from
 `recovering`): the conversation waits on an answer, holding its address's slot.
 

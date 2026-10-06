@@ -9,6 +9,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -70,6 +71,10 @@ type conn struct {
 
 	// onClose runs once the socket is closed, to give back its slot.
 	onClose func()
+	// mayCreate and created are the address's allowance of new characters
+	// (addressLimit); nil, as in tests, is no limit.
+	mayCreate func() bool
+	created   func()
 }
 
 const (
@@ -288,6 +293,8 @@ func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, banner, host
 	log.Info().Msgf("telnet connection from %s", nc.RemoteAddr())
 	c := newConn(nc, gs, cat)
 	c.onClose = func() { limit.release(host) }
+	c.mayCreate = func() bool { return limit.mayCreate(host, time.Now()) }
+	c.created = func() { limit.created(host, time.Now()) }
 	go c.writePump()
 	go c.readPump()
 	c.Send(banner)
@@ -481,6 +488,11 @@ func (c *conn) create(name string) (done, ok bool) {
 	if canonical, err := player.CanonicalName(name); err == nil {
 		name = canonical
 	}
+	if c.mayCreate != nil && !c.mayCreate() {
+		c.Send(fmt.Sprintf("No one by the name of %s, and your address has made all the "+
+			"new characters it can for today.\r\n", name))
+		return false, true
+	}
 	yn, ok := c.prompt(fmt.Sprintf("No one by the name of %s. Create them? (yn) ", name))
 	if !ok {
 		return false, false
@@ -500,6 +512,9 @@ func (c *conn) create(name string) (done, ok bool) {
 	created, why := c.awaitAuth()
 	switch {
 	case created:
+		if c.created != nil {
+			c.created()
+		}
 		return true, true
 	case why == event.NameTaken:
 		c.Send(fmt.Sprintf("Someone else has just taken the name %s.\r\n", name))
@@ -979,6 +994,45 @@ type addressLimit struct {
 	max   int
 	open  map[string]int
 	total int // every connection; refused past maxConns
+	// made is when each address last created characters, within the last
+	// createWindow: names are forever, and each is a document in the store.
+	made map[string][]time.Time
+}
+
+// An address may make createsPerWindow characters in any createWindow --
+// a household's worth, not a script's.
+const (
+	createsPerWindow = 10
+	createWindow     = 24 * time.Hour
+)
+
+// mayCreate is whether host may make another character now.
+func (l *addressLimit) mayCreate(host string, now time.Time) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return len(l.recent(host, now)) < createsPerWindow
+}
+
+// created counts a character host made.
+func (l *addressLimit) created(host string, now time.Time) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.made == nil {
+		l.made = map[string][]time.Time{}
+	}
+	l.made[host] = append(l.recent(host, now), now)
+}
+
+// recent is host's creations still inside the window, and forgets the rest
+// -- and the address, once it has none. Called with mu held.
+func (l *addressLimit) recent(host string, now time.Time) []time.Time {
+	kept := slices.DeleteFunc(l.made[host], func(t time.Time) bool { return now.Sub(t) >= createWindow })
+	if len(kept) == 0 {
+		delete(l.made, host)
+	} else {
+		l.made[host] = kept
+	}
+	return kept
 }
 
 // acquire takes a slot for host, or answers why not: full is everyone

@@ -160,8 +160,9 @@ A security review of the connection and login layer (the injection fix held up):
 - Logins must finish in 5 minutes; 200 connections at most; IPv6 counted by /64.
 - Unicode format characters (right-to-left override) dropped from typed lines.
 - Not done: moving the login lookup off the world goroutine entirely (the pause makes
-  it one lookup a second a connection); per-name lockout after failed passwords;
-  a cap on character creations per address.
+  it one lookup a second a connection); a per-name lockout after failed passwords
+  (it would let anyone lock a player out). Creations are capped since: 10 a day per
+  address.
 - Seen once since, not reproduced in 4 more runs: `TestAdventurer_answersATell`
   timed out ("Wren never came online") under the full race suite.
 
