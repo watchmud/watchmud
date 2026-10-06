@@ -93,13 +93,13 @@ func TestPromptEnd_clientSaysDoEOR(t *testing.T) {
 
 // The offers follow the banner, so a MUD client can answer them before the
 // first question.
-func TestStart_offersEORAndAsksForNAWS(t *testing.T) {
+func TestStart_offersEORAndGMCPAndAsksForNAWS(t *testing.T) {
 	serverEnd, client := net.Pipe()
 	t.Cleanup(func() { _ = client.Close() })
 	go start(serverEnd, &fakeServer{}, nil, "Welcome.\r\n", "test", &addressLimit{max: 1, open: map[string]int{}})
 
-	buf := make([]byte, len("Welcome.\r\n")+6)
+	buf := make([]byte, len("Welcome.\r\n")+9)
 	_, err := io.ReadFull(client, buf)
 	require.NoError(t, err)
-	assert.Equal(t, "Welcome.\r\n"+string([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS}), string(buf))
+	assert.Equal(t, "Welcome.\r\n"+string([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP}), string(buf))
 }

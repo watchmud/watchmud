@@ -78,6 +78,18 @@ type RoomDescription struct {
 	Players     []string
 	Objects     []string
 	Mobs        []string
+
+	// Where the room is, for a client that maps (GMCP Room.Info): "zone/room",
+	// the zone's name, and where each exit leads. Nothing renders them.
+	Id     string
+	Area   string
+	ExitTo []ExitTo
+}
+
+// ExitTo is one way out of a room and the room it leads to, "zone/room".
+type ExitTo struct {
+	Direction rules.Direction
+	To        string
 }
 
 type Entered struct {

@@ -53,6 +53,10 @@ type conn struct {
 	// width is the client's window, to wrap to; zero until it says, and then
 	// no wrapping. Owned by writePump.
 	width int
+	// gmcp is whether the client said DO GMCP, and vitals the Char.Vitals
+	// last sent, so only a change goes. Owned by writePump.
+	gmcp   bool
+	vitals *vitals
 
 	// How long a line may take to arrive before the connection is dropped,
 	// before login and after. readPump owns readTimeout and switches it
@@ -273,8 +277,9 @@ func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, banner, host
 	c.Send(banner)
 	// after the banner, which is what a person reads first: a MUD client
 	// that says DO EOR gets EOR after each prompt instead of GA, and one that
-	// says WILL NAWS tells us how wide to wrap
-	c.Send(negotiation([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS}))
+	// says WILL NAWS tells us how wide to wrap, and one that says DO GMCP
+	// gets vitals and rooms as data (gmcp.go)
+	c.Send(negotiation([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP}))
 }
 
 func (c *conn) Player() *player.Player {
@@ -687,6 +692,18 @@ func (c *conn) write(msg any) error {
 	case windowSize:
 		c.width = wrapWidth(int(m))
 		return nil
+	case gmcpOn:
+		c.gmcp, c.vitals = bool(m), nil
+		return nil
+	}
+	if c.gmcp {
+		var data string
+		data, c.vitals = gmcpFor(msg, c.vitals)
+		if data != "" {
+			if err := c.writeRaw(data); err != nil {
+				return err
+			}
+		}
 	}
 	text := c.frame(msg)
 	if text == "" {
@@ -811,8 +828,8 @@ func (c *conn) readPump() {
 	c.gs.Logout(c, cause)
 }
 
-// negotiated hears the client's side of option negotiation: EOR, and a client
-// that stops reporting its window. WILL ECHO is only ever offered around a
+// negotiated hears the client's side of option negotiation: EOR, GMCP, and a
+// client that stops reporting its window. WILL ECHO is only ever offered around a
 // password, and the client's answer changes nothing.
 func (c *conn) negotiated(verb, option byte) {
 	switch {
@@ -822,6 +839,10 @@ func (c *conn) negotiated(verb, option byte) {
 		c.Send(endOfRecord(false))
 	case option == optNAWS && verb == WONT:
 		c.Send(windowSize(0)) // won't say: back to not wrapping
+	case option == optGMCP && verb == DO:
+		c.Send(gmcpOn(true))
+	case option == optGMCP && verb == DONT:
+		c.Send(gmcpOn(false))
 	}
 }
 

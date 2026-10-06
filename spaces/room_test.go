@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -96,4 +97,19 @@ func TestRoom_LimitToZone(t *testing.T) {
 	result := center.Exits(true)
 	assert.Equal(t, 1, len(result))
 	assert.Equal(t, rules.DirectionNorth, result[0].Direction)
+}
+
+// A description says where the room is and where each exit leads, for a
+// client that draws a map; a test room, with no zone, is just its id.
+func TestDescription_where(t *testing.T) {
+	z := NewZone("town", "The Town", rules.ZoneResetAlways, 0)
+	a, b := NewRoom(z, "square", "Square", ""), NewRoom(z, "gate", "Gate", "")
+	a.Connect(rules.DirectionSouth, b)
+
+	d := a.DescriptionExcept(nil)
+	assert.Equal(t, "town/square", d.Id)
+	assert.Equal(t, "The Town", d.Area)
+	assert.Equal(t, []event.ExitTo{{Direction: rules.DirectionSouth, To: "town/gate"}}, d.ExitTo)
+
+	assert.Equal(t, "lonely", NewTestRoom("lonely").DescriptionExcept(nil).Id)
 }

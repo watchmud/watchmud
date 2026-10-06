@@ -65,6 +65,8 @@ Released and deployed: **v0.9.0** (nohassle, slay, smite). Earlier: heal and man
 - A socialite bot (`WATCHMUD_SOCIALITES`): stands in Temple Square, welcomes each new
   character, answers questions said or told. The room now hears "X has entered the
   game for the first time." for a brand-new character
+- GMCP for MUD clients: `Char.Vitals` and `Room.Info` (no site change until there's a
+  Mudlet package that draws something with them)
 
 **Next, roughly:** a release of the above; content; the bots ROADMAP lists (explore-and-map, bots that wear what they find). The Barrow-King's AC waits for a real group to try him.
 Leftovers: `watchmud.games` DNS points nowhere; nothing alerts on an unhealthy game.

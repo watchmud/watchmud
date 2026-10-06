@@ -214,6 +214,18 @@ MUD client can only guess from a pause whether a partial line is a prompt; tinti
 `#action {^Password:}` depended on that guess. A prompt `frame` doesn't print gets no mark --
 a bare GA would announce a prompt that never came.
 
+**GMCP is a second rendering, not a second protocol for the world**
+(`telnet/gmcp.go`). `WILL GMCP` goes out with the other offers after the banner; a
+client that answers `DO` (`gmcpOn`, through the queue like `endOfRecord`) gets JSON
+side by side with the text, written raw by `write` just ahead of the event it came
+from: `Char.Vitals` from `event.Prompt` -- only when the numbers changed, since a prompt
+goes out every second -- and `Room.Info` from every `event.RoomDescription`, in IRE's
+shape so existing mapper scripts read it. The world sends nothing new for it: the room
+description carries `Id` ("zone/room"), `Area` and `ExitTo` for this and nothing renders
+them. A room's `num` is an FNV hash of its "zone/room", stable with nothing stored;
+`TestRoomNum_uniqueInTheWorld` fails on a collision in the real content. What a client
+sends back (`Core.Hello`, `Core.Supports.Set`) is ignored.
+
 **Color is the renderer's, and the connection's to take away.** `render` always paints
 (`telnet/ansi.go`: the palette is named by what a thing *is* -- `colorRoomName`,
 `colorMob` -- so restyling is one file), and `conn.frame` strips it with `plain` unless the

@@ -54,6 +54,15 @@ func (r *Room) String() string {
 	return fmt.Sprintf("(Room %s-%s: '%s')", r.Zone.Id, r.Id, r.Name)
 }
 
+// ref is "zone/room", the room's name across the whole world. A test room
+// has no zone, and is just its id.
+func (r *Room) ref() string {
+	if r.Zone == nil {
+		return r.Id
+	}
+	return r.Zone.Id + "/" + r.Id
+}
+
 func (r *Room) Location() player.Location {
 	return player.NewLocation(r.Zone.Id, r.Id)
 }
@@ -177,6 +186,13 @@ func (r *Room) DescriptionExcept(exclude *player.Player) event.RoomDescription {
 		Name:        r.Name,
 		Description: r.Description,
 		Exits:       r.ExitString(),
+		Id:          r.ref(),
+	}
+	if r.Zone != nil {
+		desc.Area = r.Zone.Name
+	}
+	for _, ex := range r.Exits(false) {
+		desc.ExitTo = append(desc.ExitTo, event.ExitTo{Direction: ex.Direction, To: ex.Room.ref()})
 	}
 
 	for p := range r.playerList.AllExcept(exclude) {
