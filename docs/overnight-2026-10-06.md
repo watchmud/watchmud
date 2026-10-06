@@ -15,8 +15,14 @@ production, and nothing here is released.
   hedge-witch answering `say heal` with a line (words only: healing a player from a
   script would be a new Go action, raised rather than decided).
 - [x] **5. Small cleanup**: `world/settings.go`'s lone `VERBOSE_LOGGING` const.
-- [ ] **6. Stretch: split `spaces.Room` into definition and instance** (ROADMAP "Known
-  problems"): a spec first, then the refactor in steps, each green.
+- [x] **6. Stretch: split `spaces.Room` into definition and instance** (ROADMAP "Known
+  problems"): a spec first, then the refactor in steps, each green. *Spec only -- see
+  notes.*
+
+- [ ] **7. FAQ answers for the new commands** (give, look/examine, bags), so the
+  socialite documents them for the newest players.
+- [ ] **8. Hunt the two flaky tests** seen once each earlier (a bot game test,
+  `TestMoveWhileFighting`): run the suite many times, root-cause what fails.
 
 Feel and tuning calls met along the way are noted below rather than decided.
 
@@ -47,3 +53,8 @@ Feel and tuning calls met along the way are noted below rather than decided.
   she doesn't heal.
 - **5.** `VERBOSE_LOGGING` gone; ping logs at trace. The stdlib-`log` half of the
   ROADMAP item had already gone everywhere but `cmd/watchmud-bots`.
+- **6.** Spec, not code: `docs/superpowers/specs/2026-10-06-room-definition-split-design.md`.
+  Looking closer, `Zone` conflates content and live state too, and `loader.Content`
+  isn't immutable (the world plays in its rooms) -- but the writers are loader-only,
+  so nothing is broken. ~150 call sites; a design to agree before doing, with a
+  recommendation to wait until something needs it.
