@@ -683,7 +683,13 @@ Additive once the byte loop exists:
   GMCP done 2026-10-06: `Char.Vitals` and `Room.Info` (CLAUDE.md, telnet/). Mudlet
   hands them to scripts; `mudlet/` is the package that draws bars and a map from them,
   served from www.watchmud.com (2026-10-06). MSSP waits until the game wants to be listed.
-- Test against tintin++ specifically, since that's the target.
+- ~~Test against tintin++ specifically, since that's the target.~~ Done 2026-10-06 with
+  tintin++ 2.02.20 (Ubuntu's), scripted against a local server: `#action`s on every
+  login question fired -- the GA after each prompt is what lets them -- so a new
+  character was made with no typing; the password wasn't echoed; lines wrapped to the
+  width tintin sent by NAWS; color came through; say, emote, time, walking, wimpy and
+  quit all read right. GMCP was offered and did no harm. (A tintin `#action` on the
+  prompt needs `%*` or a regex for "100/100", not `%d`.)
 
 ---
 
