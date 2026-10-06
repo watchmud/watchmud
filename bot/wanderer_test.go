@@ -82,7 +82,9 @@ func TestKeepOut_safe(t *testing.T) {
 		require.True(t, r.HasExit(dir), "%s has no exit %s", d.from, d.dir)
 	}
 
-	// where aggressive mobs too strong for it are put
+	// where aggressive mobs too strong for it are put -- moonstruck ones too,
+	// aggressive on a full-moon night -- and, for one that wanders, all of
+	// its zone
 	danger := map[*spaces.Room][]string{}
 	for _, zid := range slices.Sorted(maps.Keys(content.Zones)) {
 		z := content.Zones[zid]
@@ -96,8 +98,15 @@ func TestKeepOut_safe(t *testing.T) {
 				defZone = content.Zones[cm.ZoneId]
 			}
 			def := defZone.MobileDefinitions[cm.MobileDefinitionId]
-			if def != nil && def.HasFlag(rules.MobileFlagAggressive) && def.Power > survivable {
-				r := z.Rooms[cm.RoomId]
+			hostile := def != nil && (def.HasFlag(rules.MobileFlagAggressive) || def.HasFlag(rules.MobileFlagMoonstruck))
+			if !hostile || def.Power <= survivable {
+				continue
+			}
+			rooms := []*spaces.Room{z.Rooms[cm.RoomId]}
+			if def.Wandering.CanWander {
+				rooms = slices.Collect(maps.Values(z.Rooms))
+			}
+			for _, r := range rooms {
 				danger[r] = append(danger[r], def.Name)
 			}
 		}

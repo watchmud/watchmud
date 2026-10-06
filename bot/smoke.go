@@ -209,6 +209,10 @@ func walk(c *Client) (int, error) {
 		}
 		body, err := room(c, r.room)
 		if err != nil {
+			// a wild dog on a full-moon night, most likely: not the deploy's fault
+			if strings.Contains(c.Transcript(), busyText) {
+				return 0, fmt.Errorf("going %s to %s: attacked on the way: %w", r.dir, r.room, err)
+			}
 			return 0, fmt.Errorf("going %s to %s: %w", r.dir, r.room, err)
 		}
 		last = body

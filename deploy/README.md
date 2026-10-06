@@ -162,6 +162,10 @@ disconnects everyone a second time.
 
 "no goose at the millpond" is a pass: a player got there first.
 
+A walk that fails "attacked on the way" isn't a bad deploy either: on a full-moon night
+(6 pm to 6 am Seattle, when `time` says the moon is full) the Hollowfields' wild dogs
+roam aggressive and can catch the bot. Run it again, or check by hand.
+
 It needs a character, made once by hand -- the bot never creates one, since names are
 permanent:
 
