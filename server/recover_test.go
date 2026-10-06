@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"testing"
 	"uuid"
 
@@ -48,4 +49,22 @@ func TestRecoverPulse_theRestStillRun(t *testing.T) {
 		recoverPulse("save", func() { ran = true })
 	})
 	assert.True(t, ran)
+}
+
+func storeDown(*gameserver.HandlerParameter) error { return errors.New("store unreachable") }
+
+// And the same for a handler that returns an error -- the store having a bad
+// moment -- which used to leave the conversation waiting for good, holding
+// its address's slot.
+func TestRecovering_aLoginThatErrs(t *testing.T) {
+	gs, _ := newTestGameServer(t)
+	c := &testConn{}
+	gs.recovering(gameserver.NewHandlerParameter(c, command.Login{Name: "Bob"}), storeDown)
+	assert.Equal(t, []any{event.LoginFailed{Reason: event.Unknown}}, c.sent)
+
+	// a player's command that errs is logged; they're not told it was a login
+	r := &player.Recorder{}
+	p := &testConn{p: player.NewTestPlayer(uuid.New(), "Bob", r)}
+	gs.recovering(gameserver.NewHandlerParameter(p, command.Look{}), storeDown)
+	assert.Empty(t, p.sent)
 }

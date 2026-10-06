@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"runtime/debug"
 	"sync/atomic"
 	"time"
@@ -27,6 +28,10 @@ type GameServer struct {
 	store          player.Store
 	// bcryptCost is bcrypt.DefaultCost; tests turn it down to MinCost.
 	bcryptCost int
+	// bcryptSlots is how many hashes run at once: one a CPU. Each is
+	// deliberately slow, and a crowd of logins mustn't take every core from
+	// the world goroutine.
+	bcryptSlots chan struct{}
 	// lastBeat is unix nanoseconds at the end of the last tick, for the
 	// health check (health.go); zero until Run starts.
 	lastBeat atomic.Int64
@@ -40,6 +45,7 @@ func New(w *world.World, c *rules.Catalog, s player.Store) *GameServer {
 		catalog:        c,
 		store:          s,
 		bcryptCost:     bcrypt.DefaultCost,
+		bcryptSlots:    make(chan struct{}, runtime.GOMAXPROCS(0)),
 	}
 }
 
@@ -222,7 +228,7 @@ func (gs *GameServer) handleLogin(msg *gameserver.HandlerParameter, cmd command.
 			msg.Client.Send(event.LoginFailed{Reason: event.NameReserved})
 			return nil
 		}
-		log.Info().Str("playerName", playerName).Msg("playerName not found in store")
+		log.Debug().Str("playerName", playerName).Msg("playerName not found in store")
 		msg.Client.Send(event.LoginFailed{Reason: event.NoSuchPlayer})
 		return nil
 	}
@@ -232,6 +238,8 @@ func (gs *GameServer) handleLogin(msg *gameserver.HandlerParameter, cmd command.
 	}
 
 	go func() {
+		gs.bcryptSlots <- struct{}{}
+		defer func() { <-gs.bcryptSlots }()
 		ok := bcrypt.CompareHashAndPassword([]byte(rec.PasswordHash), []byte(cmd.Password)) == nil
 		gs.Receive(gameserver.NewHandlerParameter(msg.Client, loginChecked{Name: playerName, Ok: ok}))
 	}()
@@ -268,7 +276,7 @@ func (gs *GameServer) handleLoginChecked(msg *gameserver.HandlerParameter, cmd l
 	if !found {
 		// shouldn't happen unless something crazy with database
 		// not an error - could represent a new player (player creation)
-		log.Info().Str("playerName", cmd.Name).Msg("playerName not found in store")
+		log.Debug().Str("playerName", cmd.Name).Msg("playerName not found in store")
 		msg.Client.Send(event.LoginFailed{Reason: event.NoSuchPlayer})
 		return nil
 	}
@@ -338,6 +346,8 @@ func (gs *GameServer) handleCreatePlayer(msg *gameserver.HandlerParameter, cmd c
 	// separate go func because bcrypt is slooooow and can't be on the gameserver's goroutine.
 	// its ok because this doesn't modify any game / world state.
 	go func() {
+		gs.bcryptSlots <- struct{}{}
+		defer func() { <-gs.bcryptSlots }()
 		hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), gs.bcryptCost)
 		if err != nil {
 			log.Warn().Err(err).Msg("Failed to hash password?! Bad bad not good.")
@@ -438,6 +448,11 @@ func (gs *GameServer) recovering(msg *gameserver.HandlerParameter, handle func(*
 	if err := handle(msg); err != nil {
 		// don't return error, we're not halting the server
 		log.Error().Err(err).Msg("error dispatching message")
+		// but answer a login: the connection is waiting on one, and would
+		// wait for good -- holding its address's slot -- on a store hiccup
+		if msg.Client.Player() == nil {
+			msg.Client.Send(event.LoginFailed{Reason: event.Unknown})
+		}
 	}
 }
 
