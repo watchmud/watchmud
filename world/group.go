@@ -252,6 +252,10 @@ func (w *World) followersCome(leader *player.Player, from *spaces.Room, dir rule
 			f.Send(event.Followed{Leader: leader.Name(), Direction: dir, Fighting: true})
 			continue
 		}
+		if f.Position() != player.Standing {
+			f.Send(event.Followed{Leader: leader.Name(), Direction: dir, Down: true})
+			continue
+		}
 		w.movePlayer(f, dir, dest)
 		f.Send(event.Followed{Leader: leader.Name(), Direction: dir})
 		f.Send(dest.DescriptionExcept(f))

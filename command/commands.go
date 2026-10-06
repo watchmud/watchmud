@@ -393,6 +393,20 @@ func (Reply) talk()     {}
 func (Social) talk()    {}
 func (GroupTell) talk() {}
 
+// Position is sit, rest, sleep, stand and wake: To says which. Wake is
+// standing up from sleep.
+type Position struct {
+	To   string // "sit", "rest", "sleep", "stand"
+	Wake bool
+}
+
+func (p Position) Verb() string {
+	if p.Wake {
+		return "wake"
+	}
+	return p.To
+}
+
 // Report is bug, idea or typo: a note for whoever runs the game.
 type Report struct {
 	Kind string

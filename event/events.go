@@ -76,8 +76,11 @@ type RoomDescription struct {
 	Description string
 	Exits       string
 	Players     []string
-	Objects     []string
-	Mobs        []string
+	// PlayerPositions is beside Players: "" for standing, else "sitting",
+	// "resting" or "sleeping".
+	PlayerPositions []string
+	Objects         []string
+	Mobs            []string
 
 	// Where the room is, for a client that maps (GMCP Room.Info): "zone/room",
 	// the zone's name, and where each exit leads. Nothing renders them.
@@ -169,6 +172,8 @@ type Followed struct {
 	Leader    string
 	Direction rules.Direction
 	Fighting  bool
+	// Down is a follower left behind for not being on their feet.
+	Down bool
 }
 
 // GroupList is "group": the leader first, then followers in the order they
@@ -226,6 +231,15 @@ type Snatched struct {
 type Swept struct {
 	Sweeper string
 	Item    string
+}
+
+// PositionChanged is a player sitting, resting, sleeping, standing or
+// waking, seen by the room. To is the word: "sitting", "resting",
+// "sleeping", "" for standing; Woke marks standing up from sleep.
+type PositionChanged struct {
+	Actor string
+	To    string
+	Woke  bool
 }
 
 // Reported thanks a player for a report.

@@ -52,11 +52,12 @@ var helpSections = []helpSection{
 		{"inventory, equipment", "what you carry (i), and wear (eq)", []string{"inventory", "i", "equipment", "eq"}},
 	}},
 	{"Fighting", []helpEntry{
-		{"kill <mob>", "start a fight", []string{"kill"}},
-		{"flee", "get out of one", []string{"flee"}},
+		{"kill <mob>, flee", "start a fight, or get out of one", []string{"kill", "flee"}},
 		{"cast <ability> [target]", "gear's spells: cast heal bob, cast smite goose (c)", []string{"cast", "c"}},
 	}},
 	{"You", []helpEntry{
+		{"sit, rest, sleep, stand", "heal faster off your feet; 'wake' to get up",
+			[]string{"sit", "rest", "sleep", "stand", "wake"}},
 		{"stat, role, abilities", "you; what your gear makes you; what it casts", []string{"stat", "role", "abilities"}},
 		{"color [on|off]", "ANSI color, on or off; just color switches it", []string{"color"}},
 	}},

@@ -979,6 +979,16 @@ without `assist off` (`groups.noAssist`, in memory), join against the mob throug
 `joinFight`, which assists no one, so there's no chain. Kill, aggro, smite and summons
 all start fights through `startFight`, so a group fights together however one began.
 
+**Positions** (`player/position.go`, `world/h_position.go`): `sit`, `rest`, `sleep`,
+`stand`, `wake`. In memory -- everyone logs in standing. Off your feet health and mana
+come back faster (`Position.RegenPercent`: 150/200/300%, placeholders) and you can't
+walk (`NOT_STANDING`); asleep you can do little but wake, stand, look over yourself and
+your group, and quit (`awake`, checked in `HandleIncomingMessage`). Nobody sits down in a
+fight, and `joinFight` stands up any player drawn into one. A follower off their feet
+stays behind (`Followed.Down`). The room description says how each player is
+(`RoomDescription.PlayerPositions`), so "Ann is resting here." -- and the bots' `hereRe`
+reads that as a player too.
+
 **Socials** are content, `content/rules/socials.json` (`rules.Social`, checked by
 `Catalog.SetSocials`): lines for doing it alone (self, room) and, optionally, at a player
 or mob in the room (self, victim, room), with `$n` the doer and `$N` the target -- our own

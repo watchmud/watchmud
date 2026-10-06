@@ -89,6 +89,10 @@ const (
 	UnknownToggle ResultCode = "UNKNOWN_TOGGLE"
 	// a report longer than report.MaxLength
 	TooLong ResultCode = "TOO_LONG"
+	// positions: not on your feet, asleep, already so
+	NotStanding     ResultCode = "NOT_STANDING"
+	Asleep          ResultCode = "ASLEEP"
+	AlreadyPosition ResultCode = "ALREADY_POSITION"
 	// moderation: what a muted or frozen player is told
 	Muted  ResultCode = "MUTED"
 	Frozen ResultCode = "FROZEN"

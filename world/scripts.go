@@ -34,6 +34,11 @@ func (w *World) startFight(attacker, defender combat.Combatant) error {
 
 // joinFight is startFight without the group: the ledger and the openers.
 func (w *World) joinFight(attacker, defender combat.Combatant) error {
+	for _, c := range []combat.Combatant{attacker, defender} {
+		if p, ok := c.(*player.Player); ok {
+			w.standUp(p)
+		}
+	}
 	attackerWas, defenderWas := w.fightLedger.InFight(attacker), w.fightLedger.InFight(defender)
 	if err := w.fightLedger.Fight(attacker, defender); err != nil {
 		return err

@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"github.com/watchmud/watchmud/player"
 
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/command"
@@ -35,6 +36,10 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		}
 		if _, talk := msg.Command.(command.Talk); talk && p.Muted() {
 			msg.Fail(event.Muted)
+			return nil
+		}
+		if p.Position() == player.Sleeping && !awake(msg.Command) {
+			msg.Fail(event.Asleep)
 			return nil
 		}
 	}
@@ -121,6 +126,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleModerate(msg, cmd)
 	case command.Report:
 		w.handleReport(msg, cmd)
+	case command.Position:
+		w.handlePosition(msg, cmd)
 	case command.Reports:
 		w.handleReports(msg, cmd)
 	case command.GroupTell:

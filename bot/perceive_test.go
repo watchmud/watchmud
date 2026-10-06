@@ -51,3 +51,13 @@ func TestLooted_coinsDontCount(t *testing.T) {
 	text := "You get 7 coins from the corpse of angry goose.\nYou get a long goose feather from the corpse of angry goose.\n"
 	assert.Equal(t, 1, looted(text))
 }
+
+// a player off their feet is still a player in the room
+func TestHereRe_positions(t *testing.T) {
+	for _, line := range []string{"Ann is here.", "Ann is sitting here.", "Ann is resting here.", "Ann is sleeping here."} {
+		m := hereRe.FindStringSubmatch(line)
+		if assert.NotNil(t, m, line) {
+			assert.Equal(t, "Ann", m[1])
+		}
+	}
+}

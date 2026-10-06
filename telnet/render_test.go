@@ -1106,3 +1106,14 @@ func TestRender_wizardAdmin(t *testing.T) {
 		}}, "wiz")))
 	assert.Equal(t, "Restarting soon.\n", plain(render(event.Echoed{Text: "Restarting soon."}, "ann")))
 }
+
+func TestRender_positions(t *testing.T) {
+	assert.Equal(t, "You sit back and rest.\n", plain(render(event.PositionChanged{Actor: "ann", To: "resting"}, "ann")))
+	assert.Equal(t, "ann lies down and goes to sleep.\n", plain(render(event.PositionChanged{Actor: "ann", To: "sleeping"}, "bob")))
+	assert.Equal(t, "ann wakes and gets up.\n", plain(render(event.PositionChanged{Actor: "ann", Woke: true}, "bob")))
+	assert.Contains(t, plain(render(event.RoomDescription{Name: "Square", Players: []string{"Ann", "Bob"}, PlayerPositions: []string{"resting", ""}}, "cal")),
+		"Ann is resting here.\nBob is here.\n")
+	cmd, err := parseCommand([]string{"wake"})
+	require.NoError(t, err)
+	assert.Equal(t, command.Position{Wake: true}, cmd)
+}

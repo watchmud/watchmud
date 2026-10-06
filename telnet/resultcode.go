@@ -42,6 +42,14 @@ func failureText(verb, code string) string {
 }
 
 var failureByVerb = map[string]string{
+	"wake/ALREADY_POSITION":       "You're already awake.",
+	"stand/ALREADY_POSITION":      "You're already on your feet.",
+	"sit/ALREADY_POSITION":        "You're already sitting.",
+	"rest/ALREADY_POSITION":       "You're already resting.",
+	"sleep/ALREADY_POSITION":      "You're already asleep.",
+	"sit/IN_A_FIGHT":              "Not in the middle of a fight!",
+	"rest/IN_A_FIGHT":             "Not in the middle of a fight!",
+	"sleep/IN_A_FIGHT":            "Not in the middle of a fight!",
 	"typo/NO_VALUE":               "What's the typo? 'typo <what happened, or what you'd like>'.",
 	"idea/NO_VALUE":               "What's the idea? 'idea <what happened, or what you'd like>'.",
 	"bug/NO_VALUE":                "What's the bug? 'bug <what happened, or what you'd like>'.",
@@ -109,6 +117,9 @@ var failureByVerb = map[string]string{
 }
 
 var failureByCode = map[string]string{
+	"NOT_STANDING":      "You'll have to stand up first.",
+	"ASLEEP":            "You're asleep. 'wake' first.",
+	"ALREADY_POSITION":  "You're already doing that.",
 	"TOO_LONG":          "That's a bit long: say it in 500 characters or so.",
 	"MUTED":             "You've been muted: nobody can hear you.",
 	"FROZEN":            "You're frozen solid. You can look around, or quit.",

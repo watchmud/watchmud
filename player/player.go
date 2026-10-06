@@ -37,6 +37,8 @@ type Player struct {
 	// muted can't talk to anyone; frozen can only look and quit. A wizard's
 	// doing, kept on the record.
 	muted, frozen bool
+	// position is standing, sitting, resting or sleeping; see position.go.
+	position Position
 	// coins is the purse. Never negative: Spend refuses what it can't pay.
 	coins int
 	// backfilled is the backfill starting gear this character has been

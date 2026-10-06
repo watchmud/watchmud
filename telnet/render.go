@@ -100,6 +100,9 @@ func render(msg any, self string) string {
 		if m.Fighting {
 			return m.Leader + " leaves " + strings.ToLower(m.Direction.String()) + ", but you can't follow in the middle of a fight.\n"
 		}
+		if m.Down {
+			return m.Leader + " leaves " + strings.ToLower(m.Direction.String()) + ", but you'd have to be on your feet to follow.\n"
+		}
 		return "You follow " + m.Leader + " " + strings.ToLower(m.Direction.String()) + ".\n"
 	case event.OOCSaid:
 		return paint(colorOOC, "[ooc] "+m.Speaker+": "+m.Value) + "\n"
@@ -131,6 +134,8 @@ func render(msg any, self string) string {
 	case event.Swept:
 		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
 
+	case event.PositionChanged:
+		return renderPositionChanged(m, self)
 	case event.Reported:
 		return "Thanks -- your " + m.Kind + " is noted, for whoever runs the game.\n"
 	case event.ReportList:
@@ -780,8 +785,12 @@ func renderRoom(rd event.RoomDescription) string {
 	for _, m := range rd.Mobs {
 		b.WriteString(paint(colorMob, m) + "\n")
 	}
-	for _, p := range rd.Players {
-		b.WriteString(paint(colorPlayer, p) + " is here.\n")
+	for i, p := range rd.Players {
+		how := ""
+		if i < len(rd.PlayerPositions) && rd.PlayerPositions[i] != "" {
+			how = rd.PlayerPositions[i] + " "
+		}
+		b.WriteString(paint(colorPlayer, p) + " is " + how + "here.\n")
 	}
 	return b.String()
 }
@@ -1182,4 +1191,26 @@ func renderModerated(m event.Moderated, self string) string {
 		return "You have been " + what + ".\n"
 	}
 	return m.Target + " is " + what + ".\n"
+}
+
+func renderPositionChanged(m event.PositionChanged, self string) string {
+	you := m.Actor == self
+	pick := func(mine, theirs string) string {
+		if you {
+			return mine + "\n"
+		}
+		return m.Actor + " " + theirs + "\n"
+	}
+	switch m.To {
+	case "sitting":
+		return pick("You sit down.", "sits down.")
+	case "resting":
+		return pick("You sit back and rest.", "sits back to rest.")
+	case "sleeping":
+		return pick("You lie down and go to sleep.", "lies down and goes to sleep.")
+	}
+	if m.Woke {
+		return pick("You wake and get to your feet.", "wakes and gets up.")
+	}
+	return pick("You stand up.", "stands up.")
 }
