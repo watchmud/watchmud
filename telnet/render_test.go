@@ -910,3 +910,38 @@ func TestParse_give(t *testing.T) {
 	assert.Equal(t, "testdood gives a knife to bob.\n", plain(render(m, "otherdood")))
 	assert.Equal(t, "Give it to whom?\n", failureText("give", "NO_RECIPIENT"))
 }
+
+// look <thing>: an object, a mob, a player
+func TestRender_lookedAt(t *testing.T) {
+	hood := event.LookedAtObject{Item: "a bandit hood", Slot: rules.SlotHead, ArmorType: rules.ArmorTypeLeather,
+		Worn: true, Power: 3, Durability: 12, MaxDurability: 20, Armor: 1, Abilities: []string{"assess"}}
+	assert.Equal(t, "A bandit hood\n"+
+		"  Leather armor, worn on the head. Power 3.\n"+
+		"  Condition 12/20.\n"+
+		"  Adds 1 to armor class.\n"+
+		"  Lets you cast assess.\n"+
+		"  You have it on.\n", plain(render(hood, "testdood")))
+
+	knife := event.LookedAtObject{Item: "a knife", Slot: rules.SlotWield, Power: 1, Damage: "1d4", Broken: true, MaxDurability: 20}
+	assert.Equal(t, "A knife\n  A weapon. Power 1.\n  Condition broken.\n  Hits for 1d4.\n", plain(render(knife, "testdood")))
+
+	bag := event.LookedAtObject{Item: "a leather satchel", Power: 1, Container: true, Holding: 3, Capacity: 10}
+	assert.Equal(t, "A leather satchel\n  Power 1.\n  Holding 3 of 10.\n", plain(render(bag, "testdood")))
+	box := event.LookedAtObject{Item: "a strongbox", Container: true, Closed: true, Locked: true}
+	assert.Contains(t, plain(render(box, "testdood")), "It's locked.")
+
+	rat := event.LookedAtMob{Name: "a giant rat", Health: 40, Fighting: "bob"}
+	assert.Equal(t, "A giant rat is badly hurt, fighting bob.\n", plain(render(rat, "testdood")))
+	assert.Equal(t, "A giant rat is in perfect health.\n", plain(render(event.LookedAtMob{Name: "a giant rat", Health: 100}, "testdood")))
+
+	bob := event.LookedAtPlayer{Name: "Bob", Lineage: "Wood Elf", Role: "Tank", Health: 80, Wearing: []string{"a knife", "a leather cap"}}
+	assert.Equal(t, "Bob is a Wood Elf, slightly hurt.\n  Geared as a Tank.\n  Wearing a knife, a leather cap.\n",
+		plain(render(bob, "testdood")))
+	assert.Contains(t, plain(render(event.LookedAtPlayer{Name: "Ann", Lineage: "Orc", Health: 100}, "Ann")), "You are an Orc, in perfect health.")
+
+	for _, line := range []string{"look knife", "examine knife", "exa knife"} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, command.Look{Target: "knife"}, cmd, line)
+	}
+}

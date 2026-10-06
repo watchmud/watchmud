@@ -66,6 +66,8 @@ inhabitant bots (v0.4.0).
   work on one you carry, and what's in it is saved with you. Bags don't nest, coins stay
   in the purse, and `inventory` shows how full each one is
 - `give <item|coins> to <player>`, in the same room
+- `look <thing>` (and `examine`) works at last: an item's stats, how hurt a mob looks,
+  what another player has on
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

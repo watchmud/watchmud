@@ -286,6 +286,13 @@ func render(msg any, self string) string {
 		}
 		return m.Actor + " " + verb + "s the " + m.Container + ".\n"
 
+	case event.LookedAtObject:
+		return renderLookedAtObject(m)
+	case event.LookedAtMob:
+		return renderLookedAtMob(m)
+	case event.LookedAtPlayer:
+		return renderLookedAtPlayer(m, self)
+
 	case event.Assessed:
 		return renderAssessed(m, self)
 
@@ -864,4 +871,112 @@ func renderContainerContents(c event.ContainerContents) string {
 		b.WriteString(fmt.Sprintf("  %s [power %d]\n", item.ShortDescription, item.Power))
 	}
 	return b.String()
+}
+
+// renderLookedAtObject is what one thing is: where it goes, what it's made of,
+// its power and condition, and what it does.
+func renderLookedAtObject(m event.LookedAtObject) string {
+	var b strings.Builder
+	b.WriteString(paint(colorObject, capitalize(m.Item)) + "\n")
+	var kind string
+	switch {
+	case m.ArmorType != rules.ArmorTypeNone:
+		kind = capitalize(string(m.ArmorType)) + " armor, worn on the " + slotLabel(m.Slot)
+	case m.Slot == rules.SlotWield:
+		kind = "A weapon"
+	case m.Slot == rules.SlotHold:
+		kind = "Held in the hand"
+	case m.Slot != rules.SlotNone && m.Slot != "":
+		kind = "Worn on the " + slotLabel(m.Slot)
+	}
+	if kind != "" {
+		fmt.Fprintf(&b, "  %s. Power %d.\n", kind, m.Power)
+	} else {
+		fmt.Fprintf(&b, "  Power %d.\n", m.Power)
+	}
+	if c := wear(m.Durability, m.MaxDurability, m.Broken); c.text != "" {
+		text := c.text
+		if c.color != "" {
+			text = paint(c.color, text)
+		}
+		b.WriteString("  Condition " + text + ".\n")
+	}
+	if m.Damage != "" {
+		fmt.Fprintf(&b, "  Hits for %s.\n", m.Damage)
+	}
+	if m.Armor > 0 {
+		fmt.Fprintf(&b, "  Adds %d to armor class.\n", m.Armor)
+	}
+	if len(m.Abilities) > 0 {
+		b.WriteString("  Lets you cast " + strings.ToLower(strings.Join(m.Abilities, ", ")) + ".\n")
+	}
+	switch {
+	case m.Locked:
+		b.WriteString("  It's locked.\n")
+	case m.Closed:
+		b.WriteString("  It's closed.\n")
+	case m.Container && m.Capacity > 0:
+		fmt.Fprintf(&b, "  Holding %d of %d.\n", m.Holding, m.Capacity)
+	case m.Container && m.Holding == 0:
+		b.WriteString("  It's empty.\n")
+	case m.Container:
+		fmt.Fprintf(&b, "  Holding %d.\n", m.Holding)
+	}
+	if m.Worn {
+		b.WriteString("  You have it on.\n")
+	}
+	return b.String()
+}
+
+// healthWords is how hurt something looks, from a percentage of its health.
+func healthWords(pct int) string {
+	switch {
+	case pct >= 100:
+		return "in perfect health"
+	case pct >= 75:
+		return "slightly hurt"
+	case pct >= 50:
+		return "wounded"
+	case pct >= 25:
+		return "badly hurt"
+	}
+	return "near death"
+}
+
+func renderLookedAtMob(m event.LookedAtMob) string {
+	s := capitalize(m.Name) + " is " + healthWords(m.Health)
+	if m.Fighting != "" {
+		s += ", fighting " + m.Fighting
+	}
+	return s + ".\n"
+}
+
+func renderLookedAtPlayer(m event.LookedAtPlayer, self string) string {
+	var b strings.Builder
+	who := paint(colorPlayer, m.Name) + " is"
+	if m.Name == self {
+		who = "You are"
+	}
+	fmt.Fprintf(&b, "%s %s %s, %s", who, article(m.Lineage), m.Lineage, healthWords(m.Health))
+	if m.Fighting != "" {
+		b.WriteString(", fighting " + m.Fighting)
+	}
+	b.WriteString(".\n")
+	if m.Role != "" {
+		fmt.Fprintf(&b, "  Geared as a %s.\n", m.Role)
+	}
+	if len(m.Wearing) == 0 {
+		b.WriteString("  Wearing nothing at all.\n")
+	} else {
+		b.WriteString("  Wearing " + strings.Join(m.Wearing, ", ") + ".\n")
+	}
+	return b.String()
+}
+
+// article is "a" or "an" for a word, by its first letter.
+func article(word string) string {
+	if word != "" && strings.ContainsRune("AEIOUaeiou", rune(word[0])) {
+		return "an"
+	}
+	return "a"
 }

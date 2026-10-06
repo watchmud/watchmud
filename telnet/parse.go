@@ -36,6 +36,8 @@ func parseCommand(tokens []string) (command.Command, error) {
 			return command.Look{Target: strings.TrimSpace(rest[len("in"):]), In: true}, nil
 		}
 		return command.Look{Target: rest}, nil
+	case "examine", "exa":
+		return command.Look{Target: rest}, nil
 
 	case "n", "north", "s", "south", "e", "east", "w", "west", "u", "up", "d", "down":
 		dir, err := rules.ParseDirection(verb)

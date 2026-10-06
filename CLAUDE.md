@@ -894,6 +894,13 @@ leaves them, and nothing put away decays.
 `give <item> to <player>` (`world/h_give.go`) is the same again towards another player
 in the room (`Room.FindPlayer`, any case): coins too, worn things stay on, and a bag goes
 with what's in it. One `event.Gave` renders three ways -- giver, recipient, room.
+`look <thing>` (and `examine`/`exa`; `world/look_at.go`) looks at one thing, only the
+looker told: a player in the room (`event.LookedAtPlayer`: lineage, role, how hurt, what
+they wear), a mob (`LookedAtMob`: how hurt it looks and who it's fighting -- words from a
+percentage, never assess's numbers), then something carried or worn, then the floor
+(`LookedAtObject`: slot, armor type and the AC it adds, power, condition, damage,
+abilities by name, a container's state). Until 2026-10-06 help offered it and the
+handler ignored the target.
 
 **Bags** are containers with `"portable": true` (and an optional `"capacity"`): not
 `noTake`, and no lid or lock -- the loader refuses either, since a lid's state would have

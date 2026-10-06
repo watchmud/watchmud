@@ -519,6 +519,48 @@ type Assessed struct {
 	Stunned    int
 }
 
+// LookedAtObject is "look <thing>" on an object: what one thing is, for the
+// one looking. Slot is rules.SlotNone for something nobody wears; Damage is
+// empty for anything not wielded; Armor is what it adds to armor class.
+// Abilities are names, in the item's order.
+type LookedAtObject struct {
+	Item          string
+	Slot          rules.EquipmentSlot
+	ArmorType     rules.ArmorType
+	Worn          bool
+	Power         int
+	Durability    int
+	MaxDurability int
+	Broken        bool
+	Damage        string
+	Armor         int
+	Abilities     []string
+	// a container: a bag, or a chest with a lid
+	Container bool
+	Holding   int
+	Capacity  int
+	Closed    bool
+	Locked    bool
+}
+
+// LookedAtMob is "look <mob>": how it seems, not its numbers -- those are
+// assess's. Health is a percentage the renderer puts into words.
+type LookedAtMob struct {
+	Name     string
+	Health   int
+	Fighting string
+}
+
+// LookedAtPlayer is "look <player>": who they are and what they have on.
+type LookedAtPlayer struct {
+	Name     string
+	Lineage  string
+	Role     string
+	Health   int
+	Fighting string
+	Wearing  []string
+}
+
 // Staggered is a stunned combatant's round going by without a swing.
 type Staggered struct {
 	Name string
