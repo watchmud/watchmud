@@ -437,7 +437,7 @@ Two halves, each checked at startup so content can't name an ability that does n
 
 - **The numbers are content**: `content/rules/abilities.json`, loaded by
   `Catalog.SetAbilities` -- id, name, mana cost, cooldown, a `target` kind (`self`,
-  `friend`, `foe`, `none`), and each ability's own parameters (heal's `amount`: `base +
+  `friend`, `foe`, `mob`, `none`), and each ability's own parameters (heal's `amount`: `base +
   per_power * power`). A bad target, a negative cost, or an object granting an id the
   catalog lacks fails the load.
 - **What it does is Go**: `effects` in `world/abilities.go`, an `effect` per ability id.
@@ -455,8 +455,10 @@ a target string: `friend` is the caster when empty, otherwise a player **in the 
 room**. `foe` (`castFoe`) is a mob in the room by name -- `FindMobile`, as `kill` uses --
 or, with no name, whoever the caster is fighting; no fight and no name is `NO_FOE`, not
 `NO_TARGET`, since failure text is keyed on the `cast` verb and would read "Cast what?".
-It then refuses what `kill` refuses: a no-fight room, a can't-fight mob. `none` resolves
-nothing; recall is the first to use it.
+It then refuses what `kill` refuses: a no-fight room, a can't-fight mob. `mob`
+(`castMob`, which `castFoe` is built on) finds the mob the same way and refuses neither:
+looking at something isn't fighting it. `none` resolves nothing; recall is the first
+to use it.
 
 **Recall is an ability** (`recall`: `none`, no mana, 60s), granted by the **temple
 token** -- worn on the neck, in every new character's kit, sold at the General Store, and
@@ -517,6 +519,11 @@ silence. In memory like cooldowns (`Player.ward`), cleared by `Revive`. A second
 refreshes to the larger of what's left and what's new, never stacks. Like heal it
 neither starts nor joins a fight. A blow the ward takes all of never reaches the armor:
 no `wearFromBlow`.
+**Assess** (`mob`, granted by the bandit hood) is the first informative ability: the
+mob's exact health, AC, power and damage dice, who it's swinging at and the stun it has
+left (`event.Assessed`) -- the numbers `consider` only hints at and a fight never shows.
+The room sees the caster look; only the caster gets the numbers. It touches nothing,
+and works mid-fight, in a no-fight room, and on a mob that can't be fought.
 Nothing about abilities reads a role; the Healer label and the censer's heal are two
 separate consequences of the same item, as are Striker and the cudgel's smite.
 

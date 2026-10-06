@@ -260,6 +260,9 @@ func render(msg any, self string) string {
 	case event.Staggered:
 		return m.Name + " staggers, stunned.\n"
 
+	case event.Assessed:
+		return renderAssessed(m, self)
+
 	case event.Warded:
 		return renderWarded(m, self)
 
@@ -365,6 +368,31 @@ func renderInventory(items []event.InventoryItem) string {
 	b.WriteString("You are carrying:\n")
 	for _, item := range items {
 		b.WriteString("\t" + item.ShortDescription + "\n")
+	}
+	return b.String()
+}
+
+// renderAssessed gives the numbers to whoever cast it; the rest of the room
+// only sees them looking.
+func renderAssessed(m event.Assessed, self string) string {
+	if m.Actor != self {
+		return m.Actor + " studies " + m.Target + ".\n"
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "You study %s.\n", m.Target)
+	fmt.Fprintf(&b, "  Health %d/%d  AC %d  Power %d  Hits for %s\n",
+		m.Health, m.MaxHealth, m.ArmorClass, m.Power, m.Damage)
+	switch {
+	case m.Fighting == self:
+		b.WriteString("  Fighting you\n")
+	case m.Fighting != "":
+		b.WriteString("  Fighting " + m.Fighting + "\n")
+	}
+	switch {
+	case m.Stunned == 1:
+		b.WriteString("  Stunned for 1 more round\n")
+	case m.Stunned > 1:
+		fmt.Fprintf(&b, "  Stunned for %d more rounds\n", m.Stunned)
 	}
 	return b.String()
 }

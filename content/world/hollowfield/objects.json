@@ -59,7 +59,8 @@
     "short_description": "a leather bandit hood",
     "description_on_ground": "A leather hood with eye-holes cut in it lies here.",
     "equipment_slot": "head",
-    "armor_type": "leather"
+    "armor_type": "leather",
+    "abilities": ["assess"]
   },
   {
     "id": "bandit_cudgel",

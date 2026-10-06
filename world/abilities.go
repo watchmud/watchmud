@@ -13,7 +13,7 @@ import (
 type cast struct {
 	caster  *player.Player
 	target  *player.Player   // for self and friend
-	foe     *mobile.Instance // for foe
+	foe     *mobile.Instance // for foe and mob
 	ability *rules.Ability
 	power   int // of the item granting it
 }
@@ -29,6 +29,7 @@ var effects = map[string]effect{
 	"provoke": provokeEffect,
 	"stun":    stunEffect,
 	"ward":    wardEffect,
+	"assess":  assessEffect,
 	"recall":  recallEffect,
 }
 
@@ -121,6 +122,26 @@ func wardEffect(w *World, c cast) {
 		Target: c.target.Name(),
 		Amount: c.target.Ward(w.now()),
 	})
+}
+
+// assessEffect reads the mob's numbers out to the caster: what consider
+// only hints at, and what a fight never shows. It touches nothing, and is
+// fine mid-fight.
+func assessEffect(w *World, c cast) {
+	a := event.Assessed{
+		Actor:      c.caster.Name(),
+		Target:     c.foe.Name(),
+		Health:     c.foe.CurHealth,
+		MaxHealth:  c.foe.Definition.MaxHealth,
+		ArmorClass: c.foe.ArmorClass(),
+		Power:      c.foe.Power(),
+		Damage:     c.foe.WeaponDamageRoll(),
+		Stunned:    w.fightLedger.Stunned(c.foe),
+	}
+	if fight := w.fightLedger.GetFight(c.foe); fight != nil {
+		a.Fighting = fight.Fightee.Name()
+	}
+	w.playerRoom(c.caster).Send(a)
 }
 
 // recallEffect takes the caster back to the start room -- what the recall

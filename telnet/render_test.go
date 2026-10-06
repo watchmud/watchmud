@@ -373,6 +373,13 @@ var commandCases = []commandCase{
 		wantOther: "testdood stuns Little Drone!\n",
 	},
 	{
+		name:      "assess a mob",
+		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { wearTestAssessHood(p) },
+		input:     "cast assess little",
+		want:      "You study Little Drone.\n  Health 25/25  AC 10  Power 1  Hits for 1d2\n",
+		wantOther: "testdood studies Little Drone.\n",
+	},
+	{
 		name:      "ward yourself",
 		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { wearTestWardRing(p) },
 		input:     "cast ward",
@@ -584,6 +591,17 @@ func wieldTestStunMace(p *player.Player) {
 	p.Equipment().Equip(rules.SlotWield, inst)
 }
 
+// wearTestAssessHood puts a hood granting assess on p's head
+func wearTestAssessHood(p *player.Player) {
+	d := object.NewDefinition("hood", "hood", "wrathrock", rules.ObjectCategoryArmor,
+		nil, "a hood", "A hood is here.", rules.SlotHead, rules.ArmorTypeLeather, nil)
+	d.Abilities = []string{"assess"}
+	inst := object.NewInstance(uuid.New(), d)
+	inst.Power = 1
+	_ = p.Inventory().Add(inst)
+	p.Equipment().Equip(rules.SlotHead, inst)
+}
+
 // wearTestWardRing puts a ring granting ward on p's finger
 func wearTestWardRing(p *player.Player) {
 	d := object.NewDefinition("ring", "ring", "wrathrock", rules.ObjectCategoryTreasure,
@@ -775,4 +793,21 @@ func TestRender_wardBroken(t *testing.T) {
 	m := event.WardBroken{Name: "testdood"}
 	assert.Equal(t, "Your ward shatters.\n", plain(render(m, "testdood")))
 	assert.Equal(t, "testdood's ward shatters.\n", plain(render(m, "otherdood")))
+}
+
+// mid-fight, an assess says who the mob is on and how long its stun lasts
+func TestRender_assessedMidFight(t *testing.T) {
+	m := event.Assessed{Actor: "testdood", Target: "Barrow-King", Health: 132, MaxHealth: 180,
+		ArmorClass: 16, Power: 15, Damage: "2d8", Fighting: "otherdood", Stunned: 1}
+	assert.Equal(t, "You study Barrow-King.\n"+
+		"  Health 132/180  AC 16  Power 15  Hits for 2d8\n"+
+		"  Fighting otherdood\n"+
+		"  Stunned for 1 more round\n", plain(render(m, "testdood")))
+	assert.Equal(t, "testdood studies Barrow-King.\n", plain(render(m, "otherdood")))
+
+	m.Fighting, m.Stunned = "testdood", 2
+	assert.Equal(t, "You study Barrow-King.\n"+
+		"  Health 132/180  AC 16  Power 15  Hits for 2d8\n"+
+		"  Fighting you\n"+
+		"  Stunned for 2 more rounds\n", plain(render(m, "testdood")))
 }

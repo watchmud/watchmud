@@ -43,6 +43,13 @@
     "duration": "30s"
   },
   {
+    "id": "assess",
+    "name": "assess",
+    "mana": 10,
+    "cooldown": "10s",
+    "target": "mob"
+  },
+  {
     "id": "recall",
     "name": "recall",
     "mana": 0,

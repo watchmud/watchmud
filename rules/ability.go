@@ -91,6 +91,9 @@ const (
 	TargetSelf   AbilityTarget = "self"   // always the caster
 	TargetFriend AbilityTarget = "friend" // the caster or a player in their room
 	TargetFoe    AbilityTarget = "foe"    // a mob in the caster's room
+	// TargetMob is a mob in the caster's room too, but never refused for
+	// where it is or what it is: looking at something isn't fighting it.
+	TargetMob AbilityTarget = "mob"
 )
 
 func (t AbilityTarget) valid() bool {
@@ -108,6 +111,7 @@ var abilityTargets = enum[AbilityTarget]{
 		TargetSelf,
 		TargetFriend,
 		TargetFoe,
+		TargetMob,
 	},
 }
 

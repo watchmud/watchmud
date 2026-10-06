@@ -185,7 +185,7 @@ Needed for that fight, and not yet anywhere else on this page:
   on someone else, every 15s at most. No threat table: damage and heals never pull him,
   so a pull gone wrong is the tank's to fix, not the healer's to avoid.
 
-### 5. Abilities from gear -- heal, smite, provoke, stun, recall, ward done
+### 5. Abilities from gear -- heal, smite, provoke, stun, recall, ward, assess done
 
 Gear decides what you can *do*, as well as how strong you are: a censer lets you
 `cast heal`, and taking it off takes the heal with it. Spec:
@@ -224,7 +224,12 @@ Gear decides what you can *do*, as well as how strong you are: a censer lets you
   doesn't wear your armor. The ring of mending grants it -- the hedge-witch's other
   drop, so a healer can hold the censer's heal and wear the ring's ward without one item
   granting both. Prevention to heal's cure: it's cast *before* the King swings.
-- **Still to come**, each an entry in abilities.json plus a Go effect: informative.
+- **Assess** (done 2026-10-06): the first informative ability -- a mob's exact health,
+  armor class, power and damage, who it's fighting and how much stun it has left. 10
+  mana, 10s. Consider says whether you'd win; assess says by how much, and mid-fight
+  it's the King's health bar, so a group knows when the skeletons are coming. Never
+  starts a fight, and isn't refused where one couldn't happen. The bandit hood grants
+  it (the eye-holes), early and cheap. Mobs only: considering a player is still tabled.
 
 ### 6. Crafting (later)
 

@@ -432,6 +432,22 @@ type WardBroken struct {
 	Name string
 }
 
+// Assessed is a mob's numbers, read by an assess: the room sees it happen,
+// and the renderer gives the numbers to the one who cast it. Fighting is who
+// the mob is swinging at, empty if nobody; Stunned is rounds it has left to
+// skip.
+type Assessed struct {
+	Actor      string
+	Target     string
+	Health     int
+	MaxHealth  int
+	ArmorClass int
+	Power      int
+	Damage     string
+	Fighting   string
+	Stunned    int
+}
+
 // Staggered is a stunned combatant's round going by without a swing.
 type Staggered struct {
 	Name string

@@ -84,15 +84,31 @@ func (w *World) castTarget(c *cast, target string) event.ResultCode {
 		return ""
 	case rules.TargetFoe:
 		return w.castFoe(c, target)
+	case rules.TargetMob:
+		return w.castMob(c, target)
 	}
 	c.caster.Log().Error().Msgf("cast %s: target kind %q not handled yet", c.ability.Id, c.ability.Target)
 	return event.InternalError
 }
 
-// castFoe finds the mob a foe ability is aimed at: the one named, or with no name,
-// whoever the caster is fighting. Then the same refusals kill makes.
+// castFoe finds the mob a foe ability is aimed at -- castMob's -- and then
+// makes the same refusals kill makes.
 func (w *World) castFoe(c *cast, target string) event.ResultCode {
-	room := w.playerRoom(c.caster)
+	if code := w.castMob(c, target); code != "" {
+		return code
+	}
+	if w.playerRoom(c.caster).Flag(rules.RoomFlagNoFight) {
+		return event.NoFightRoom
+	}
+	if c.foe.Definition.HasFlag(rules.MobileFlagPlayerCantFight) {
+		return event.NoFight
+	}
+	return ""
+}
+
+// castMob finds the mob an ability is aimed at: the one named, or with no
+// name, whoever the caster is fighting.
+func (w *World) castMob(c *cast, target string) event.ResultCode {
 	if target == "" {
 		fight := w.fightLedger.GetFight(c.caster)
 		if fight == nil {
@@ -103,18 +119,12 @@ func (w *World) castFoe(c *cast, target string) event.ResultCode {
 			return event.NoFoe
 		}
 		c.foe = mob
-	} else {
-		mob, found := room.FindMobile(target)
-		if !found {
-			return event.TargetNotFound
-		}
-		c.foe = mob
+		return ""
 	}
-	if room.Flag(rules.RoomFlagNoFight) {
-		return event.NoFightRoom
+	mob, found := w.playerRoom(c.caster).FindMobile(target)
+	if !found {
+		return event.TargetNotFound
 	}
-	if c.foe.Definition.HasFlag(rules.MobileFlagPlayerCantFight) {
-		return event.NoFight
-	}
+	c.foe = mob
 	return ""
 }

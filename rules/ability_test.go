@@ -111,3 +111,10 @@ func TestAbility_duration(t *testing.T) {
 
 	assert.Error(t, json.Unmarshal([]byte(`{"id": "ward", "duration": "a while"}`), &a))
 }
+
+// assess looks at a mob without fighting it
+func TestAbility_mobTarget(t *testing.T) {
+	target, err := ParseAbilityTarget("mob")
+	require.NoError(t, err)
+	assert.Equal(t, TargetMob, target)
+}
