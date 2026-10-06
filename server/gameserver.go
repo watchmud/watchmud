@@ -49,6 +49,11 @@ func New(w *world.World, c *rules.Catalog, s player.Store) *GameServer {
 	}
 }
 
+// SetPasswordCost is bcrypt's cost for passwords made and checked from here
+// on, for a server whose characters are throwaway -- tests and the load test,
+// which would otherwise spend most of their time hashing. Never production.
+func (gs *GameServer) SetPasswordCost(cost int) { gs.bcryptCost = cost }
+
 // SetTickInterval is how often Run ticks; zero is rules.PulseInterval. Every
 // pulse job counts pulses rather than reading a clock, so a faster tick runs
 // the whole world faster and in the same order -- for tests that want a
