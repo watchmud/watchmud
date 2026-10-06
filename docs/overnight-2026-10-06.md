@@ -200,7 +200,7 @@ reach from here): nothing found that would stop it loading, but --
 
 ### If you want a hotfix before this PR ships
 
-Five of the night's fixes are for bugs in v0.10.0. Releasing is yours; this is only
+Seven of the night's fixes are for bugs in v0.10.0. Releasing is yours; this is only
 which commits carry them, for a `hotfix/` branch off the release tag:
 - `bd01955` -- typed lines cleaned, IAC doubled (telnet/conn.go). Self-contained.
 - `2e59676` -- write-behind retries and distrusts failed writes (writebehind/).
