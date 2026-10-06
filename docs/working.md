@@ -57,6 +57,8 @@ Released and deployed: **v0.9.0** (nohassle, slay, smite). Earlier: heal and man
   bandit hood
 - `/healthz` and a compose healthcheck; `deploy.sh` waits for healthy before the smoke
   test (no site change -- it isn't something players see)
+- `who` is a table, in color, with the bots in their own section at the bottom; the
+  `[bot]` tag is gone, so the site's "Anyone marked `[bot]` in `who`" changes with it
 
 **Next, roughly:** a release of the above; content; the bots ROADMAP lists (Wanderer,
 Socialite, explore-and-map, bots that wear what they find). The Barrow-King's AC waits for a real group to try him.

@@ -70,7 +70,7 @@ func TestAdventurer_answersATell(t *testing.T) {
 		if v.Send("who") != nil {
 			return false
 		}
-		_, err := v.Expect(`(?m)^Wren `, 200*time.Millisecond)
+		_, err := v.Expect(`(?m)^\s*Wren `, 200*time.Millisecond)
 		return err == nil
 	}, 20*time.Second, 50*time.Millisecond, "Wren never came online")
 	require.NoError(t, v.Send("tell Wren hello?"))
@@ -110,7 +110,7 @@ func TestAdventurer_leavesAGroundToAPlayer(t *testing.T) {
 		if v.Send("who") != nil {
 			return false
 		}
-		_, err := v.Expect(`(?m)^Wren .* - Market Square - `, 200*time.Millisecond)
+		_, err := v.Expect(`(?m)^\s*Wren .* Market Square, `, 200*time.Millisecond)
 		return err == nil
 	}, 20*time.Second, 50*time.Millisecond, "never waited in the market: %s", v.Transcript())
 	time.Sleep(500 * time.Millisecond) // a few idle rounds in town

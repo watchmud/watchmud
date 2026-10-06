@@ -29,6 +29,21 @@ func TestRenderRoom_colored(t *testing.T) {
 		bold+"bob"+reset+" is here.\n", got)
 }
 
+// who: names bold (a bot's dim), the role colored, where they are in cyan;
+// padding is counted without the color, so the columns still line up
+func TestRenderWho_colored(t *testing.T) {
+	got := render(event.Who{Players: []event.WhoEntry{
+		{PlayerName: "Al", Lineage: "Human", Role: "Tank", RoomName: "Temple Square", ZoneName: "Wrathrock"},
+		{PlayerName: "Wren", Bot: true, Lineage: "Human", RoomName: "The Millpond", ZoneName: "Hollowfields"},
+	}}, "Al")
+
+	assert.Equal(t, bold+"Players"+reset+"\n"+
+		"  "+bold+"Al"+reset+"    Human "+magenta+"Tank"+reset+"  "+cyan+"Temple Square, Wrathrock"+reset+"\n"+
+		"\n"+bold+"Bots"+reset+"\n"+
+		"  "+dim+"Wren"+reset+"  Human       "+cyan+"The Millpond, Hollowfields"+reset+"\n"+
+		"\n1 player and 1 bot online.\n", got)
+}
+
 // The connection is plain until the world says this player wants color, so
 // the login conversation never has any.
 func TestFrame_colorOnlyOnceTheWorldSaysSo(t *testing.T) {

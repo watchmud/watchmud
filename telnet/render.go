@@ -622,38 +622,80 @@ func renderViolence(self string, s event.Struck) string {
 }
 
 func renderWho(players []event.WhoEntry) string {
-	var b strings.Builder
 	if len(players) == 0 {
-		b.WriteString("There's nobody here!\n")
-		return b.String()
+		return "There's nobody here!\n"
 	}
-	b.WriteString("-- Who Is Here --\n")
+	// columns sized to the widest name and title, measured before color
+	nameWidth, titleWidth := 0, 0
 	for _, p := range players {
-		b.WriteString(whoTitle(p) + " - " + p.RoomName + " - " + p.ZoneName + "\n")
+		nameWidth = max(nameWidth, len(p.PlayerName))
+		titleWidth = max(titleWidth, len(whoTitle(p)))
 	}
+	var b strings.Builder
+	people, bots := 0, 0
+	for i, p := range players {
+		// the world sends people first and bots after; a heading starts each
+		if i == 0 || p.Bot != players[i-1].Bot {
+			if i > 0 {
+				b.WriteString("\n")
+			}
+			heading := "Players"
+			if p.Bot {
+				heading = "Bots"
+			}
+			b.WriteString(paint(colorHeading, heading) + "\n")
+		}
+		if p.Bot {
+			bots++
+		} else {
+			people++
+		}
+		nameColor := colorPlayer
+		if p.Bot {
+			nameColor = colorBot
+		}
+		b.WriteString("  " + pad(paint(nameColor, p.PlayerName), len(p.PlayerName), nameWidth))
+		b.WriteString("  " + pad(paintTitle(p), len(whoTitle(p)), titleWidth))
+		b.WriteString("  " + paint(colorPlace, p.RoomName+", "+p.ZoneName) + "\n")
+	}
+	b.WriteString("\n" + countOf(people, "player", "players"))
+	if bots > 0 {
+		b.WriteString(" and " + countOf(bots, "bot", "bots"))
+	}
+	b.WriteString(" online.\n")
 	return b.String()
+}
+
+// pad fills s, which shows as width columns once its color is gone, out to
+// to columns.
+func pad(s string, width, to int) string {
+	return s + strings.Repeat(" ", max(to-width, 0))
+}
+
+func countOf(n int, one, many string) string {
+	if n == 1 {
+		return "1 " + one
+	}
+	return fmt.Sprintf("%d %s", n, many)
 }
 
 // whoTitle is where a MUD traditionally prints a class. It prints the
 // lineage and the role instead, and the role can change between two
 // consecutive `who`s if the player swaps their gear in between. Either half
-// can be missing -- a player in no role at all is just "alice the Hill Dwarf".
+// can be missing -- a player in no role at all is just "Hill Dwarf".
 func whoTitle(p event.WhoEntry) string {
-	name := p.PlayerName
-	if p.Bot {
-		name += " [bot]"
+	return strings.TrimSpace(p.Lineage + " " + p.Role)
+}
+
+// paintTitle is whoTitle with the role in color.
+func paintTitle(p event.WhoEntry) string {
+	if p.Lineage == "" {
+		return paint(colorRole, p.Role)
 	}
-	var parts []string
-	if p.Lineage != "" {
-		parts = append(parts, p.Lineage)
+	if p.Role == "" {
+		return p.Lineage
 	}
-	if p.Role != "" {
-		parts = append(parts, p.Role)
-	}
-	if len(parts) == 0 {
-		return name
-	}
-	return name + " the " + strings.Join(parts, " ")
+	return p.Lineage + " " + paint(colorRole, p.Role)
 }
 
 // renderConsidered puts the power gap into words, then gives the numbers. The

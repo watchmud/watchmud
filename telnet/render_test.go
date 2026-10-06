@@ -175,7 +175,10 @@ var commandCases = []commandCase{
 	{
 		name:  "who lists everyone",
 		input: "who",
-		want:  "-- Who Is Here --\notherdood the Human - Temple Square - Wrathrock\ntestdood the Human - Temple Square - Wrathrock\n",
+		want: "Players\n" +
+			"  otherdood  Human  Temple Square, Wrathrock\n" +
+			"  testdood   Human  Temple Square, Wrathrock\n" +
+			"\n2 players online.\n",
 	},
 	{
 		name:  "nothing equipped",
@@ -300,17 +303,24 @@ var commandCases = []commandCase{
 			p.Equipment().Equip(rules.SlotHead, testHelmet())
 		},
 		input: "who",
-		want:  "-- Who Is Here --\notherdood the Human - Temple Square - Wrathrock\ntestdood the Human Tank - Temple Square - Wrathrock\n",
+		want: "Players\n" +
+			"  otherdood  Human       Temple Square, Wrathrock\n" +
+			"  testdood   Human Tank  Temple Square, Wrathrock\n" +
+			"\n2 players online.\n",
 	},
 	{
-		// a bot is labelled where players look for who is around: the label
-		// is the server's, from the record, never something a client claims
-		name: "who marks bots",
+		// bots are listed apart, after the people: which is which is the
+		// server's, from the record, never something a client claims
+		name: "who lists bots last",
 		setup: func(_ *world.World, _ *player.Player, o *player.Player) {
 			o.SetBot(true)
 		},
 		input: "who",
-		want:  "-- Who Is Here --\notherdood [bot] the Human - Temple Square - Wrathrock\ntestdood the Human - Temple Square - Wrathrock\n",
+		want: "Players\n" +
+			"  testdood   Human  Temple Square, Wrathrock\n" +
+			"\nBots\n" +
+			"  otherdood  Human  Temple Square, Wrathrock\n" +
+			"\n1 player and 1 bot online.\n",
 	},
 	{
 		// recall moves with direction.None, which must not render as "none!"

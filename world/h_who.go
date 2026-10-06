@@ -28,8 +28,12 @@ func (w *World) handleWho(msg *gameserver.HandlerParameter, cmd command.Who) {
 			RoomName:   r.Name,
 		})
 	}
-	// sort results by name
+	// people first, then the bots, each alphabetical: the renderer lists
+	// them in two sections in this order
 	sort.Slice(entries, func(i, j int) bool {
+		if entries[i].Bot != entries[j].Bot {
+			return !entries[i].Bot
+		}
 		return entries[i].PlayerName < entries[j].PlayerName
 	})
 

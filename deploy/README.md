@@ -166,7 +166,7 @@ laptop, against any server: `WATCHMUD_BOT_PASSWORD=... bin/watchmud-bot -addr ho
 
 The `bots` service plays a few characters around the clock: they walk out to the
 Hollowfields, fight what's a fair fight, loot, rest, and leave what they find in the
-donation room. They're labelled `[bot]` in `who`, `help bots` explains them, and a
+donation room. They're listed apart, under Bots, in `who`, `help bots` explains them, and a
 tell to one gets an automatic honest answer. They leave a hunting ground to any player
 they meet there.
 

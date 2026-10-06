@@ -47,7 +47,7 @@ services:
         max-size: 20m
         max-file: "5"
 
-  # The bots: always-on characters a program plays, labelled [bot] in who.
+  # The bots: always-on characters a program plays, listed under Bots in who.
   # Each is made by hand and flagged on its record first -- README, "Bots".
   # With WATCHMUD_BOTS empty this idles.
   bots:

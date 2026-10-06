@@ -864,7 +864,7 @@ table -- damage and healing never pull a mob.
   record lacks `Wizard`, before any handler runs. Forget it and the command is open to
   every player. Grant it with `make wizard NAME=...`, while they're logged out.
   `Bot` on the record is the same kind of hand-set flag (`make bot NAME=...`); it only
-  labels the character in `who`, and nothing may branch on it.
+  lists the character among the bots at the bottom of `who`, and nothing may branch on it.
 - **`Send` returns nothing.** `player.Sender` is `Send(msg any)`. The only error any
   implementation could produce meant "this connection is already dead and I already tore it
   down," which no caller can act on. Don't reintroduce an error return.

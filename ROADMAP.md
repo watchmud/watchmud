@@ -156,7 +156,7 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
   `cmd/watchmud-bot`, run by `deploy.sh` after every restart and by `go test` against
   the real content in-process. Load testing is still open; it builds on `bot.Client`.
 - ~~**Inhabitants.**~~ Done 2026-09-30: `bot.Adventurer` and `cmd/watchmud-bots`, the
-  `bots` compose service -- always-on, labelled `[bot]` in `who` from a flag on the
+  `bots` compose service -- always-on, listed apart in `who` from a flag on the
   record, hunting the Hollowfields, donating what they find, and honest when told
   to. Dropped items decay after 30 minutes, so the donation room turns over.
   Future: a **Wanderer** (roams, fights only when attacked, never loots), a
