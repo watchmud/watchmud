@@ -280,6 +280,16 @@ A last review, of the fixes above:
   creation password was answered twice; bots timed out on "They aren't taking
   tells." and missed a player logging in on their ground.
 
+Checks against the real thing:
+- **tintin++** (2.02.20, installed here): a scripted session made a character with no
+  typing -- its `#action`s fire on our GA-marked prompts -- and played; wrapping,
+  color, password echo all right (ROADMAP Phase 7).
+- **Mudlet** couldn't be fetched here (the network policy refuses GitHub's release
+  downloads), so it's still yours to try.
+- **Load test** after the night's changes: 100 bots at a person's pace, none dropped,
+  `look` p99 22ms. At test pace (`-fast`), 19, 5 and 1 dropped across three runs --
+  the 19 on the run with a quarter fewer steps, i.e. a busy machine; it was 1 before.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:
