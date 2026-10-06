@@ -230,9 +230,11 @@ Two more reviews, of the core mechanics and of the bots:
   name, and "nothing" is a reserved name (an emote by a Nothing would be the refusal).
 - A hunter kept fighting and looting after a player walked in; it now looks when
   someone enters and leaves the ground to them.
-- Not done: the smoke test can fail on a full-moon night (a wild dog attacks it on the
-  walk), and `TestKeepOut_safe` ignores `moonstruck`; an explorer would keep trying a
-  door it once saw open; recall's cooldown wait ignores shutdown.
+- The smoke test can fail on a full-moon night (a wild dog catches it on the walk): it
+  now says "attacked on the way", and deploy/README says that isn't a bad deploy.
+  `TestKeepOut_safe` counts moonstruck mobs, and a wanderer's whole zone.
+- Not done: an explorer would keep trying a door it once saw open (none in reach
+  today); recall's cooldown wait ignores shutdown.
 
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
