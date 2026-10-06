@@ -98,9 +98,15 @@ func TestStore_documentShape(t *testing.T) {
 	assert.Equal(t, rec.Id.String(), raw["_id"])
 	assert.Equal(t, rec.Name, raw["name"])
 	assert.Equal(t, "hill_dwarf", raw["lineage_id"])
-	assert.Len(t, raw["inventory"], 2)
+	assert.Len(t, raw["inventory"], len(rec.Inventory))
 	assert.Len(t, raw["equipment"], 1)
 	assert.WithinDuration(t, time.Now(), raw["updated_at"].(bson.DateTime).Time(), time.Minute)
+
+	// and a bag's contents come back inside it
+	got, found, err := s.Load(rec.Name)
+	require.NoError(t, err)
+	require.True(t, found)
+	assert.Equal(t, rec.Inventory, got.Inventory)
 }
 
 // Two characters with one name is the one thing the game can't sort out for

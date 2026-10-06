@@ -729,7 +729,8 @@ words, lowercased -- a script has no pattern functions, so it looks a word up
 (`said.words.heal`) rather than searching. Only a player's `say` fires it: a mob's
 `me:say` doesn't, so two scripts can't talk each other round in circles. The
 hedge-witch (`hollowfield/hedge_witch`) is its first user: ask about healing and she
-answers. `me` is
+answers -- and never in a way that invites a fight: she isn't prey, for players as
+for bots. `me` is
 copies (`name`, `health`, `max_health`), `me.memory` (a table per mob instance, dropped
 with the mob in `World.RemoveMobile`), `me.summons` (how many of its summons are alive),
 and `me:say` and `me:summon`, bound to that one call. `foe` is
@@ -900,7 +901,9 @@ looks for a lidded container on the floor (`findLidded`) and answers with
 grammar, coins included, into an open container; worn things stay on the way `drop`
 leaves them, and nothing put away decays.
 `give <item> to <player>` (`world/h_give.go`) is the same again towards another player
-in the room (`Room.FindPlayer`, any case): coins too, worn things stay on, and a bag goes
+in the room (`Room.FindPlayer`, any case): coins too, always with a number (`give coins
+to bob` is refused, unlike `put` -- every coin is too easy a mistake), worn things
+stay on, and a bag goes
 with what's in it. One `event.Gave` renders three ways -- giver, recipient, room.
 `look <thing>` (and `examine`/`exa`; `world/look_at.go`) looks at one thing, only the
 looker told: a player in the room (`event.LookedAtPlayer`: lineage, role, how hurt, what

@@ -72,3 +72,16 @@ Feel and tuning calls met along the way are noted below rather than decided.
 - **8.** Not reproduced: 15 full-suite runs, 5 under `-race` (world, bot, telnet,
   server) and 5 at `-cpu=1`, all green. The move test already reports what it was
   fighting if it fails again, which is the lead to follow then.
+
+## Decided next morning
+
+- Room/zone split: leave it for now (the spec says so).
+- The hedge-witch must not encourage attacking her: her second line now points at
+  gear that grants heal and `abilities`.
+- `give coins to bob` needs a number (`NO_VALUE`, "How many? Give 20 coins to
+  someone."); `put coins in chest` still takes them all.
+- Mob health words stay as they are.
+- Mudlet: to try tomorrow.
+- CI caught what `make check` can't: `TestStore_documentShape` (real-mongo only)
+  counted two inventory items, and the bags commit added a third to the shared test
+  record. It now counts the record's own, and checks the bag survives a real round trip.

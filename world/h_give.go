@@ -71,13 +71,14 @@ func (w *World) handleGive(msg *gameserver.HandlerParameter, cmd command.Give) {
 	}
 }
 
-// giveCoins is "give 20 coins to bob", or every coin with no number, as put
-// takes them.
+// giveCoins is "give 20 coins to bob". Unlike put, a number is required:
+// "give coins to bob" handing over every coin is too easy a mistake.
 func (w *World) giveCoins(msg *gameserver.HandlerParameter, to *player.Player, n int) {
 	if n == 0 {
-		n = msg.Player.Coins()
+		msg.Fail(event.NoValue)
+		return
 	}
-	if n == 0 || !msg.Player.Spend(n) {
+	if !msg.Player.Spend(n) {
 		msg.Fail(event.NotEnoughCoins)
 		return
 	}

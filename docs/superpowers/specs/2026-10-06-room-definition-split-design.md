@@ -1,6 +1,7 @@
 # Rooms and zones: definition and instance
 
-Status: proposal, 2026-10-06, written overnight for the owner to decide on. **Not
+Status: **decided 2026-10-06: leave it for now.** Kept for when something needs it.
+Proposal written overnight for the owner to decide on. **Not
 started**: this changes how the world is built, and "Bigger features get a spec before
 code" applies doubly to a refactor nobody asked for tonight.
 

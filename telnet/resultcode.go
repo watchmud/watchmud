@@ -55,6 +55,7 @@ var failureByVerb = map[string]string{
 	"give/NO_RECIPIENT":        "Give it to whom?",
 	"give/NOT_ENOUGH_COINS":    "You don't have that many coins.",
 	"give/TO_PLAYER_NOT_FOUND": "They aren't here.",
+	"give/NO_VALUE":            "How many? Give 20 coins to someone.",
 	"give/GIVE_SELF":           "You already have it.",
 	"CONTAINER_FULL":           "There's no more room in it.",
 	"CANT_NEST":                "That won't go inside another container.",

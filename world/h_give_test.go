@@ -88,6 +88,11 @@ func (s *handleGiveSuite) TestGive_coins() {
 	s.give("50 coins", "bob")
 	s.Assert().Equal(event.NotEnoughCoins, s.failed())
 	s.Assert().Equal(10, s.p.Coins())
+
+	// a number, always: "give coins" isn't "give every coin"
+	s.give("coins", "bob")
+	s.Assert().Equal(event.NoValue, s.failed())
+	s.Assert().Equal(10, s.p.Coins())
 }
 
 func (s *handleGiveSuite) TestGive_allSkipsWhatsWorn() {
