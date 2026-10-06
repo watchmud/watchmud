@@ -5,12 +5,11 @@
 Everything below is on PR #36's branch, CI green, nothing released or deployed.
 
 **Wants you:**
-1. **A hotfix for v0.10.0?** Eleven fixes are for bugs live today -- telnet injection
-   (anyone can hide what the room types), saves that are never retried after a mongo
-   blip, a login freezing the game during one, the Barrow resetting mid-fight, crash
-   duplicates, players able to knock bots off by talking, ghost logins, `kill wild
-   dog` attacking the boar. "If you want a hotfix" below lists the commits; the first four were
-   tried on the tag and pass.
+1. **A hotfix for v0.10.0?** Eleven fixes are for bugs live today. Seven of them are
+   ready as a patch series on the tag, **`docs/hotfix-v0.10.1/`** -- its README says
+   how to apply them (`git am`) and what each is; checked: they apply to a fresh
+   v0.10.0 and every test passes. The rest are bigger or conflict with the old bots;
+   they ride the next release.
 2. **Try Mudlet** (the PR's add-on; merging publishes its site section). If the map
    misbehaves: close Mudlet's own map window, uninstall its `generic_mapper`. Rooms now
    come with grid coordinates from the server, so a recall shouldn't stack rooms.
