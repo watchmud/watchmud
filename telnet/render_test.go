@@ -137,7 +137,7 @@ var commandCases = []commandCase{
 		name:  "inventory with one item",
 		setup: func(_ *world.World, p *player.Player, o *player.Player) { p.Inventory().Add(testKnife()) },
 		input: "inv",
-		want:  "You are carrying:\n\tknife\n",
+		want:  "Inventory\n  knife  power 0\n",
 	},
 	{
 		name:      "say reaches the room",
@@ -685,37 +685,20 @@ const roleBlockStriker = `You are fighting as a Striker.
 Change what you're wearing to change your role.
 `
 
-// Tabs, so these are quoted rather than raw. There is no ability block: what
-// a character can do is their gear, and the six scores were a number nothing
-// read.
-const statBlockNoGear = "Status:\n" +
-	"Player:\ttestdood\n" +
-	"Lineage:\tHuman\tRole: none\n" +
-	"Power:\t0\n" +
-	"Health:\t100 of 100\n" +
-	"Coins:\t0\n" +
-	"Location:\t(wrathrock - temple_square)\n\n"
-
-const statBlockTank = "Status:\n" +
-	"Player:\ttestdood\n" +
-	"Lineage:\tHuman\tRole: Tank\n" +
-	"Power:\t0\n" +
-	"Health:\t100 of 100\n" +
-	"Coins:\t0\n" +
-	"Location:\t(wrathrock - temple_square)\n\n"
-
-const statBlockPowered = "Status:\n" +
-	"Player:\ttestdood\n" +
-	"Lineage:\tHuman\tRole: Tank\n" +
-	"Power:\t7\n" +
-	"Health:\t100 of 100\n" +
-	"Coins:\t0\n" +
-	"Location:\t(wrathrock - temple_square)\n\n"
+// No ability block: what a character can do is their gear, and the six
+// scores were a number nothing read.
+const statBlockNoGear = "testdood, the Human\n" +
+	"  Health       100/100\n" +
+	"  Mana         100/100\n" +
+	"  Power        0\n" +
+	"  Armor class  10\n" +
+	"  Coins        0\n" +
+	"  Where        Temple Square, Wrathrock\n"
 
 func TestRenderPurse(t *testing.T) {
-	assert.Equal(t, "You aren't carrying anything.\n", render(event.Inventory{}, "testdood"), "an empty purse says nothing")
-	assert.Equal(t, "You aren't carrying anything.\nYou have 1 coin.\n", render(event.Inventory{Coins: 1}, "testdood"))
-	assert.Equal(t, "You aren't carrying anything.\nYou have 30 coins.\n", render(event.Inventory{Coins: 30}, "testdood"))
+	assert.Equal(t, "You aren't carrying anything.\n", plain(render(event.Inventory{}, "testdood")), "an empty purse says nothing")
+	assert.Equal(t, "You aren't carrying anything.\nYou have 1 coin.\n", plain(render(event.Inventory{Coins: 1}, "testdood")))
+	assert.Equal(t, "You aren't carrying anything.\nYou have 30 coins.\n", plain(render(event.Inventory{Coins: 30}, "testdood")))
 }
 
 func TestRenderShopList(t *testing.T) {
@@ -723,9 +706,9 @@ func TestRenderShopList(t *testing.T) {
 		{Item: "a short sword", Power: 2, Price: 40},
 		{Item: "a waterskin", Power: 1, Price: 10},
 	}}, "testdood")
-	assert.Equal(t, "For sale here:\n"+
-		"  a short sword  [power 2]  40 coins\n"+
-		"  a waterskin    [power 1]  10 coins\n", got)
+	assert.Equal(t, "For sale\n"+
+		"  a short sword  power 2  40 coins\n"+
+		"  a waterskin    power 1  10 coins\n", plain(got))
 	assert.Equal(t, "You buy a short sword for 40 coins.\n", render(event.Bought{Item: "a short sword", Cost: 40}, "testdood"))
 	assert.Equal(t, "You sell a scrap of rat pelt for 4 coins.\n", render(event.Sold{Item: "a scrap of rat pelt", Coins: 4}, "testdood"))
 	assert.Equal(t, "The shopkeeper would give you 1 coin for a feather.\n", render(event.Valued{Item: "a feather", Coins: 1}, "testdood"))
@@ -820,4 +803,37 @@ func TestRender_assessedMidFight(t *testing.T) {
 		"  Health 132/180  AC 16  Power 15  Hits for 2d8\n"+
 		"  Fighting you\n"+
 		"  Stunned for 2 more rounds\n", plain(render(m, "testdood")))
+}
+
+const statBlockTank = "testdood, the Human Tank\n" +
+	"  Health       100/100\n" +
+	"  Mana         100/100\n" +
+	"  Power        0\n" +
+	"  Armor class  10\n" +
+	"  Coins        0\n" +
+	"  Where        Temple Square, Wrathrock\n"
+
+const statBlockPowered = "testdood, the Human Tank\n" +
+	"  Health       100/100\n" +
+	"  Mana         100/100\n" +
+	"  Power        7\n" +
+	"  Armor class  10\n" +
+	"  Coins        0\n" +
+	"  Where        Temple Square, Wrathrock\n"
+
+// The same thing in the same shape is one line with a count; a different
+// power or condition is a different line.
+func TestRenderInventory_groups(t *testing.T) {
+	feather := event.InventoryItem{ShortDescription: "a long goose feather", Power: 1}
+	worn := event.InventoryItem{ShortDescription: "a knife", Power: 2, Durability: 20, MaxDurability: 25}
+	got := plain(render(event.Inventory{Items: []event.InventoryItem{
+		feather, worn, feather, feather,
+		{ShortDescription: "a long goose feather", Power: 3},
+	}, Coins: 12}, "testdood"))
+
+	assert.Equal(t, "Inventory\n"+
+		"  a long goose feather (x3)  power 1\n"+
+		"  a knife                    power 2  20/25\n"+
+		"  a long goose feather       power 3\n"+
+		"You have 12 coins.\n", got)
 }

@@ -16,10 +16,10 @@ func TestRenderEquipment_power(t *testing.T) {
 	}}, "testdood")
 
 	assert.Equal(t,
-		"You are using (power 6):\n"+
-			"wield\ta knife\t[power 4] (id-1)\n"+
-			"head\ta helm\t[power 8] (id-2)\n\n",
-		got)
+		"Equipment (power 6)\n"+
+			"  wielded  a knife  power 4\n"+
+			"  head     a helm   power 8\n",
+		plain(got))
 }
 
 // Every step of consider, from the far bottom of the clamp to the top. Delta

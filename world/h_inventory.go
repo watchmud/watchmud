@@ -14,6 +14,10 @@ func (w *World) handleInventory(msg *gameserver.HandlerParameter, cmd command.In
 				Id:               instPtr.Id.String(),
 				ShortDescription: instPtr.Definition.ShortDescription,
 				Category:         instPtr.Definition.ObjectCategory,
+				Power:            instPtr.Power,
+				Durability:       instPtr.Durability,
+				MaxDurability:    instPtr.Definition.MaxDurability,
+				Broken:           instPtr.Broken(),
 			})
 		}
 	}

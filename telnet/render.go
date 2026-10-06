@@ -9,7 +9,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/event"
-	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -322,28 +321,42 @@ func renderEquipment(power int, equipment []event.EquippedItem) string {
 	if len(equipment) == 0 {
 		return "Nothing equipped.\n"
 	}
-	var b strings.Builder
-	b.WriteString(fmt.Sprintf("You are using (power %d):\n", power))
+	var rows [][]cell
 	for _, eq := range equipment {
-		// include instance id just for testing, for now...
-		b.WriteString(fmt.Sprintf("%s\t%s\t[power %d] %s(%s)\n", eq.Slot, eq.ShortDescription, eq.Power, condition(eq), eq.Id))
+		rows = append(rows, []cell{
+			plainCell(slotLabel(eq.Slot)),
+			colored(colorObject, eq.ShortDescription),
+			plainCell(fmt.Sprintf("power %d", eq.Power)),
+			wear(eq.Durability, eq.MaxDurability, eq.Broken),
+		})
 	}
-	b.WriteString("\n")
-	return b.String()
+	return paint(colorHeading, "Equipment") + fmt.Sprintf(" (power %d)\n", power) + table(rows)
 }
 
-// condition is what shape a piece of equipment is in, for the listing. Gear
-// that never wears out says nothing at all, so a game with no durability.json
-// reads exactly as it did before there was one.
-func condition(eq event.EquippedItem) string {
-	switch {
-	case eq.Broken:
-		return "(broken) "
-	case eq.MaxDurability > 0:
-		return fmt.Sprintf("(%d/%d) ", eq.Durability, eq.MaxDurability)
-	default:
-		return ""
+// slotLabel is how a slot reads in the equipment list: where the thing is,
+// in words.
+func slotLabel(s rules.EquipmentSlot) string {
+	switch s {
+	case rules.SlotWield:
+		return "wielded"
+	case rules.SlotHold:
+		return "held"
 	}
+	return strings.ReplaceAll(string(s), "_", " ")
+}
+
+// wear is a piece's condition for a listing: broken in red, worn down to a
+// third or less in yellow, and nothing at all for gear that never wears out.
+func wear(durability, maxDurability int, broken bool) cell {
+	switch {
+	case broken:
+		return colored(colorBroken, "broken")
+	case maxDurability <= 0:
+		return plainCell("")
+	case durability*3 <= maxDurability:
+		return colored(colorWounded, fmt.Sprintf("%d/%d", durability, maxDurability))
+	}
+	return plainCell(fmt.Sprintf("%d/%d", durability, maxDurability))
 }
 
 func renderExits(exits []event.Exit) string {
@@ -367,12 +380,35 @@ func renderInventory(items []event.InventoryItem) string {
 	if len(items) == 0 {
 		return "You aren't carrying anything.\n"
 	}
-	var b strings.Builder
-	b.WriteString("You are carrying:\n")
-	for _, item := range items {
-		b.WriteString("\t" + item.ShortDescription + "\n")
+	// the same thing in the same shape is one line with a count: a pack of
+	// goose feathers is "a long goose feather (x5)", not five lines
+	type key struct {
+		desc               string
+		power, dur, maxDur int
+		broken             bool
 	}
-	return b.String()
+	var order []key
+	count := map[key]int{}
+	for _, it := range items {
+		k := key{it.ShortDescription, it.Power, it.Durability, it.MaxDurability, it.Broken}
+		if count[k] == 0 {
+			order = append(order, k)
+		}
+		count[k]++
+	}
+	var rows [][]cell
+	for _, k := range order {
+		desc := k.desc
+		if n := count[k]; n > 1 {
+			desc += fmt.Sprintf(" (x%d)", n)
+		}
+		rows = append(rows, []cell{
+			colored(colorObject, desc),
+			plainCell(fmt.Sprintf("power %d", k.power)),
+			wear(k.dur, k.maxDur, k.broken),
+		})
+	}
+	return paint(colorHeading, "Inventory") + "\n" + table(rows)
 }
 
 // renderAssessed gives the numbers to whoever cast it; the rest of the room
@@ -442,39 +478,26 @@ func renderAbilities(m event.Abilities) string {
 	if len(m.Granted) == 0 {
 		return "Nothing you're wearing grants any abilities.\n"
 	}
-	// every column is as wide as its widest entry, measured before color,
-	// so the table lines up with color on or off
-	type row struct{ name, mana, cooldown, from string }
-	rows := make([]row, len(m.Granted))
-	width := func(s string, n int) int { return max(len(s), n) }
-	nameW, manaW, coolW, fromW := 0, 0, 0, 0
-	for i, a := range m.Granted {
-		r := row{
-			name:     a.Name,
-			mana:     fmt.Sprintf("%d mana", a.Mana),
-			cooldown: a.Cooldown.String() + " cooldown",
-			from:     fmt.Sprintf("%s (power %d)", a.Item, a.Power),
-		}
-		rows[i] = r
-		nameW, manaW = width(r.name, nameW), width(r.mana, manaW)
-		coolW, fromW = width(r.cooldown, coolW), width(r.from, fromW)
-	}
-
-	var b strings.Builder
-	b.WriteString(paint(colorHeading, "Abilities") + "\n")
-	for i, a := range m.Granted {
-		r := rows[i]
-		ready := paint(colorReady, "ready")
+	var rows [][]cell
+	for _, a := range m.Granted {
+		ready := colored(colorReady, "ready")
 		if a.ReadyIn > 0 {
-			ready = paint(colorWaiting, fmt.Sprintf("ready in %ds", int((a.ReadyIn+time.Second-1)/time.Second)))
+			ready = colored(colorWaiting, fmt.Sprintf("ready in %ds", int((a.ReadyIn+time.Second-1)/time.Second)))
 		}
-		b.WriteString("  " + pad(paint(colorAbility, r.name), len(r.name), nameW))
-		b.WriteString("  " + strings.Repeat(" ", manaW-len(r.mana)) + r.mana) // numbers right-aligned
-		b.WriteString("  " + pad(r.cooldown, len(r.cooldown), coolW))
-		b.WriteString("  " + pad(r.from, len(r.from), fromW))
-		b.WriteString("  " + ready + "\n")
+		rows = append(rows, []cell{
+			colored(colorAbility, a.Name),
+			number(fmt.Sprintf("%d mana", a.Mana)),
+			plainCell(seconds(a.Cooldown) + " cooldown"),
+			plainCell(fmt.Sprintf("%s (power %d)", a.Item, a.Power)),
+			ready,
+		})
 	}
-	return b.String()
+	return paint(colorHeading, "Abilities") + "\n" + table(rows)
+}
+
+// seconds is a cooldown as a player reads it: "60s", not Go's "1m0s".
+func seconds(d time.Duration) string {
+	return fmt.Sprintf("%ds", int((d+time.Second-1)/time.Second))
 }
 
 // renderShopList lines the prices up: the reader is comparing them.
@@ -482,16 +505,15 @@ func renderShopList(items []event.ShopEntry) string {
 	if len(items) == 0 {
 		return "Nothing's for sale here, but the shopkeeper will buy.\n"
 	}
-	width := 0
+	var rows [][]cell
 	for _, it := range items {
-		width = max(width, len(it.Item))
+		rows = append(rows, []cell{
+			colored(colorObject, it.Item),
+			plainCell(fmt.Sprintf("power %d", it.Power)),
+			{text: coins(it.Price), color: colorCoins, right: true},
+		})
 	}
-	var b strings.Builder
-	b.WriteString("For sale here:\n")
-	for _, it := range items {
-		fmt.Fprintf(&b, "  %-*s  [power %d]  %s\n", width, it.Item, it.Power, coins(it.Price))
-	}
-	return b.String()
+	return paint(colorHeading, "For sale") + "\n" + table(rows)
 }
 
 // coins is an amount as a player reads it.
@@ -509,22 +531,25 @@ func renderPurse(n int) string {
 	if n == 0 {
 		return ""
 	}
-	return "You have " + coins(n) + ".\n"
+	return "You have " + paint(colorCoins, coins(n)) + ".\n"
 }
 
 // renderPlayerStat formats a player's stats as a string for display to a mud
 // client.
 func renderPlayerStat(s event.Stat) string {
-	var b strings.Builder
-	b.WriteString("Status:\n")
-	b.WriteString("Player:\t" + s.PlayerName + "\n")
-	b.WriteString("Lineage:\t" + s.Lineage + "\tRole: " + roleOrNone(s.Role) + "\n")
-	b.WriteString(fmt.Sprintf("Power:\t%d\n", s.Power))
-	b.WriteString(fmt.Sprintf("Health:\t%d of %d\n", s.CurrentHealth, s.MaxHealth))
-	b.WriteString(fmt.Sprintf("Coins:\t%d\n", s.Coins))
-	b.WriteString("Location:\t" + player.NewLocation(s.ZoneId, s.RoomId).String() + "\n")
-	b.WriteString("\n")
-	return b.String()
+	title := paint(colorPlayer, s.PlayerName) + ", the " + s.Lineage
+	if s.Role != "" {
+		title += " " + paint(colorRole, s.Role)
+	}
+	rows := [][]cell{
+		{plainCell("Health"), colored(healthColor(s.CurrentHealth, s.MaxHealth), fmt.Sprintf("%d/%d", s.CurrentHealth, s.MaxHealth))},
+		{plainCell("Mana"), plainCell(fmt.Sprintf("%d/%d", s.CurrentMana, s.MaxMana))},
+		{plainCell("Power"), plainCell(fmt.Sprint(s.Power))},
+		{plainCell("Armor class"), plainCell(fmt.Sprint(s.ArmorClass))},
+		{plainCell("Coins"), colored(colorCoins, fmt.Sprint(s.Coins))},
+		{plainCell("Where"), colored(colorPlace, s.RoomName+", "+s.ZoneName)},
+	}
+	return title + "\n" + table(rows)
 }
 
 // roleOrNone is what goes where a role name goes when the player's equipment
@@ -545,22 +570,24 @@ func renderRole(r event.Role) string {
 	if r.Current == "" {
 		b.WriteString("You aren't wearing anything that argues for a role.\n")
 	} else {
-		b.WriteString("You are fighting as a " + r.Current + ".\n")
+		b.WriteString("You are fighting as a " + paint(colorRole, r.Current) + ".\n")
 		if r.Description != "" {
 			b.WriteString(" " + r.Description + "\n")
 		}
 	}
-	width := 0
-	for _, s := range r.Standings {
-		width = max(width, len(s.Name))
-	}
-	for _, s := range r.Standings {
-		fmt.Fprintf(&b, "  %-*s %2d", width, s.Name, s.Total)
-		if len(s.Sources) > 0 {
-			b.WriteString("  (" + strings.Join(s.Sources, ", ") + ")")
+	var rows [][]cell
+	for _, st := range r.Standings {
+		name := plainCell(st.Name)
+		if st.Name == r.Current {
+			name = colored(colorRole, st.Name)
 		}
-		b.WriteString("\n")
+		row := []cell{name, number(fmt.Sprint(st.Total))}
+		if len(st.Sources) > 0 {
+			row = append(row, plainCell("("+strings.Join(st.Sources, ", ")+")"))
+		}
+		rows = append(rows, row)
 	}
+	b.WriteString(table(rows))
 	b.WriteString("Change what you're wearing to change your role.\n")
 	return b.String()
 }

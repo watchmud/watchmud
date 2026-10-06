@@ -37,6 +37,7 @@ const (
 	colorAbility  = boldCyan // an ability's name, in the abilities list
 	colorReady    = green    // an ability that can be cast now
 	colorWaiting  = yellow   // one still cooling down
+	colorCoins    = yellow
 
 	colorSay   = bold
 	colorTell  = magenta

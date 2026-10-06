@@ -16,7 +16,7 @@ var (
 	hereRe     = regexp.MustCompile(`(?m)^([A-Z][a-z]+) is here\.$`)
 	gotRe      = regexp.MustCompile(`(?m)^You get .+ from .+\.$`)
 	coinsRe    = regexp.MustCompile(`^You get \d+ coins? from `)
-	powerRe    = regexp.MustCompile(`You are using \(power (\d+)\)`)
+	powerRe    = regexp.MustCompile(`(?m)^Equipment \(power (\d+)\)`)
 	considerRe = regexp.MustCompile(`\(power (\d+); you are (\d+)\)`)
 )
 

@@ -40,7 +40,7 @@ func TestLooted(t *testing.T) {
 }
 
 func TestPowerAndConsider(t *testing.T) {
-	m := powerRe.FindStringSubmatch("You are using (power 3):\nwield\ta dagger\n")
+	m := powerRe.FindStringSubmatch("Equipment (power 3)\n  wielded  a dagger  power 3\n")
 	assert.Equal(t, "3", m[1])
 	m = considerRe.FindStringSubmatch("Giant beetle looks like a fair fight. (power 2; you are 1)\n")
 	assert.Equal(t, []string{"(power 2; you are 1)", "2", "1"}, m)

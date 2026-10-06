@@ -227,6 +227,12 @@ type InventoryItem struct {
 	Id               string
 	ShortDescription string
 	Category         rules.ObjectCategory
+	// Power and condition, as EquippedItem has them: what a player weighs
+	// before wearing or selling something.
+	Power         int
+	Durability    int
+	MaxDurability int
+	Broken        bool
 }
 
 type Equipment struct {
@@ -303,11 +309,15 @@ type Stat struct {
 	// Role, empty when the player is wearing nothing that speaks to one.
 	Role          string
 	Power         int
+	ArmorClass    int
 	CurrentHealth int
 	MaxHealth     int
+	CurrentMana   int
+	MaxMana       int
 	Coins         int
-	ZoneId        string
-	RoomId        string
+	// where they are, by name
+	RoomName string
+	ZoneName string
 }
 
 // Considered answers consider. Delta is yours less theirs, clamped the way

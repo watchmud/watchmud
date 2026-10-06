@@ -105,7 +105,9 @@ func (s *RoleTestSuite) TestStatReportsTheSameRole() {
 	st := sent[event.Stat](s.T(), s.r, 0)
 	s.Assert().Equal("Striker", st.Role)
 	s.Assert().Equal("Human", st.Lineage)
-	s.Assert().Equal("wrathrock", st.ZoneId)
-	s.Assert().Equal("temple_square", st.RoomId)
+	s.Assert().Equal("Wrathrock", st.ZoneName)
+	s.Assert().Equal("Temple Square", st.RoomName)
 	s.Assert().Equal(100, st.MaxHealth)
+	s.Assert().Equal(100, st.MaxMana)
+	s.Assert().Equal(s.p.ArmorClass(), st.ArmorClass)
 }

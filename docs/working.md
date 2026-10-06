@@ -34,39 +34,23 @@ and LEVELS.md are the plan of record; this is the rest.
 - **A `site/` change describing unreleased features waits** to be pushed with its
   release; pushing `site/` to master publishes it immediately.
 
-## Where things stand (2026-10-05)
+## Where things stand (2026-10-06)
 
-Released and deployed: **v0.9.0** (nohassle, slay, smite). Earlier: heal and mana
-(v0.8.0), the economy (v0.7.0), bots on foot and NAWS (v0.6.0), color and repair
-(v0.5.0), the inhabitant bots (v0.4.0).
+Released and deployed: **v0.10.0** -- provoke, stun, ward and assess; the Barrow-King's
+summons; recall as a trinket; `wear`/`wield` of `2.thing`; wizard `gold`; `/healthz`
+and the compose healthcheck; `who` as a table with bots apart; the wanderer and
+socialite bots and "entered the game for the first time"; GMCP `Char.Vitals` and
+`Room.Info`. Earlier: nohassle, slay, smite (v0.9.0), heal and mana (v0.8.0), the
+economy (v0.7.0), bots on foot and NAWS (v0.6.0), color and repair (v0.5.0), the
+inhabitant bots (v0.4.0).
 
 **On master, not yet released** -- each needs its line in the site guide when it ships:
 
-- `cast provoke` (tank: turn a mob onto yourself) -- barrow plate and helm, boar-hide jerkin
-- `cast stun` (a mob skips two swings) -- the mace of smackdown, from barrow skeletons
-- The Barrow-King calls up two skeletons at half health, after a two-second pause
-  (Lua `me:summon` and `wait()`)
-- Recall as a trinket: the temple token, worn on the neck, 60s cooldown; every
-  existing character is handed one at their next login
-- `wear` and `wield` understand `2.thing` and pass over what can't go on; both name
-  what they put on
-- Wizard `gold <amount>`
-- `cast ward` (a shield on yourself or a friend that takes damage before health does)
-  -- the ring of mending, from the hedge-witch
-- `cast assess` (a mob's exact health, AC, power, damage, target and stun) -- the
-  bandit hood
-- `/healthz` and a compose healthcheck; `deploy.sh` waits for healthy before the smoke
-  test (no site change -- it isn't something players see)
-- `who` is a table, in color, with the bots in their own section at the bottom; the
-  `[bot]` tag is gone, so the site's "Anyone marked `[bot]` in `who`" changes with it
-- Wanderer bots (`WATCHMUD_WANDERERS` in deploy/.env): roam the safe parts of the
-  world, linger, fight only back, take nothing. Needs characters made and flagged,
-  like the hunters (deploy/README.md, "Bots")
-- A socialite bot (`WATCHMUD_SOCIALITES`): stands in Temple Square, welcomes each new
-  character, answers questions said or told. The room now hears "X has entered the
-  game for the first time." for a brand-new character
-- GMCP for MUD clients: `Char.Vitals` and `Room.Info` (no site change until there's a
-  Mudlet package that draws something with them)
+- `abilities`, `equipment`, `inventory`, `stat`, `role` and `list` are aligned tables
+  in color; `equipment` no longer prints instance ids; `inventory` shows power and
+  condition and folds duplicates; `stat` adds mana, armor class and the room by name
 
-**Next, roughly:** a release of the above; content; the bots ROADMAP lists (explore-and-map, bots that wear what they find). The Barrow-King's AC waits for a real group to try him.
+**Next, roughly:** a Mudlet package that draws the GMCP (bars and a map); a zone
+between the Hollowfields and the Barrow; the bots ROADMAP lists (explore-and-map, bots
+that wear what they find). The Barrow-King's AC waits for a real group to try him.
 Leftovers: `watchmud.games` DNS points nowhere; nothing alerts on an unhealthy game.

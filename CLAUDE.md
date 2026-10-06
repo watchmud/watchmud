@@ -269,6 +269,13 @@ separate notification type for drop, get, say, tell or shout.
 is keyed on the code, not on any type. It takes a verb as well, because `TARGET_NOT_FOUND`
 means "you don't see that here" to `get` and "you aren't carrying that" to `drop`.
 
+**Lists are tables** (`telnet/table.go`): `table` pads every column to its widest cell,
+measured before color, so a list lines up with color on or off; a cell can be
+right-aligned for numbers. `abilities`, `equipment`, `inventory`, `stat`, `role` and the
+shop's `list` use it, each under a bold heading; `who` pads its own, across two
+sections. Inventory folds identical things -- same description, power and condition --
+into one line with a count.
+
 Renderers emit plain `\n`; `conn.write` does the single CRLF translation. Keep it that way --
 expected strings in tests stay readable, and it is impossible to forget.
 
@@ -854,7 +861,8 @@ pieces are worth (`object.Equipment.ArmorClass`); a mob's is whatever `"ac"` in 
 mobs.json says, on the same absolute scale, and the loader defaults a mob that doesn't say
 to the baseline. It is a pointer in `loader.mobEntry` so that an absent key and an explicit
 `"ac": 0` stay distinguishable: zero means a thing a d20 can never miss, and that is what
-every mob missing the key silently used to be. Nothing displays AC to the player yet.
+every mob missing the key silently used to be. A player sees their own on `stat`, and a
+mob's through `cast assess`.
 
 `combat` splits its interfaces by lifetime, not by entity:
 
