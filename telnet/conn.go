@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/rs/zerolog/log"
@@ -639,7 +640,28 @@ func (c *conn) readLine() (string, bool) {
 	if !c.scanner.Scan() {
 		return "", false
 	}
-	return strings.TrimSpace(c.scanner.Text()), true
+	return strings.TrimSpace(clean(c.scanner.Text())), true
+}
+
+// clean is what a typed line may carry on to the world: printable text.
+// Control characters go -- an escape sequence emoted at a room would clear
+// its screens -- as do bytes that aren't UTF-8, among them the 0xFF a
+// doubled IAC leaves in a line, which echoed back out would be a telnet
+// command. A tab is a space.
+func clean(line string) string {
+	var b strings.Builder
+	for i, r := range line {
+		switch {
+		case r == utf8.RuneError && !strings.HasPrefix(line[i:], string(utf8.RuneError)):
+			// an invalid byte, not a real U+FFFD
+		case r == '\t':
+			b.WriteByte(' ')
+		case unicode.IsControl(r):
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 func (c *conn) Close() {
@@ -718,6 +740,9 @@ func (c *conn) write(msg any) error {
 	}
 	text = strings.ReplaceAll(text, "\r\n", "\n") // normalize
 	text = strings.ReplaceAll(text, "\n", "\r\n") // replace with \r\n
+	// a literal 0xFF is IAC to the client; never valid UTF-8, so it can only
+	// have come from somewhere unclean, and doubled it's just a byte
+	text = strings.ReplaceAll(text, "\xff", "\xff\xff")
 	switch msg.(type) {
 	case event.Prompt, reprompt, question:
 		text += c.promptEnd()
