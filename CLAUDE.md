@@ -886,6 +886,9 @@ out of the player record, since floors aren't saved. When no door matches, `hand
 looks for a lidded container on the floor (`findLidded`) and answers with
 `event.ContainerChanged`; `findContainer` refuses a closed one (`CONTAINER_CLOSED`), so
 `get from` and `look in` need it open. A corpse is a container with no lid: always open.
+`put <item> in <container>` (`world/h_put.go`) is get-from run backwards: get's target
+grammar, coins included, into an open container on the floor; worn things stay on the
+way `drop` leaves them, and nothing put away decays.
 
 A fight has no location of its own. Nobody can leave a fight without ending it (`move`
 and `recall` refuse, `flee` ends it first), so `DoViolence` reports each swing to

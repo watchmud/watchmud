@@ -61,6 +61,7 @@ inhabitant bots (v0.4.0).
   strongbox key inside) and the miller's strongbox. Zone resets now top objects up to
   `instance_max` instead of adding one more each time: the Sample Zone's fountains have
   been piling up in production since it launched
+- `put <item> in <chest>` (and coins): get-from backwards
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

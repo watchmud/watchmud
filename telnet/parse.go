@@ -64,6 +64,16 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "drop":
 		return command.Drop{Target: rest}, nil
 
+	case "put":
+		// "put knife in chest", or "into"; a missing container is the
+		// handler's to answer, like a missing target
+		for _, sep := range []string{" into ", " in "} {
+			if target, into, ok := strings.Cut(rest, sep); ok {
+				return command.Put{Target: strings.TrimSpace(target), Into: strings.TrimSpace(into)}, nil
+			}
+		}
+		return command.Put{Target: rest}, nil
+
 	case "repair":
 		return command.Repair{Target: rest}, nil
 

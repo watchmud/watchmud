@@ -94,6 +94,12 @@ func render(msg any, self string) string {
 		}
 		return m.Actor + " drops " + m.Item + ".\n"
 
+	case event.Put:
+		if m.Actor == self {
+			return "You put " + m.Item + " in " + m.Into + ".\n"
+		}
+		return m.Actor + " puts " + m.Item + " in " + m.Into + ".\n"
+
 	case event.Got:
 		switch {
 		case m.From != "" && m.Actor == self:

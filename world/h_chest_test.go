@@ -95,3 +95,78 @@ func (s *chestSuite) TestACorpseHasNoLid() {
 	s.do(command.Open{Target: "knife"})
 	s.Assert().Equal(event.NoDoor, s.failed())
 }
+
+func (s *chestSuite) open() {
+	s.T().Helper()
+	s.box.Lock.Locked, s.box.Lock.Closed = false, false
+}
+
+func (s *chestSuite) carry(name string) *object.Instance {
+	s.T().Helper()
+	d := object.NewDefinition(name, name, "wrathrock", rules.ObjectCategoryOther, nil,
+		"a "+name, "A "+name+" is here.", rules.SlotNone, rules.ArmorTypeNone, nil)
+	inst := object.NewInstance(uuid.New(), d)
+	s.Require().NoError(s.p.Inventory().Add(inst))
+	return inst
+}
+
+func (s *chestSuite) TestPutIn() {
+	s.open()
+	pelt := s.carry("pelt")
+
+	s.do(command.Put{Target: "pelt", Into: "box"})
+
+	s.Assert().Equal(event.Put{Actor: "testdood", Item: "a pelt", Into: "a strongbox"}, sent[event.Put](s.T(), s.r, 0))
+	_, inBox := s.box.Contents.Get(pelt.Id)
+	s.Assert().True(inBox)
+	_, carried := s.p.Inventory().Get(pelt.Id)
+	s.Assert().False(carried)
+	s.Assert().True(pelt.DecaysAt.IsZero(), "kept, not left lying")
+}
+
+func (s *chestSuite) TestPutAllSkipsWhatsWorn() {
+	s.open()
+	s.carry("pelt")
+	s.carry("pelt")
+	helm := object.NewDefinition("helm", "helm", "wrathrock", rules.ObjectCategoryArmor, nil,
+		"a helm", "A helm is here.", rules.SlotHead, rules.ArmorTypeLeather, nil)
+	worn := object.NewInstance(uuid.New(), helm)
+	s.Require().NoError(s.p.Inventory().Add(worn))
+	s.p.Equipment().Equip(rules.SlotHead, worn)
+
+	s.do(command.Put{Target: "all", Into: "box"})
+	s.Assert().Len(s.r.Sent, 2, "two pelts, and the helm stays on")
+
+	s.do(command.Put{Target: "helm", Into: "box"})
+	s.Assert().Equal(event.TargetInUse, s.failed())
+}
+
+func (s *chestSuite) TestPutCoins() {
+	s.open()
+	s.p.AddCoins(30)
+
+	s.do(command.Put{Target: "20 coins", Into: "box"})
+	s.Assert().Equal(20, s.box.Coins)
+	s.Assert().Equal(10, s.p.Coins())
+
+	s.do(command.Put{Target: "50 coins", Into: "box"})
+	s.Assert().Equal(event.NotEnoughCoins, s.failed())
+
+	s.do(command.Put{Target: "coins", Into: "box"})
+	s.Assert().Equal(30, s.box.Coins, "all of them")
+	s.Assert().Zero(s.p.Coins())
+}
+
+func (s *chestSuite) TestPutRefusals() {
+	s.carry("pelt")
+
+	s.do(command.Put{Target: "pelt", Into: "box"})
+	s.Assert().Equal(event.ContainerClosed, s.failed())
+	s.do(command.Put{Target: "pelt"})
+	s.Assert().Equal(event.NoContainer, s.failed())
+	s.do(command.Put{Into: "box"})
+	s.Assert().Equal(event.NoTarget, s.failed())
+	s.open()
+	s.do(command.Put{Target: "dragon", Into: "box"})
+	s.Assert().Equal(event.TargetNotFound, s.failed())
+}

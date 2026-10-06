@@ -76,6 +76,15 @@ type Get struct {
 
 func (Get) Verb() string { return "get" }
 
+// Put is "put knife in chest": something carried into an open container on
+// the floor. Target takes get's grammar, coins included.
+type Put struct {
+	Target string
+	Into   string
+}
+
+func (Put) Verb() string { return "put" }
+
 type Drop struct {
 	Target string
 }

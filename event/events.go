@@ -149,6 +149,13 @@ type Dropped struct {
 	Item  string
 }
 
+// Put is something put into a container, seen by the room.
+type Put struct {
+	Actor string
+	Item  string
+	Into  string
+}
+
 type Got struct {
 	Actor string
 	Item  string

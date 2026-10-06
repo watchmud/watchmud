@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
 	"github.com/watchmud/watchmud/object"
@@ -861,4 +862,21 @@ func TestRender_containerChanged(t *testing.T) {
 	m := event.ContainerChanged{Actor: "testdood", Container: "strongbox", Change: event.DoorUnlocked}
 	assert.Equal(t, "You unlock the strongbox.\n", plain(render(m, "testdood")))
 	assert.Equal(t, "testdood unlocks the strongbox.\n", plain(render(m, "otherdood")))
+}
+
+// "put x in y", "put x into y"; a missing container is the handler's to answer
+func TestParse_put(t *testing.T) {
+	for line, want := range map[string]command.Put{
+		"put knife in chest":        {Target: "knife", Into: "chest"},
+		"put all.pelt into the bin": {Target: "all.pelt", Into: "the bin"},
+		"put 20 coins in strongbox": {Target: "20 coins", Into: "strongbox"},
+		"put knife":                 {Target: "knife"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err, line)
+		assert.Equal(t, want, cmd, line)
+	}
+	m := event.Put{Actor: "testdood", Item: "a knife", Into: "a strongbox"}
+	assert.Equal(t, "You put a knife in a strongbox.\n", plain(render(m, "testdood")))
+	assert.Equal(t, "testdood puts a knife in a strongbox.\n", plain(render(m, "otherdood")))
 }
