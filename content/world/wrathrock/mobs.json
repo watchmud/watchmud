@@ -27,5 +27,19 @@
     "flags": [ "nofight" ],
     "ac": 10,
     "script": "janitor"
+  },
+  {
+    "id": "shopkeeper",
+    "name": "shopkeeper",
+    "aliases": [ "keeper", "merchant" ],
+    "short_description": "The shopkeeper.",
+    "description_in_room": "The shopkeeper polishes the counter that doesn't need it.",
+    "max_health": 20,
+    "wandering_definition": {
+      "can_wander": false
+    },
+    "flags": [ "nofight" ],
+    "ac": 10,
+    "script": "shopkeeper"
   }
 ]

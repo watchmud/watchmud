@@ -759,7 +759,9 @@ the room has heard it). `said.text` is what was said and `said.words` the set of
 words, lowercased -- a script has no pattern functions, so it looks a word up
 (`said.words.heal`) rather than searching. Only a player's `say` fires it: a mob's
 `me:say` doesn't, so two scripts can't talk each other round in circles. The
-hedge-witch (`hollowfield/hedge_witch`) is its first user: ask about healing and she
+hedge-witch (`hollowfield/hedge_witch`) and the General Store's shopkeeper
+(`wrathrock/shopkeeper`, `nofight`: buying, selling, repairs, the satchel, a hello) use
+it. The witch was the first: ask about healing and she
 answers -- and never in a way that invites a fight: she isn't prey, for players as
 for bots. `me` is
 copies (`name`, `health`, `max_health`), `me.memory` (a table per mob instance, dropped

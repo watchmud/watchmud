@@ -928,3 +928,18 @@ func TestBandit(t *testing.T) {
 	h.rt.FightPulse(b, bob)
 	assert.Equal(t, 1, h.fled, "once a life")
 }
+
+// the real shopkeeper: a topic she knows, a hello, and quiet otherwise
+func TestShopkeeper(t *testing.T) {
+	src, err := os.ReadFile("../content/world/wrathrock/scripts/shopkeeper.lua")
+	require.NoError(t, err)
+	h := newHarness(t, map[string]string{"wrathrock/shopkeeper": string(src)})
+	keeper := mob("shopkeeper", "wrathrock/shopkeeper")
+
+	h.rt.Hear(keeper, bob, "what would you pay for this pelt?")
+	h.rt.Hear(keeper, bob, "Hello!")
+	h.rt.Hear(keeper, bob, "nice weather")
+	require.Len(t, h.said, 2)
+	assert.Contains(t, h.said[0].text, "'value'")
+	assert.Contains(t, h.said[1].text, "Welcome in, Bob")
+}
