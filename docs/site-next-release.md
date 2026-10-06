@@ -46,6 +46,10 @@ After the `tell` row:
 <tr><td><code>emote waves</code>, <code>smile</code>, <code>bow Ana</code></td><td>Act something out (<code>:</code> for short). <code>socials</code> lists the ready-made ones</td></tr>
 <tr><td><code>bug</code>, <code>idea</code>, <code>typo</code></td><td>Tell whoever runs the game: something broken, something you'd like, a spelling slip. It notes where you were standing</td></tr>
 <tr><td><code>rest</code>, <code>sleep</code>, <code>stand</code></td><td>Heal faster sitting, faster resting, fastest asleep. Stand (or <code>wake</code>) to get moving again</td></tr>
+<tr><td><code>track bandit</code></td><td>Which way the nearest one went. Take that step and track again: it's how you catch a bandit that ran</td></tr>
+<tr><td><code>wimpy 20</code></td><td>Run on your own when a fight takes you below 20 health. <code>wimpy 0</code> to stand your ground</td></tr>
+<tr><td><code>split 30</code></td><td>Share coins out among your group in the room</td></tr>
+<tr><td><code>where</code>, <code>time</code></td><td>Who's playing in this part of the world; the hour in Wrathrock (Seattle's), and the moon</td></tr>
 <tr><td><code>quaff draught</code></td><td>Drink a healing draught (the General Store sells them). Works mid-fight; one every ten seconds</td></tr>
 <tr><td><code>toggle</code></td><td>What you're hearing -- tells, shouts, ooc, color -- and <code>toggle tells</code> to switch one</td></tr>
 <tr><td><code>ooc hello</code></td><td>Chat with everyone playing who's on the channel: questions, plans, anything out of the game. <code>ooc off</code> leaves it. The Temple Square bot answers questions there too</td></tr>
@@ -65,4 +69,11 @@ And one for the janitor:
 ```html
 <dt>Something I dropped vanished</dt>
 <dd>The town janitor sweeps up what's been left lying in Wrathrock for five minutes or more. Give it to someone instead, or leave it in the donation room, east of Temple Square, which he never touches. Out in the Hollowfields it may have been a crow: catch it, and whatever it took is in its corpse.</dd>
+```
+
+And one for the moon:
+
+```html
+<dt>"Full moon tonight. Be careful."</dt>
+<dd>WatchMUD's moon is the real one over Seattle. On a full-moon night (6 pm to 6 am there) the wild dogs in the Hollowfields turn on anyone they meet -- and loot is a little luckier. <code>time</code> shows the phase.</dd>
 ```
