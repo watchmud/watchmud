@@ -187,6 +187,18 @@ type GroupMember struct {
 	Room      string
 }
 
+// Assisted is a group member joining another's fight, seen by the room.
+type Assisted struct {
+	Actor  string
+	Member string
+	Target string
+}
+
+// AssistSet answers assist: whether you'll now join your group's fights.
+type AssistSet struct {
+	On bool
+}
+
 // GroupTold is a gtell, to everyone in the group, the speaker included.
 type GroupTold struct {
 	Speaker string

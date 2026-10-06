@@ -41,8 +41,7 @@ own channel, and can see how each other are doing.
 
 ## Not now
 
-Shared loot or coins; a group's own XP (there is none); auto-assist (a follower joining
-the leader's fight); following mobs or mobs following players; consent before being
+Shared loot or coins; a group's own XP (there is none); following mobs or mobs following players; consent before being
 followed. Each is a later call once groups are used.
 
 ## Code
@@ -56,3 +55,10 @@ followed. Each is a later call once groups are used.
   `GroupList{...}`, `GroupTold{Speaker, Value}`; codes `NOT_IN_GROUP`,
   `NOT_FOLLOWING_YOU`.
 - Bots ignore all of it.
+
+## Assist (added the same day)
+
+When any member is drawn into a fight with a mob -- they started it, or it started
+on them -- the rest of the group in that room joins against that mob, unless already
+fighting or `assist off`. Joining assists nobody further. `assist [on|off]`, in memory,
+on by default. The mob keeps to whoever engaged first, as always.

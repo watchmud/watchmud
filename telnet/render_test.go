@@ -989,3 +989,14 @@ func TestRender_swept(t *testing.T) {
 	assert.Equal(t, "The janitor sweeps up a pelt and tips it into a barrow.\n",
 		plain(render(event.Swept{Sweeper: "janitor", Item: "a pelt"}, "testdood")))
 }
+
+func TestRender_assist(t *testing.T) {
+	m := event.Assisted{Actor: "ann", Member: "bob", Target: "wolf"}
+	assert.Equal(t, "You leap to bob's aid against the wolf!\n", plain(render(m, "ann")))
+	assert.Equal(t, "ann leaps to bob's aid against the wolf!\n", plain(render(m, "bob")))
+	assert.Equal(t, "You'll join your group's fights.\n", plain(render(event.AssistSet{On: true}, "ann")))
+	assert.Equal(t, "You'll stay out of your group's fights unless you join in.\n", plain(render(event.AssistSet{}, "ann")))
+	cmd, err := parseCommand(strings.Fields("assist OFF"))
+	require.NoError(t, err)
+	assert.Equal(t, command.Assist{Setting: "off"}, cmd)
+}

@@ -951,6 +951,11 @@ leader's step: each follower still in the room left and not fighting walks after
 (`event.Followed`, then the room), a fighting one stays behind and is told. Only
 walking pulls: recall, flee, death and wizard moves move one player. `RemovePlayer`
 takes a player out of any group from either end.
+**Assist**: `startFight` is `joinFight` (the ledger and the openers) and then
+`assist` for each side -- the rest of a player's group in the room, not fighting and
+without `assist off` (`groups.noAssist`, in memory), join against the mob through
+`joinFight`, which assists no one, so there's no chain. Kill, aggro, smite and summons
+all start fights through `startFight`, so a group fights together however one began.
 
 `look <thing>` (and `examine`/`exa`; `world/look_at.go`) looks at one thing, only the
 looker told: a player in the room (`event.LookedAtPlayer`: lineage, role, how hurt, what

@@ -65,8 +65,8 @@ var helpSections = []helpSection{
 		{"say <words>", "to the room (')", []string{"say", "'"}},
 		{"tell <who> <words>", "to one player, anywhere", []string{"tell"}},
 		{"shout <words>", "to everyone playing", []string{"shout"}},
-		{"follow <who>, group, gt", "walk with them; your group; tell it (ungroup)",
-			[]string{"follow", "group", "gt", "gtell", "ungroup"}},
+		{"follow <who>, group, gt", "walk and fight as one; gt talks (assist, ungroup)",
+			[]string{"follow", "group", "gt", "gtell", "ungroup", "assist"}},
 		{"who, quit", "who's playing; save and leave", []string{"who", "quit"}},
 	}},
 }

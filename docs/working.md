@@ -73,7 +73,8 @@ inhabitant bots (v0.4.0).
 - An explorer bot (`WATCHMUD_EXPLORERS`) that maps everywhere it safely may
 - The town janitor: wanders Wrathrock, can't be fought, sweeps up what's been
   dropped and left 5 minutes (never in the donation room)
-- Groups: `follow`, `group`, `gt`, `ungroup` -- followers walk after their leader
+- Groups: `follow`, `group`, `gt`, `ungroup`, `assist` -- followers walk after their
+  leader, and the group joins a fight any of them is in
 - An outside uptime check (`.github/workflows/uptime.yaml`), live once on master
 - Scripts hear: `on_hear(me, speaker, said)`; ask the hedge-witch about healing
 

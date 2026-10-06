@@ -3,9 +3,11 @@ package world
 import (
 	"slices"
 
+	"github.com/watchmud/watchmud/combat"
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
+	"github.com/watchmud/watchmud/mobile"
 	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
 	"github.com/watchmud/watchmud/spaces"
@@ -18,12 +20,16 @@ import (
 type groups struct {
 	leaderOf  map[*player.Player]*player.Player
 	followers map[*player.Player][]*player.Player
+	// noAssist is who has turned assist off; everyone else joins their
+	// group's fights.
+	noAssist map[*player.Player]bool
 }
 
 func newGroups() *groups {
 	return &groups{
 		leaderOf:  map[*player.Player]*player.Player{},
 		followers: map[*player.Player][]*player.Player{},
+		noAssist:  map[*player.Player]bool{},
 	}
 }
 
@@ -90,6 +96,53 @@ func (w *World) disband(leader *player.Player) {
 func (w *World) leaveGroups(p *player.Player) {
 	w.stopFollowing(p)
 	w.disband(p)
+	delete(w.groups.noAssist, p)
+}
+
+// assist brings the rest of member's group into a fight with foe: whoever is
+// in the same room, not already fighting, and hasn't turned assist off. Only
+// against a mob -- nothing else is fought -- and joining sets off no assist
+// of its own, so there's no chain to follow.
+func (w *World) assist(member, foe combat.Combatant) {
+	p, ok := member.(*player.Player)
+	if !ok {
+		return
+	}
+	mob, ok := foe.(*mobile.Instance)
+	if !ok {
+		return
+	}
+	room := w.playerRoom(p)
+	for _, other := range w.groups.members(p) {
+		if other == p || w.playerRoom(other) != room || w.fightLedger.InFight(other) || w.groups.noAssist[other] {
+			continue
+		}
+		if err := w.joinFight(other, mob); err != nil {
+			other.Log().Warn().Err(err).Msg("assist")
+			continue
+		}
+		room.Send(event.Assisted{Actor: other.Name(), Member: p.Name(), Target: mob.Name()})
+	}
+}
+
+func (w *World) handleAssist(msg *gameserver.HandlerParameter, cmd command.Assist) {
+	on := w.groups.noAssist[msg.Player]
+	switch cmd.Setting {
+	case "":
+	case "on":
+		on = true
+	case "off":
+		on = false
+	default:
+		msg.Fail(event.BadRequest)
+		return
+	}
+	if on {
+		delete(w.groups.noAssist, msg.Player)
+	} else {
+		w.groups.noAssist[msg.Player] = true
+	}
+	msg.Player.Send(event.AssistSet{On: on})
 }
 
 func (w *World) handleFollow(msg *gameserver.HandlerParameter, cmd command.Follow) {

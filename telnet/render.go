@@ -101,6 +101,16 @@ func render(msg any, self string) string {
 			return m.Leader + " leaves " + strings.ToLower(m.Direction.String()) + ", but you can't follow in the middle of a fight.\n"
 		}
 		return "You follow " + m.Leader + " " + strings.ToLower(m.Direction.String()) + ".\n"
+	case event.Assisted:
+		if m.Actor == self {
+			return "You leap to " + m.Member + "'s aid against the " + m.Target + "!\n"
+		}
+		return m.Actor + " leaps to " + m.Member + "'s aid against the " + m.Target + "!\n"
+	case event.AssistSet:
+		if m.On {
+			return "You'll join your group's fights.\n"
+		}
+		return "You'll stay out of your group's fights unless you join in.\n"
 	case event.GroupList:
 		return renderGroupList(m)
 	case event.GroupTold:

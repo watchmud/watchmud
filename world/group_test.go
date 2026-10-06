@@ -83,6 +83,7 @@ func (s *groupSuite) TestWalkingPullsFollowers() {
 // a fight keeps a follower behind, still following
 func (s *groupSuite) TestAFightKeepsAFollowerBehind() {
 	s.as(s.ann, command.Follow{Target: "testdood"})
+	s.as(s.p, command.Assist{Setting: "off"}) // or testdood joins ann's fight and can't walk
 	mob, found := s.w.StartRoom.FindMobile("target")
 	s.Require().True(found)
 	s.Require().NoError(s.w.startFight(s.ann, mob))
@@ -187,4 +188,49 @@ func indexOf[T any](r *player.Recorder) int {
 		}
 	}
 	return -1
+}
+
+// the group joins a fight any of them is drawn into, in the room
+func (s *groupSuite) TestAssist() {
+	s.as(s.ann, command.Follow{Target: "testdood"})
+	s.as(s.bob, command.Follow{Target: "testdood"})
+	s.as(s.bob, command.Assist{Setting: "off"})
+	s.Assert().False(sent[event.AssistSet](s.T(), s.bobRec, 0).On)
+
+	s.as(s.p, command.Kill{Target: "target"})
+
+	mob, found := s.w.StartRoom.FindMobile("target")
+	s.Require().True(found)
+	s.Assert().True(s.w.fightLedger.InFight(s.ann))
+	s.Assert().Equal(mob, s.w.fightLedger.GetFight(s.ann).Fightee, "ann fights what testdood fights")
+	s.Assert().False(s.w.fightLedger.InFight(s.bob), "bob turned assist off")
+	i := indexOf[event.Assisted](s.annRec)
+	s.Require().GreaterOrEqual(i, 0)
+	s.Assert().Equal(event.Assisted{Actor: "ann", Member: "testdood", Target: mob.Name()}, s.annRec.Sent[i])
+	s.Assert().Same(s.p, s.w.fightLedger.GetFight(mob).Fightee.(*player.Player), "the mob stays on whoever engaged first")
+}
+
+// a follower set upon brings the leader in too; someone elsewhere stays out
+func (s *groupSuite) TestAssistGoesBothWays() {
+	s.as(s.ann, command.Follow{Target: "testdood"})
+	s.as(s.bob, command.Follow{Target: "testdood"})
+	store, found := s.w.findRoomById("wrathrock", "general_store")
+	s.Require().True(found)
+	s.w.movePlayerMagically(s.bob, store)
+	mob, found := s.w.StartRoom.FindMobile("target")
+	s.Require().True(found)
+
+	s.Require().NoError(s.w.startFight(mob, s.ann)) // aggro on ann
+
+	s.Assert().True(s.w.fightLedger.InFight(s.p))
+	s.Assert().False(s.w.fightLedger.InFight(s.bob))
+}
+
+func (s *groupSuite) TestAssistSetting() {
+	s.as(s.ann, command.Assist{})
+	s.Assert().False(sent[event.AssistSet](s.T(), s.annRec, 0).On, "on by default, so a bare assist turns it off")
+	s.as(s.ann, command.Assist{})
+	s.Assert().True(sent[event.AssistSet](s.T(), s.annRec, 0).On)
+	s.as(s.ann, command.Assist{Setting: "sideways"})
+	s.Assert().Equal(event.BadRequest, s.failed(s.annRec))
 }

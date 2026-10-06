@@ -109,6 +109,14 @@ type Ungroup struct {
 
 func (Ungroup) Verb() string { return "ungroup" }
 
+// Assist is "assist [on|off]": whether you join your group's fights. Just
+// "assist" switches it.
+type Assist struct {
+	Setting string
+}
+
+func (Assist) Verb() string { return "assist" }
+
 // Group lists the group you're in.
 type Group struct{}
 

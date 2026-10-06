@@ -22,7 +22,7 @@ var faq = []topic{
 	{[]string{"repair", "repairs", "broken", "broke", "smith", "smithy", "durability", "worn"},
 		"Gear wears down in fights and when you die. The smithy, west of Market Square, mends it for coins: 'repair all'."},
 	{[]string{"group", "groups", "party", "follow", "together", "team"},
-		"'follow <name>' walks you after someone wherever they walk. Then 'group' shows how your group is doing and where, and 'gt' talks to just them. 'follow' on its own stops.",
+		"'follow <name>' walks you after someone wherever they walk, and into their fights -- 'assist off' if you'd rather choose. Then 'group' shows how your group is doing and where, and 'gt' talks to just them. 'follow' on its own stops.",
 	},
 	{[]string{"give", "trade", "share", "hand", "lend"},
 		"'give <name> to' someone in the same room hands it over, and coins go the same way: 'give 20 coins to' them. What you're wearing stays on.",
