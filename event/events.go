@@ -228,6 +228,23 @@ type Swept struct {
 	Item    string
 }
 
+// Junked is something destroyed by its owner, seen by the room.
+type Junked struct {
+	Actor string
+	Item  string
+}
+
+// Donated is something sent to the donation room, seen by the room it left.
+type Donated struct {
+	Actor string
+	Item  string
+}
+
+// Appeared is a donation arriving, seen by the donation room.
+type Appeared struct {
+	Item string
+}
+
 // Gave is one thing, or some coins, passed from Actor to Recipient: the
 // giver, the one given to and the room each see it their own way.
 type Gave struct {

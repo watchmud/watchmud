@@ -131,6 +131,19 @@ func render(msg any, self string) string {
 	case event.Swept:
 		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
 
+	case event.Junked:
+		if m.Actor == self {
+			return "You junk " + m.Item + ". It's gone.\n"
+		}
+		return m.Actor + " junks " + m.Item + ".\n"
+	case event.Donated:
+		if m.Actor == self {
+			return "You donate " + m.Item + ". It's waiting in the donation room.\n"
+		}
+		return m.Actor + " donates " + m.Item + ".\n"
+	case event.Appeared:
+		return capitalize(m.Item) + " appears, donated.\n"
+
 	case event.Gave:
 		switch self {
 		case m.Actor:

@@ -16,6 +16,12 @@ After the `get all from corpse` row:
 <tr><td><code>give pelt to Ana</code></td><td>Hand something to a player in the same room. <code>give 20 coins to Ana</code> for coins</td></tr>
 ```
 
+After the `drop knife` row:
+
+```html
+<tr><td><code>donate knife</code>, <code>junk knife</code></td><td>Done with something? Donate sends it, from anywhere, to the donation room for someone who needs it. Junk destroys it: nothing back, just the space</td></tr>
+```
+
 After the `remove` row:
 
 ```html

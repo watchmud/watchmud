@@ -857,7 +857,9 @@ told with the `event.Fled` a player's flee uses; it answers whether it got away,
 a call. `DoViolence` skips a fight whose sides aren't in the same room, since a mob that
 fled earlier in a round still has fights in that round's snapshot. First user: the
 bandit (`hollowfield/bandit`), below a quarter health, once a life, on a coin flip --
-taking its loot with it, which is a tuning call.
+taking its loot with it. **Fleeing is per mob, by its script, on purpose**: a bandit runs
+and must be chased; a goose or a rat fights to the end. Give a mob a flee only where
+running is in character.
 
 **The janitor** (`wrathrock/janitor`, `nofight`, wandering Wrathrock) is `on_arrive`'s
 first user: `me:junk()` counts the junk on his floor and `me:sweep(n)` takes up to `n`
@@ -981,6 +983,12 @@ all start fights through `startFight`, so a group fights together however one be
 to everyone playing who's on it, wherever they are. `ooc off`/`ooc on` leave and rejoin,
 kept on the record as `NoOOC` (inverted like `NoColor`, so everyone starts on it); off
 the channel you can't speak on it either.
+
+`junk <item>` and `donate <item>` (`world/h_junk.go`, one `getRidOf` between them) are
+the other two ways to be rid of something: junk destroys it and gives nothing back --
+the space is the point -- and refuses a bag with anything in it; donate sends it, from
+anywhere, to the donation room's floor on the dropped-item clock, a bag with what's in
+it. Both take get's grammar, leave worn things on, and refuse coins.
 
 `look <thing>` (and `examine`/`exa`; `world/look_at.go`) looks at one thing, only the
 looker told: a player in the room (`event.LookedAtPlayer`: lineage, role, how hurt, what

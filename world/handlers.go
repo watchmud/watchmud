@@ -66,6 +66,10 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handlePut(msg, cmd)
 	case command.Give:
 		w.handleGive(msg, cmd)
+	case command.Junk:
+		w.handleJunk(msg, cmd)
+	case command.Donate:
+		w.handleDonate(msg, cmd)
 	case command.Follow:
 		w.handleFollow(msg, cmd)
 	case command.Ungroup:

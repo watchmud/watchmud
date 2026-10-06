@@ -85,6 +85,20 @@ type Put struct {
 
 func (Put) Verb() string { return "put" }
 
+// Junk is "junk <item>": destroyed, nothing back.
+type Junk struct {
+	Target string
+}
+
+func (Junk) Verb() string { return "junk" }
+
+// Donate is "donate <item>": sent to the donation room, from anywhere.
+type Donate struct {
+	Target string
+}
+
+func (Donate) Verb() string { return "donate" }
+
 // Give is "give knife to bob": something carried, or coins, to another player
 // in the same room. Target takes get's grammar.
 type Give struct {

@@ -74,10 +74,6 @@
       {
         "direction": "west",
         "dest_room": "market_square"
-      },
-      {
-        "direction": "east",
-        "dest_room": "general_store"
       }
     ]
   },

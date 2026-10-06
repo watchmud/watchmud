@@ -77,6 +77,8 @@ const (
 	NotEmpty      ResultCode = "NOT_EMPTY"
 	// ooc: off the channel, so not heard on it either
 	OffChannel ResultCode = "OFF_CHANNEL"
+	// donate: content names no donation room that exists
+	NoDonationRoom ResultCode = "NO_DONATION_ROOM"
 	// groups
 	NotInGroup       ResultCode = "NOT_IN_GROUP"
 	NotFollowing     ResultCode = "NOT_FOLLOWING"

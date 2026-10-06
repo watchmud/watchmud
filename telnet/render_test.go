@@ -1015,3 +1015,20 @@ func TestRender_snatched(t *testing.T) {
 	assert.Equal(t, "The crow snatches up a goose feather.\n",
 		plain(render(event.Snatched{Mob: "crow", Item: "a goose feather"}, "testdood")))
 }
+
+func TestRender_junkAndDonate(t *testing.T) {
+	j := event.Junked{Actor: "ann", Item: "a pelt"}
+	assert.Equal(t, "You junk a pelt. It's gone.\n", plain(render(j, "ann")))
+	assert.Equal(t, "ann junks a pelt.\n", plain(render(j, "bob")))
+	d := event.Donated{Actor: "ann", Item: "a pelt"}
+	assert.Equal(t, "You donate a pelt. It's waiting in the donation room.\n", plain(render(d, "ann")))
+	assert.Equal(t, "A pelt appears, donated.\n", plain(render(event.Appeared{Item: "a pelt"}, "bob")))
+	for line, want := range map[string]command.Command{
+		"junk all.pelt": command.Junk{Target: "all.pelt"},
+		"donate knife":  command.Donate{Target: "knife"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, want, cmd, line)
+	}
+}

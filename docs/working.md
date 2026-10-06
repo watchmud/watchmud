@@ -77,6 +77,8 @@ inhabitant bots (v0.4.0).
 - The General Store has a shopkeeper who answers questions about her trade
 - Mobs can flee (`me:flee()`): a losing bandit may run, once, on a coin flip
 - An ooc channel (`ooc`, `newbie`, `nb`; `ooc off`), which the socialite answers on
+- `junk` (destroyed, nothing back) and `donate` (to the donation room, from anywhere)
+- The General Store no longer leads east into itself
 - Groups: `follow`, `group`, `gt`, `ungroup`, `assist` -- followers walk after their
   leader, and the group joins a fight any of them is in
 - An outside uptime check (`.github/workflows/uptime.yaml`), live once on master
