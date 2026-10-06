@@ -32,6 +32,9 @@ type objectEntry struct {
 	// Abilities this grants while equipped, by rules.Ability id: ["heal"]
 	Abilities []string `json:"abilities"`
 
+	// Quaff makes it a potion: the ability drinking it uses, on the drinker.
+	Quaff string `json:"quaff"`
+
 	// Container makes it a chest (chests.go).
 	Container *containerEntry `json:"container"`
 }

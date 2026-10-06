@@ -54,6 +54,7 @@ move is one change.
 | Max mana | 100, flat (`rules.MaxMana`) | the budget a healer walks into a fight with |
 | Heal | 20 mana, 10s cooldown, 10 + 2 per power (`abilities.json`) | whether one healer keeps a tank up |
 | Smite | 25 mana, 20s cooldown, 8 + 3 per power, always lands (`abilities.json`) | how much faster a striker opens a fight than a swing does |
+| Healing draught | heal at power 2 (14 health) for 20 coins, no mana; one potion per 10s (`rules.QuaffCooldown`) | whether a pack of them makes a fight unlosable |
 | Dropped decay | 30m (`rules.DroppedDecay`) | how long a donation waits for a newbie |
 | Bare hands damage | 1d2 (`rules.BareHands`) | also a mob with no `"damage"` |
 | Averaging worn power | rounds down | how soon one upgrade shows in your number |

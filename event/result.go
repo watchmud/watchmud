@@ -79,6 +79,8 @@ const (
 	OffChannel ResultCode = "OFF_CHANNEL"
 	// donate: content names no donation room that exists
 	NoDonationRoom ResultCode = "NO_DONATION_ROOM"
+	// quaff: not a potion
+	NotDrinkable ResultCode = "NOT_DRINKABLE"
 	// talking: a social with no target form, nobody to reply to, tells and
 	// shouts switched off, an unknown toggle
 	SocialAlone   ResultCode = "SOCIAL_ALONE"

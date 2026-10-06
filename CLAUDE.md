@@ -615,6 +615,14 @@ mob's exact health, AC, power and damage dice, who it's swinging at and the stun
 left (`event.Assessed`) -- the numbers `consider` only hints at and a fight never shows.
 The room sees the caster look; only the caster gets the numbers. It touches nothing,
 and works mid-fight, in a no-fight room, and on a mob that can't be fought.
+**Potions** are the one way to use an ability without wearing it: `"quaff": "heal"` on
+an object (`object.Definition.Quaff`; the loader refuses an unknown id or one not aimed
+at `self`/`friend`). `quaff <potion>` (`drink`, `world/h_quaff.go`) runs that ability's
+effect on the drinker at the potion's power, for no mana, without touching the
+ability's own cooldown, and the potion is gone. Every potion shares one cooldown,
+`rules.QuaffCooldown`, kept under a key no ability id can be (`:quaff`). Fine in a
+fight. `event.Quaffed`, then the ability's own event. The General Store sells a
+healing draught.
 Nothing about abilities reads a role; the Healer label and the censer's heal are two
 separate consequences of the same item, as are Striker and the cudgel's smite.
 

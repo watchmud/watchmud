@@ -14,6 +14,7 @@ const (
 	ObjectCategoryTreasure ObjectCategory = "treasure"
 	ObjectCategoryArmor    ObjectCategory = "armor"
 	ObjectCategoryFood     ObjectCategory = "food"
+	ObjectCategoryPotion   ObjectCategory = "potion"
 	ObjectCategoryOther    ObjectCategory = "other"
 	ObjectCategoryCorpse   ObjectCategory = "corpse"
 )
@@ -31,6 +32,7 @@ var objectCategories = enum[ObjectCategory]{
 		ObjectCategoryTreasure,
 		ObjectCategoryArmor,
 		ObjectCategoryFood,
+		ObjectCategoryPotion,
 		ObjectCategoryOther,
 		ObjectCategoryCorpse,
 	},

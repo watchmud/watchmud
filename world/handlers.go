@@ -86,6 +86,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleGive(msg, cmd)
 	case command.Junk:
 		w.handleJunk(msg, cmd)
+	case command.Quaff:
+		w.handleQuaff(msg, cmd)
 	case command.Donate:
 		w.handleDonate(msg, cmd)
 	case command.Follow:

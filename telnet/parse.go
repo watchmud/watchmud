@@ -108,6 +108,8 @@ func parseCommand(tokens []string) (command.Command, error) {
 
 	case "junk":
 		return command.Junk{Target: rest}, nil
+	case "quaff", "drink":
+		return command.Quaff{Target: rest}, nil
 	case "donate":
 		return command.Donate{Target: rest}, nil
 

@@ -222,6 +222,11 @@ func render(msg any, self string) string {
 			return "You junk " + m.Item + ". It's gone.\n"
 		}
 		return m.Actor + " junks " + m.Item + ".\n"
+	case event.Quaffed:
+		if m.Actor == self {
+			return "You quaff " + m.Item + ".\n"
+		}
+		return m.Actor + " quaffs " + m.Item + ".\n"
 	case event.Donated:
 		if m.Actor == self {
 			return "You donate " + m.Item + ". It's waiting in the donation room.\n"

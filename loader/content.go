@@ -270,6 +270,9 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 			if d.Abilities, err = objectAbilities(zonename, obj, c.Catalog); err != nil {
 				return err
 			}
+			if d.Quaff, err = objectQuaff(zonename, obj, c.Catalog); err != nil {
+				return err
+			}
 			d.MaxDurability, err = objectDurability(zonename, obj, c.Catalog.Durability)
 			if err != nil {
 				return err
@@ -427,6 +430,22 @@ func mobArmorClass(zoneName string, mob mobEntry) (int, error) {
 		return 0, fmt.Errorf("mob %s/%s: negative ac %d", zoneName, mob.Id, *mob.AC)
 	}
 	return *mob.AC, nil
+}
+
+// objectQuaff checks a potion's ability: one the catalog has, and one a
+// drinker can aim at themselves -- a potion of smite has nobody to hit.
+func objectQuaff(zoneName string, obj objectEntry, cat *rules.Catalog) (string, error) {
+	if obj.Quaff == "" {
+		return "", nil
+	}
+	a, known := cat.Abilities[obj.Quaff]
+	if !known {
+		return "", fmt.Errorf("object %s/%s: quaff: unknown ability %q", zoneName, obj.Id, obj.Quaff)
+	}
+	if a.Target != rules.TargetSelf && a.Target != rules.TargetFriend {
+		return "", fmt.Errorf("object %s/%s: quaff: %q isn't something to drink -- its target is %q", zoneName, obj.Id, obj.Quaff, a.Target)
+	}
+	return obj.Quaff, nil
 }
 
 // objectAbilities checks what an object grants against the catalog: an

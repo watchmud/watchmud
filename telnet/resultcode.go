@@ -67,6 +67,9 @@ var failureByVerb = map[string]string{
 	"put/NOT_ENOUGH_COINS":        "You don't have that many coins.",
 	"junk/TARGET_NOT_FOUND":       "You aren't carrying that.",
 	"junk/NO_TARGET":              "Junk what?",
+	"quaff/TARGET_NOT_FOUND":      "You aren't carrying that.",
+	"quaff/NO_TARGET":             "Quaff what?",
+	"quaff/NOT_READY":             "You can't drink another yet.",
 	"donate/TARGET_NOT_FOUND":     "You aren't carrying that.",
 	"donate/NO_TARGET":            "Donate what?",
 	"give/TARGET_NOT_FOUND":       "You aren't carrying that.",
@@ -167,6 +170,7 @@ var failureByCode = map[string]string{
 	"UNKNOWN_ABILITY": "There's no such spell.",
 	"NOT_GRANTED":     "Nothing you're wearing lets you cast that.",
 	"NOT_READY":       "You can't cast that again yet.",
+	"NOT_DRINKABLE":   "That isn't something to drink.",
 	"NOT_ENOUGH_MANA": "You don't have enough mana.",
 	"NO_FOE":          "At what? You aren't fighting anything.",
 

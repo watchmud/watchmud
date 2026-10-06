@@ -145,6 +145,13 @@ type Junk struct {
 
 func (Junk) Verb() string { return "junk" }
 
+// Quaff is "quaff <potion>": drunk, and gone.
+type Quaff struct {
+	Target string
+}
+
+func (Quaff) Verb() string { return "quaff" }
+
 // Donate is "donate <item>": sent to the donation room, from anywhere.
 type Donate struct {
 	Target string

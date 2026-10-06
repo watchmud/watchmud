@@ -382,6 +382,13 @@ type Junked struct {
 	Item  string
 }
 
+// Quaffed is a potion drunk, seen by the room; what it does follows as its
+// ability's own event (Healed, Warded).
+type Quaffed struct {
+	Actor string
+	Item  string
+}
+
 // Donated is something sent to the donation room, seen by the room it left.
 type Donated struct {
 	Actor string

@@ -54,6 +54,12 @@ type Definition struct {
 	// an id the catalog doesn't define.
 	Abilities []string
 
+	// Quaff makes this a potion: drinking it uses this ability, by
+	// rules.Ability id, on the drinker at the potion's power, and uses the
+	// potion up. Assigned by the loader, which refuses an id the catalog
+	// doesn't define or one that isn't aimed at a friend or self.
+	Quaff string
+
 	// Container makes this a chest: something that holds things, with a lid
 	// that can be shut and a lock its key fits. Nil for anything else. Each
 	// instance gets its own contents and its own lock (NewInstance).

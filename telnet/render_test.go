@@ -1051,6 +1051,17 @@ func TestRender_junkAndDonate(t *testing.T) {
 	}
 }
 
+func TestRender_quaff(t *testing.T) {
+	q := event.Quaffed{Actor: "ann", Item: "a healing draught"}
+	assert.Equal(t, "You quaff a healing draught.\n", plain(render(q, "ann")))
+	assert.Equal(t, "ann quaffs a healing draught.\n", plain(render(q, "bob")))
+	for _, line := range []string{"quaff draught", "drink draught"} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, command.Quaff{Target: "draught"}, cmd, line)
+	}
+}
+
 func TestRender_talk(t *testing.T) {
 	sz := event.Socialized{Actor: "ann", Target: "bob", ToActor: "You bow to bob.", ToTarget: "ann bows to you.", ToRoom: "ann bows to bob."}
 	assert.Equal(t, "You bow to bob.\n", plain(render(sz, "ann")))

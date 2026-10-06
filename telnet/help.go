@@ -43,8 +43,8 @@ var helpSections = []helpSection{
 		{"give <item> to <player>", "hand it over; give 20 coins to bob", []string{"give"}},
 		{"drop, junk, donate <item>", "put down; destroy; send to the donation room",
 			[]string{"drop", "junk", "donate"}},
-		{"wear <item>, wield <item>", "put it on, take up a weapon", []string{"wear", "wield"}},
-		{"remove <item>", "take it off", []string{"remove"}},
+		{"wear, wield, remove <item>", "put it on; take up a weapon; take it off",
+			[]string{"wear", "wield", "remove"}},
 		{"open, close, unlock, lock", "doors and chests, by name or way; keys as needed",
 			[]string{"open", "close", "unlock", "lock"}},
 		{"repair <item>", "mend worn gear, at the smithy; repair all", []string{"repair"}},
@@ -56,6 +56,7 @@ var helpSections = []helpSection{
 		{"kill <mob>, flee, wimpy", "fight; run; run on your own below some health",
 			[]string{"kill", "flee", "wimpy"}},
 		{"cast <ability> [target]", "gear's spells: cast heal bob, cast smite goose (c)", []string{"cast", "c"}},
+		{"quaff <potion>", "drink it: a healing draught heals you", []string{"quaff"}},
 	}},
 	{"You", []helpEntry{
 		{"sit, rest, sleep, stand", "heal faster off your feet; 'wake' to get up",
