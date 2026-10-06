@@ -23,7 +23,7 @@ Everything below is on PR #36's branch, CI green, nothing released or deployed.
 **What the night was:** the CircleMUD list you picked (socials, wizard tools, reports,
 positions, small commands, track, the moon), potions, then reviews -- nine of them,
 each finding checked before fixing: the night's own code, the morning's, the first
-night's, security, saving, Mudlet, core mechanics and the bots. About forty real bugs
+night's, security, saving, Mudlet, core mechanics and the bots. Some thirty-five real bugs
 fixed; the worst are listed under "Fixes found along the way" in the PR.
 
 
