@@ -118,6 +118,15 @@ Calls made without the owner (cheap to change):
   night is 6 pm to 6 am Seattle time.
 - `give`'s, `whisper`'s and `ask`'s room lines say only that something was said.
 
+After that, on my own judgement (each its own commit):
+- Bots rest sitting down (`rest`) and `stand` before walking on, so they look like
+  players and heal at the resting rate.
+- Potions -- your "eh, lets see" (8). Kept small: `"quaff": "heal"` on an object makes
+  it a potion; `quaff`/`drink` runs the ability on yourself at the potion's power, no
+  mana, and it's gone. One potion per 10s, shared. The General Store sells a healing
+  draught (power 2: 14 health, 20 coins). Easy to take out if it isn't wanted: one
+  object, one shop line, one handler.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:
