@@ -45,7 +45,13 @@ func (s *HandleMoveSuite) TestMoveWhileFighting() {
 	other := player.NewTestPlayer(uuid.New(), "other", r)
 	s.w.PlacePlayer(other, s.w.StartRoom)
 
-	s.Assert().NoError(s.w.fightLedger.Fight(s.p, other))
+	// a fresh world, so nothing should be fighting yet; this failed once,
+	// unreproduced, and if it does again the message says what was
+	already := "nobody"
+	if f := s.w.fightLedger.GetFight(s.p); f != nil {
+		already = f.Fightee.Name()
+	}
+	s.Require().NoError(s.w.fightLedger.Fight(s.p, other), "already fighting %s", already)
 	s.move(rules.DirectionNorth)
 
 	failed := s.r.Sent[0].(event.Failed)
