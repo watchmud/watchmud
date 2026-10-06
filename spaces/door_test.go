@@ -2,9 +2,11 @@ package spaces
 
 import (
 	"testing"
+	"uuid"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/watchmud/watchmud/lock"
+	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -17,6 +19,7 @@ func doorway() (cellar, pit *Room, grate *Door) {
 	grate = NewDoor("iron grate", []string{"bars"}, lock.New(lock.State{Closed: true, Locked: true}, "mill/grate_key"))
 	cellar.SetDoor(rules.DirectionWest, grate)
 	pit.SetDoor(rules.DirectionEast, grate)
+	grate.Sides = []*Room{cellar, pit}
 	z.Doors = append(z.Doors, grate)
 	return
 }
@@ -53,6 +56,23 @@ func TestFindDoor(t *testing.T) {
 		_, _, ok := cellar.FindDoor(target)
 		assert.False(t, ok, target)
 	}
+}
+
+// Not with someone beside it: locked in behind them, the grate is the only
+// way out of a pit whose miller the same reset just put back.
+func TestZoneReset_leavesADoorSomeoneIsBeside(t *testing.T) {
+	cellar, pit, grate := doorway()
+	grate.Locked, grate.Closed = false, false
+	o := NewOccupancy()
+	bob := player.NewTestPlayer(uuid.New(), "bob", nil)
+	o.PlacePlayer(bob, pit)
+
+	cellar.Zone.Reset(o)
+	assert.Equal(t, lock.State{}, grate.State, "still open")
+
+	o.RemovePlayer(bob)
+	cellar.Zone.Reset(o)
+	assert.Equal(t, lock.State{Closed: true, Locked: true}, grate.State, "and shut once they've gone")
 }
 
 func TestZoneReset_resetsItsDoors(t *testing.T) {

@@ -194,3 +194,30 @@ func (suite *FightLedgerSuite) TestStunEndsWithTheFight() {
 
 	suite.Assert().Equal(0, suite.fightLedger.Stunned(mob))
 }
+
+// and so does its stunner leaving: the mob is out of every fight, and the
+// rounds mustn't wait for whoever engages it next
+func (suite *FightLedgerSuite) TestStunEndsWhenTheStunnerGoes() {
+	mob := NewTestCombatant("mob", 10, []DamageType{}, []DamageType{})
+	player := NewTestCombatant("player", 10, []DamageType{}, []DamageType{})
+	suite.Require().NoError(suite.fightLedger.Fight(player, mob))
+	suite.fightLedger.Stun(mob, 2)
+
+	suite.fightLedger.EndAllFightsWith(player.Id())
+
+	suite.Assert().Equal(0, suite.fightLedger.Stunned(mob))
+}
+
+// but not while someone's still fighting it
+func (suite *FightLedgerSuite) TestStunOutlastsOneOfItsFoes() {
+	mob := NewTestCombatant("mob", 10, []DamageType{}, []DamageType{})
+	ann := NewTestCombatant("ann", 10, []DamageType{}, []DamageType{})
+	bob := NewTestCombatant("bob", 10, []DamageType{}, []DamageType{})
+	suite.Require().NoError(suite.fightLedger.Fight(ann, mob))
+	suite.Require().NoError(suite.fightLedger.Fight(bob, mob))
+	suite.fightLedger.Stun(mob, 2)
+
+	suite.fightLedger.EndAllFightsWith(ann.Id())
+
+	suite.Assert().Equal(2, suite.fightLedger.Stunned(mob))
+}

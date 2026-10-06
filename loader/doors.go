@@ -39,6 +39,10 @@ func (c *Content) hangDoors() error {
 		}
 		door := spaces.NewDoor(name, e.Aliases, lock.New(lock.State{Closed: e.Closed, Locked: e.Locked}, key))
 		room.SetDoor(p.dir, door)
+		door.Sides = append(door.Sides, room)
+		if far := room.DestinationRoom(p.dir); far != nil {
+			door.Sides = append(door.Sides, far)
+		}
 		if far := room.DestinationRoom(p.dir); far.DestinationRoom(p.dir.Opposite()) == room {
 			if far.DoorTo(p.dir.Opposite()) != nil {
 				return fmt.Errorf("door %s: there's a door there already -- declare a door on one side only, and both sides share it", where)

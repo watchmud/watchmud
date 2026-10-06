@@ -13,6 +13,18 @@ type Door struct {
 	Name    string
 	Aliases []string
 	*lock.Lock
+	// Sides are the rooms it stands between, for a reset to see who's there.
+	Sides []*Room
+}
+
+// occupied is whether a player is in a room on either side of it.
+func (d *Door) occupied() bool {
+	for _, r := range d.Sides {
+		if len(r.Players()) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func NewDoor(name string, aliases []string, l *lock.Lock) *Door {

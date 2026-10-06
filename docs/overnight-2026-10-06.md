@@ -166,6 +166,15 @@ A security review of the connection and login layer (the injection fix held up):
 - Seen once since, not reproduced in 4 more runs: `TestAdventurer_answersATell`
   timed out ("Wren never came online") under the full race suite.
 
+A review of the first night's code (doors, chests, the mill, abilities):
+- **A trap in the mill:** every reset re-locked the grate, the wheel pit's only exit,
+  with the Drowned Miller respawned beside whoever was in there. Without the key,
+  flee and recall both refused, and dying was the only way out. A door with a player
+  on either side is now left alone by resets.
+- "noPlayers" zones (the Barrow) reset with players in them; they wait now.
+- The strongbox key came back every reset and sold for ~16 coins: keys are `noSell`.
+- A stun outlasted its fight when the stunner fled or fell.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:

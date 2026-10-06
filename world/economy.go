@@ -20,6 +20,9 @@ func (w *World) price(inst *object.Instance) int {
 // price, less for wear. Broken is worth nothing -- it's the smith's business
 // first -- and that keeps repair-then-sell from ever paying.
 func (w *World) sellPrice(inst *object.Instance) int {
+	if inst.Definition.NoSell() {
+		return 0
+	}
 	price := w.price(inst)
 	if inst.WearsOut() {
 		price = price * inst.Durability / inst.Definition.MaxDurability

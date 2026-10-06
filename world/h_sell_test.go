@@ -39,6 +39,17 @@ func (s *handleSellSuite) TestSell_wearCostsYou() {
 	s.Assert().Equal(1, s.p.Inventory().Len(), "the boots are still yours")
 }
 
+// a noSell thing -- a key a reset puts back -- is worth nothing to a shop
+func (s *handleSellSuite) TestSell_noSell() {
+	s.toStore()
+	key := s.carry("key", 2, 20, 20)
+	key.Definition.Behaviors = append(key.Definition.Behaviors, rules.ObjectBehaviorNoSell)
+
+	s.do(command.Sell{Target: "key"})
+	s.Assert().Equal(event.Worthless, sent[event.Failed](s.T(), s.r, 0).Code)
+	s.Assert().Equal(1, s.p.Inventory().Len())
+}
+
 // Like drop: not what you have on.
 func (s *handleSellSuite) TestSell_notWhatYouAreWearing() {
 	s.toStore()

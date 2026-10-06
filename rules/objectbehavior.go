@@ -9,6 +9,9 @@ type ObjectBehavior string
 const (
 	ObjectBehaviorNone   ObjectBehavior = ""
 	ObjectBehaviorNoTake ObjectBehavior = "noTake"
+	// NoSell is what no shop buys: a key a reset puts back every few minutes
+	// would otherwise be a coin farm.
+	ObjectBehaviorNoSell ObjectBehavior = "noSell"
 )
 
 var ErrUnknownObjectBehavior = errors.New("unknown object behavior")
@@ -19,6 +22,7 @@ var objectBehaviors = enum[ObjectBehavior]{
 	[]ObjectBehavior{
 		ObjectBehaviorNone,
 		ObjectBehaviorNoTake,
+		ObjectBehaviorNoSell,
 	},
 }
 

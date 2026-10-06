@@ -613,7 +613,8 @@ rounds, and the mob skips that many swings. The count is on the ledger
 doesn't shake it off; a second stun refreshes to the longer, never stacks, and
 `EndAllFightsWith` clears it. `DoViolence` spends one per round (`SpendStun`): the
 round is used -- `LastPulse` moves -- with an `event.Staggered` and no swing, wear or
-script pulse. Rounds rather than seconds because the world only knows the pulse
+script pulse. A stun ends, too, once its mob is in no fight at all -- its stunner fled
+or fell -- so its rounds don't wait for whoever engages it next. Rounds rather than seconds because the world only knows the pulse
 inside `DoViolence`, while cooldowns run on `w.now`.
 Smite, provoke and stun all draw the mob in through `World.openFight`.
 **Ward** (`friend`, granted by the ring of mending) is the first defensive ability: a
@@ -728,7 +729,8 @@ corpse or a chest (never a bag: coins stay in the purse). `get all from corpse` 
 corpse` just them; they go with the corpse when it crumbles, and a player keeps theirs on
 death. A shop is a zone's `shops.json` (room, and objects at a power, named the way loot
 names them) loaded into `spaces.Zone.Shops`; it sells new instances of its stock without
-end, buys anything worth a coin, and never resells what it bought.
+end, buys anything worth a coin -- not a `"noSell"` thing, such as the mill's keys,
+which a reset puts back every few minutes -- and never resells what it bought.
 
 ### Player death
 
@@ -971,7 +973,11 @@ is what a chest will carry too. `Room.Passable` is the question movement asks --
 `open`/`close`/`lock`/`unlock` are one handler (`world/h_door.go`): `Room.FindDoor` by
 direction, name, alias or plain "door"; the key is anything in the inventory whose
 `ObjectId.Ref()` ("zone/id") is the lock's; `event.DoorChanged` goes to both rooms, the
-far side without an actor. `Zone.Reset` resets the doors its content declared. Door
+far side without an actor. `Zone.Reset` resets the doors its content declared --
+except one with a player in a room on either side (`Door.Sides`): re-locked behind
+them, the mill's grate was the only way out of a pit whose miller the same reset had
+just put back, and a player without the key could only die. A zone with
+`"noPlayers"` reset mode waits until nobody is in it (`Zone.HasPlayers`). Door
 state isn't saved: a restart puts every door back how content says.
 
 **Chests** are the lock's second user: an object with `"container"` in objects.json

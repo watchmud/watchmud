@@ -71,7 +71,8 @@
     "category": "OTHER",
     "aliases": [ "key", "rusted" ],
     "short_description": "a rusted key",
-    "description_on_ground": "A heavy key, rusted orange, lies here in a puddle."
+    "description_on_ground": "A heavy key, rusted orange, lies here in a puddle.",
+    "behaviors": [ "noSell" ]
   },
   {
     "id": "grain_bin",
@@ -88,7 +89,8 @@
     "category": "OTHER",
     "aliases": [ "key", "small", "iron" ],
     "short_description": "a small iron key",
-    "description_on_ground": "A small iron key lies here, crusted with flour."
+    "description_on_ground": "A small iron key lies here, crusted with flour.",
+    "behaviors": [ "noSell" ]
   },
   {
     "id": "strongbox",

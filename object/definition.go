@@ -111,6 +111,11 @@ func (d *Definition) NoTake() bool {
 	return slices.Contains(d.Behaviors, rules.ObjectBehaviorNoTake)
 }
 
+// NoSell is whether shops refuse it.
+func (d *Definition) NoSell() bool {
+	return slices.Contains(d.Behaviors, rules.ObjectBehaviorNoSell)
+}
+
 func (d *Definition) Takeable() bool {
 	return !d.NoTake()
 }

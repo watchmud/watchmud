@@ -128,6 +128,17 @@ func (f *FightLedger) EndAllFightsWith(id uuid.UUID) {
 	}
 	delete(f.stuns, id)
 	f.retarget()
+	// and a stun on anyone that leaves out of every fight: its stunner fled
+	// or fell, and the rounds mustn't wait for whoever engages it next
+	involved := map[uuid.UUID]bool{}
+	for _, v := range f.fightMap {
+		involved[v.Fighter.Id()], involved[v.Fightee.Id()] = true, true
+	}
+	for stunned := range f.stuns {
+		if !involved[stunned] {
+			delete(f.stuns, stunned)
+		}
+	}
 }
 
 // retarget gives anyone who is being fought, but has stopped fighting, a fight

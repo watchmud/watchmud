@@ -62,6 +62,16 @@ func (z *Zone) AddCommand(c ZoneCommand) {
 	z.Commands = append(z.Commands, c)
 }
 
+// HasPlayers is whether anyone is in any of the zone's rooms.
+func (z *Zone) HasPlayers() bool {
+	for _, r := range z.Rooms {
+		if len(r.Players()) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (z *Zone) String() string {
 	return fmt.Sprintf("(Zone %s: '%s')", z.Id, z.Name)
 }
@@ -87,8 +97,13 @@ func (z *Zone) Reset(o *Occupancy) []error {
 
 	}
 
+	// A door with someone beside it is left as it is: re-locked behind
+	// them, a door can be the only way out of a room whose mob the same
+	// reset has just put back. It's reset by the first one nobody's near.
 	for _, d := range z.Doors {
-		d.Reset()
+		if !d.occupied() {
+			d.Reset()
+		}
 	}
 
 	// Set the last reset time, even if there were errors. Whatever
