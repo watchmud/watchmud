@@ -193,6 +193,11 @@ Two rules that look inconsistent and are not:
   a full `incomingBuffer` is correct backpressure -- the flooding client waits, no command
   is dropped.
 
+**A typed line is text** by the time it leaves `readLine`: `clean` drops control
+characters and bytes that aren't UTF-8 -- among them the 0xFF a doubled `IAC` leaves
+behind, which said to a room would reach everyone as a telnet command -- and `write`
+doubles any 0xFF in text anyway. Content is UTF-8, which never has one.
+
 **`tls.go`** is the second port: the same `conn` over `tls.Server`, handshaken on its
 own goroutine before the pumps start. `certificate` re-reads the PEM files when their
 mtimes move (checked each handshake), so a Let's Encrypt renewal needs no restart --

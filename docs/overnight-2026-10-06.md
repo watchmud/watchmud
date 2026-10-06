@@ -127,6 +127,19 @@ After that, on my own judgement (each its own commit):
   draught (power 2: 14 health, 20 coins). Easy to take out if it isn't wanted: one
   object, one shop line, one handler.
 
+Then a review of the night's code (two reviewers, each finding checked before fixing):
+- **Telnet injection** (the worst; older than tonight, wider since): a doubled IAC
+  typed into a line reached the world as a 0xFF byte, so `emote` or `say` could send
+  the room `IAC WILL ECHO` (hiding what they type) or an escape that clears screens.
+  Lines are cleaned on the way in (`telnet.clean`) and 0xFF doubled on the way out.
+- `goto` out of a fight left a fight that could never swing or end.
+- `split` told bystanders "you get 15 coins".
+- `bug`/`idea`/`typo` had no rate limit: now one per player per 10s.
+- On a full-moon night wild dogs stopped wandering; and "full moon tonight" could
+  be wrong by dark. A night is now full or not as a whole (the phase at midnight).
+- Assist dragged sleeping group members into fights.
+- A muted player's typo said "muted"; muting a wizard said "remove it first".
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:
