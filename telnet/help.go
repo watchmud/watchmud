@@ -115,15 +115,15 @@ var helpText = func() string {
 	return b.String()
 }()
 
-// helpFor answers every way of asking: help, ? or commands for the command
-// list, with a word after it for a topic.
+// helpFor answers every way of asking: help or ? for the command list, with a
+// word after it for a topic. ("commands" is the world's: a bare list of verbs.)
 func helpFor(line string) (string, bool) {
 	words := strings.Fields(strings.ToLower(line))
 	if len(words) == 0 {
 		return "", false
 	}
 	switch words[0] {
-	case "help", "?", "commands":
+	case "help", "?":
 	default:
 		return "", false
 	}

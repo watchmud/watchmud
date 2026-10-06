@@ -277,6 +277,9 @@ func render(msg any, self string) string {
 		return "You wear " + m.Item + ".\n"
 
 	case event.GoldGiven:
+		if m.Amount == 1 {
+			return fmt.Sprintf("A coin appears in your purse. You have %d.\n", m.Coins)
+		}
 		return fmt.Sprintf("%d coins appear in your purse. You have %d.\n", m.Amount, m.Coins)
 
 	case event.Removed:
@@ -900,8 +903,8 @@ func renderWho(players []event.WhoEntry) string {
 	// columns sized to the widest name and title, measured before color
 	nameWidth, titleWidth := 0, 0
 	for _, p := range players {
-		nameWidth = max(nameWidth, len(p.PlayerName))
-		titleWidth = max(titleWidth, len(whoTitle(p)))
+		nameWidth = max(nameWidth, utf8.RuneCountInString(p.PlayerName))
+		titleWidth = max(titleWidth, utf8.RuneCountInString(whoTitle(p)))
 	}
 	var b strings.Builder
 	people, bots := 0, 0
@@ -926,8 +929,8 @@ func renderWho(players []event.WhoEntry) string {
 		if p.Bot {
 			nameColor = colorBot
 		}
-		b.WriteString("  " + pad(paint(nameColor, p.PlayerName), len(p.PlayerName), nameWidth))
-		b.WriteString("  " + pad(paintTitle(p), len(whoTitle(p)), titleWidth))
+		b.WriteString("  " + pad(paint(nameColor, p.PlayerName), utf8.RuneCountInString(p.PlayerName), nameWidth))
+		b.WriteString("  " + pad(paintTitle(p), utf8.RuneCountInString(whoTitle(p)), titleWidth))
 		b.WriteString("  " + paint(colorPlace, p.RoomName+", "+p.ZoneName) + "\n")
 	}
 	b.WriteString("\n" + countOf(people, "player", "players"))

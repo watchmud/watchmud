@@ -280,6 +280,14 @@ A last review, of the fixes above:
   creation password was answered twice; bots timed out on "They aren't taking
   tells." and missed a player logging in on their ground.
 
+A review of what players read (render, wrap, tables, prompts, GMCP, help):
+- **`kill wild dog` attacked the wild boar:** kill kept only the first word, and
+  "wild" finds whichever wild thing is listed first (bandit/bandit lookout and the
+  Miller/millhand the same). It takes the whole name now, as consider always did.
+- `commands` showed help instead of its list of verbs: help caught the word first.
+- `'hello` and `:waves` (no space) were "Unknown request".
+- `gold 1` said "1 coins appear"; tables counted bytes, so a "café" would misalign.
+
 Checks against the real thing:
 - **tintin++** (2.02.20, installed here): a scripted session made a character with no
   typing -- its `#action`s fire on our GA-marked prompts -- and played; wrapping,

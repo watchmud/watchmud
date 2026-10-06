@@ -24,6 +24,10 @@ func parseCommand(tokens []string) (command.Command, error) {
 	if len(tokens) == 0 {
 		return nil, nil
 	}
+	// 'hello and :waves, with no space: the MUD habit for say and emote
+	if t := tokens[0]; len(t) > 1 && (t[0] == '\'' || t[0] == ':') {
+		tokens = append([]string{t[:1], t[1:]}, tokens[1:]...)
+	}
 	verb := strings.ToLower(tokens[0])
 	rest := strings.Join(tokens[1:], " ")
 
@@ -203,7 +207,9 @@ func parseCommand(tokens []string) (command.Command, error) {
 		if len(tokens) < 2 {
 			return nil, errors.New("What do you want to attack?")
 		}
-		return command.Kill{Target: tokens[1]}, nil
+		// the whole of it: "kill wild dog" isn't "kill wild", which is
+		// whichever wild thing is listed first -- the boar, as often as not
+		return command.Kill{Target: rest}, nil
 
 	case "flee":
 		return command.Flee{}, nil
@@ -212,7 +218,7 @@ func parseCommand(tokens []string) (command.Command, error) {
 		if len(tokens) < 2 {
 			return nil, errors.New("Restore whom?")
 		}
-		return command.Restore{Target: tokens[1]}, nil
+		return command.Restore{Target: rest}, nil
 
 	case "nohassle":
 		return command.NoHassle{Setting: strings.ToLower(rest)}, nil

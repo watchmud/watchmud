@@ -1,6 +1,9 @@
 package telnet
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+)
 
 // cell is one entry in a table: what it says, and the color it's painted.
 // Right puts it against the right edge of its column, for numbers.
@@ -25,14 +28,14 @@ func table(rows [][]cell) string {
 			if i == len(widths) {
 				widths = append(widths, 0)
 			}
-			widths[i] = max(widths[i], len(c.text))
+			widths[i] = max(widths[i], utf8.RuneCountInString(c.text)) // columns, not bytes
 		}
 	}
 	var b strings.Builder
 	for _, row := range rows {
 		var line strings.Builder
 		for i, c := range row {
-			gap := strings.Repeat(" ", widths[i]-len(c.text))
+			gap := strings.Repeat(" ", widths[i]-utf8.RuneCountInString(c.text))
 			shown := c.text
 			if c.color != "" {
 				shown = paint(c.color, c.text)

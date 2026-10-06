@@ -1,6 +1,9 @@
 package telnet
 
 import (
+	"github.com/watchmud/watchmud/command"
+	"github.com/watchmud/watchmud/event"
+	"strings"
 	"testing"
 	"time"
 
@@ -66,4 +69,44 @@ func TestAddressLimit_creations(t *testing.T) {
 	assert.True(t, l.mayCreate("b", now), "another address is its own")
 	assert.True(t, l.mayCreate("a", now.Add(createWindow)), "a day on")
 	assert.Empty(t, l.made, "and the old ones are forgotten")
+}
+
+// kill takes the whole name: "kill wild dog" mustn't be "kill wild", which
+// is whichever wild thing is listed first
+func TestParse_killTakesTheWholeName(t *testing.T) {
+	for _, line := range []string{"kill wild dog", "hit wild dog", "attack wild dog"} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, command.Kill{Target: "wild dog"}, cmd, line)
+	}
+}
+
+// 'hello and :waves need no space
+func TestParse_sayAndEmoteShortcuts(t *testing.T) {
+	cmd, err := parseCommand(strings.Fields("'hello there"))
+	require.NoError(t, err)
+	assert.Equal(t, command.Say{Value: "hello there"}, cmd)
+	cmd, err = parseCommand(strings.Fields(":waves"))
+	require.NoError(t, err)
+	assert.Equal(t, command.Emote{Text: "waves"}, cmd)
+}
+
+// "commands" is the world's bare list, not help again
+func TestHelp_commandsIsntHelp(t *testing.T) {
+	_, ok := helpFor("commands")
+	assert.False(t, ok)
+	cmd, err := parseCommand([]string{"commands"})
+	require.NoError(t, err)
+	assert.Equal(t, command.Commands{}, cmd)
+}
+
+// one coin is a coin
+func TestRender_goldGivenOne(t *testing.T) {
+	assert.Equal(t, "A coin appears in your purse. You have 5.\n", plain(render(event.GoldGiven{Amount: 1, Coins: 5}, "ann")))
+}
+
+// a table lines up whatever the letters: columns, not bytes
+func TestTable_multibyte(t *testing.T) {
+	got := table([][]cell{{{text: "café"}, {text: "x"}}, {{text: "cafe"}, {text: "y"}}})
+	assert.Equal(t, "  café  x\n  cafe  y\n", got)
 }
