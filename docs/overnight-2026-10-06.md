@@ -147,10 +147,10 @@ A second review, of the morning's code (groups, give, bags, janitor, scripts):
 - A crumbling summon would have taken what it carried (none carry today).
 - Wimpy could run from a fight the bandit's script had already ended.
 
-Not fixed, for you: after a *crash* (not a clean shutdown), an item given, or coins
-split, between two players can exist twice -- the receiver who quits is saved at
-once, the giver only on the next interval. Saving both sides of a transfer would
-close it; it didn't seem worth the writes without a crash to point at.
+Fixed later in the night: after a *crash*, an item given or coins split between two
+players could exist twice -- the receiver who quit was saved at once, the giver only
+on the next interval. Drop, give, put, donate and split now save everyone in the
+room at once; saves only queue, so it's cheap.
 
 A security review of the connection and login layer (the injection fix held up):
 - A store error mid-login hung the conversation for good, and five of them locked an

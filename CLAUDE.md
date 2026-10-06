@@ -113,7 +113,9 @@ the heartbeat calls `World.QueuePlayerRecords`, which hands a record of everyone
 world to the store; `Run` does the same once more on shutdown. Handlers mutate the player
 and never save -- whatever changed a player, a command or a fight or somebody else's
 command, is in the next one. Logout saves immediately, as does death; a crash loses at
-most one interval.
+most one interval. So do `drop`, `give`, `put`, `donate` and `split`, for everyone in the
+room (`saveHandedOver`): otherwise a crash brings a giver back still holding what the
+taker, saved when they quit, has too.
 
 **Save through `w.record(p)`, never `p.Record()` directly.** The player doesn't know where it
 is standing -- location lives in `spaces.Occupancy` -- so `w.record` is what fills in

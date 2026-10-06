@@ -202,5 +202,9 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		msg.Fail(event.UnknownCommand)
 		return fmt.Errorf("unhandled command %T", msg.Command)
 	}
+	switch msg.Command.(type) {
+	case command.Drop, command.Give, command.Put, command.Donate, command.Split:
+		w.saveHandedOver(msg.Player)
+	}
 	return nil
 }

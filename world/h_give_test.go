@@ -66,6 +66,21 @@ func (s *handleGiveSuite) TestGive() {
 	s.Assert().False(kept)
 }
 
+// Both sides are saved at once, not on the timer: a crash before the giver's
+// next save would bring them back still holding what bob, saved when he
+// quits, has too.
+func (s *handleGiveSuite) TestGive_savesBothSides() {
+	s.carry("pelt", nil)
+	s.give("pelt", "bob")
+
+	for name, want := range map[string]int{"testdood": 0, "bob": 1} {
+		rec, found, err := s.w.store.Load(name)
+		s.Require().NoError(err)
+		s.Require().True(found, name)
+		s.Assert().Len(rec.Inventory, want, name)
+	}
+}
+
 func (s *handleGiveSuite) TestGive_aBagGoesWithWhatsInIt() {
 	bag := s.carry("satchel", &object.ContainerSpec{Portable: true})
 	s.Require().NoError(object.Move(s.carry("pelt", nil), s.p.Inventory(), bag.Contents))
