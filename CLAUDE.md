@@ -198,6 +198,15 @@ characters and bytes that aren't UTF-8 -- among them the 0xFF a doubled `IAC` le
 behind, which said to a room would reach everyone as a telnet command -- and `write`
 doubles any 0xFF in text anyway. Content is UTF-8, which never has one.
 
+**Login is paced and bounded, against floods rather than people**: a name asked again
+waits `nameAgain` (1s) and a wrong password `wrongPassword` (2s), both on the
+connection's own goroutine -- every name is a store lookup on the world's; a whole
+login must finish within `loginWithin` (5 minutes) whatever it answers; bcrypt runs at
+most one per CPU (`GameServer.bcryptSlots`); and `addressLimit` caps everyone together
+at `maxConns` as well as five per address, an IPv6 one counted by its /64 (`hostKey`).
+A pre-login handler that returns an error still answers (`LoginFailed{Unknown}`, from
+`recovering`): the conversation waits on an answer, holding its address's slot.
+
 **`tls.go`** is the second port: the same `conn` over `tls.Server`, handshaken on its
 own goroutine before the pumps start. `certificate` re-reads the PEM files when their
 mtimes move (checked each handshake), so a Let's Encrypt renewal needs no restart --

@@ -222,6 +222,9 @@ The game logs where each connection came from (`telnet 1.2.3.4:5678`). After the
 first real players connect, **check those are their addresses**. If every
 connection comes from the same address (a gateway, a proxy), the 5-per-address
 connection cap is counting that address, and the sixth player is refused.
+(IPv6 counts by /64.) There's also a cap of 200 connections in all
+(`telnet.maxConns`): past it, "The game is full right now." A login must be over
+within 5 minutes of connecting.
 
 ## Health
 

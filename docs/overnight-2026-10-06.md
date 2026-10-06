@@ -152,6 +152,19 @@ split, between two players can exist twice -- the receiver who quits is saved at
 once, the giver only on the next interval. Saving both sides of a transfer would
 close it; it didn't seem worth the writes without a crash to point at.
 
+A security review of the connection and login layer (the injection fix held up):
+- A store error mid-login hung the conversation for good, and five of them locked an
+  address out. Now answered.
+- One connection pipelining names kept the world goroutine doing store lookups.
+  A name asked again now waits 1s; a wrong password 2s; bcrypt one per CPU.
+- Logins must finish in 5 minutes; 200 connections at most; IPv6 counted by /64.
+- Unicode format characters (right-to-left override) dropped from typed lines.
+- Not done: moving the login lookup off the world goroutine entirely (the pause makes
+  it one lookup a second a connection); per-name lockout after failed passwords;
+  a cap on character creations per address.
+- Seen once since, not reproduced in 4 more runs: `TestAdventurer_answersATell`
+  timed out ("Wren never came online") under the full race suite.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:
