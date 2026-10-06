@@ -136,3 +136,31 @@ func heardStruck(r *player.Recorder, attacker string) bool {
 	}
 	return false
 }
+
+// Killed by the first of two mobs and revived in the room they fell in -- the
+// death room -- a player isn't swung at again by the second the same round:
+// their fights ended with the death, whatever the round began with.
+func (s *violenceSuite) TestNoSecondDeathInOneRound() {
+	s.Require().Same(s.w.DeathRoom, s.w.StartRoom, "the test world dies where it starts")
+	target, exists := s.w.StartRoom.FindMobile("target")
+	s.Require().True(exists)
+	little, exists := s.w.StartRoom.FindMobile("little")
+	s.Require().True(exists)
+	s.Require().NoError(s.w.fightLedger.Fight(target, s.p))
+	s.Require().NoError(s.w.fightLedger.Fight(little, s.p))
+	s.p.TakeMeleeDamage(s.p.CurrentHealth() - 1)
+	dice := testdice.New()
+	dice.Load([]int{20, 5, 20, 5, 0, 0, 0, 0, 0, 0, 0, 0})
+	s.w.roller = dice
+	s.r.Clear()
+
+	s.w.DoViolence(1000)
+
+	deaths := 0
+	for _, m := range s.r.Sent {
+		if d, ok := m.(event.Died); ok && d.IsPlayer {
+			deaths++
+		}
+	}
+	s.Assert().Equal(1, deaths)
+}

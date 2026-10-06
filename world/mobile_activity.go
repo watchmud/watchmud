@@ -46,7 +46,11 @@ func (w *World) DoMobileActivity() {
 // to them: the mob goes for the next player instead.
 // It answers whether there was anyone to go for.
 func (w *World) doMobAggro(mob *mobile.Instance) bool {
-	for _, p := range w.mobileRoom(mob).Players() {
+	room := w.mobileRoom(mob)
+	if room.Flag(rules.RoomFlagNoFight) {
+		return false // nobody fights here, whoever starts it
+	}
+	for _, p := range room.Players() {
 		if p.IsWizard() && p.NoHassle() {
 			continue
 		}

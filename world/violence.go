@@ -20,6 +20,12 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 		if fight.Fighter.Dead() || fight.Fightee.Dead() {
 			continue
 		}
+		// Ended, or replaced, since the round began -- a death earlier in it
+		// ends the dead one's fights, and a player revived in the room they
+		// fell in would otherwise take the rest of the round's blows again.
+		if w.fightLedger.GetFight(fight.Fighter) != fight {
+			continue
+		}
 
 		// The fights are a snapshot: one with a side that left the world
 		// earlier this round - a summon crumbling with its summoner - is
@@ -78,8 +84,9 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 				}
 			}
 
-			// A blow the ward took all of never reached the armor.
-			if fightResult.WasHit && !(absorbed > 0 && fightResult.Damage == 0) {
+			// A blow that did nothing -- the ward took it all, or it was
+			// resisted to nothing -- never reached the armor.
+			if fightResult.WasHit && fightResult.Damage > 0 {
 				// A landed blow costs the gear on both ends of it. After the
 				// damage, so a killing blow still wears the armor it went
 				// through, and after the room has been told about the blow,

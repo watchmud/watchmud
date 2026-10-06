@@ -113,3 +113,15 @@ func (s *noHassleSuite) TestCommand() {
 	s.Assert().Equal(event.BadRequest, sent[event.Failed](s.T(), s.r, 0).Code)
 	s.Assert().True(s.p.NoHassle(), "unchanged")
 }
+
+// nobody fights in a nofight room, whoever would start it
+func (s *noHassleSuite) TestNoAggroInANoFightRoom() {
+	smithy, found := s.w.findRoomById("wrathrock", "smithy")
+	s.Require().True(found)
+	s.w.RemoveMobile(s.drone)
+	s.w.PlaceMobile(s.drone, smithy)
+	s.w.movePlayerMagically(s.p, smithy)
+
+	s.Assert().False(s.w.doMobAggro(s.drone))
+	s.Assert().False(s.w.fightLedger.InFight(s.p))
+}
