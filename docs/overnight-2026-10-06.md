@@ -184,6 +184,18 @@ round-trips and nothing aliased, and two real bugs, both in production today:
   skipped as "identical" -- remove a sword, wield it again, and the store kept the
   removal. A failed write now forgets what was last written for that player.
 
+Before you try Mudlet (a review against Mudlet's own source; its wiki was out of
+reach from here): nothing found that would stop it loading, but --
+- **Rooms you jumped into stacked up:** a recall, login or death into a room with no
+  mapped neighbour went to the area's origin, often on top of another. The server
+  now lays every zone out on a grid at load and sends each room's place in
+  Room.Info (`"grid"`); the script uses it. Every exit in the content fits the grid
+  exactly, and a test keeps it that way.
+- Uninstalling now takes the bars, map and handlers away (`sysUninstall`).
+- The site's Mudlet section now says: close Mudlet's own map window if the map box
+  stays empty, and uninstall Mudlet's `generic_mapper` if the map jumps about -- it
+  reads our `[ Exits: ]` line and recentres the map itself. Neither checked live.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:

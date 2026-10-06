@@ -17,7 +17,7 @@ import (
 // gets, from then on:
 //
 //   - Char.Vitals {"hp", "maxhp", "mp", "maxmp"}, whenever they change
-//   - Room.Info {"num", "id", "name", "area", "exits"}, on every room
+//   - Room.Info {"num", "id", "name", "area", "exits", "grid"}, on every room
 //
 // Nothing the world sends changes for it. Both come out of events the
 // connection already sees -- event.Prompt, event.RoomDescription -- so GMCP
@@ -48,6 +48,17 @@ type roomInfo struct {
 	Name  string            `json:"name"`
 	Area  string            `json:"area"`
 	Exits map[string]uint32 `json:"exits"`
+	// Grid is where the room sits on its area's map (spaces.LayGrid): a
+	// mapper places a room from it rather than guessing from a neighbour,
+	// which a room arrived at by recall, login or death hasn't got. Ours;
+	// IRE's games have no such thing.
+	Grid grid `json:"grid"`
+}
+
+type grid struct {
+	X int `json:"x"`
+	Y int `json:"y"`
+	Z int `json:"z"`
 }
 
 // roomNum is a room's number for a mapper: a hash of "zone/room", so it is
@@ -71,7 +82,8 @@ func gmcpFor(msg any, last *vitals) (string, *vitals) {
 		}
 		return gmcpMessage("Char.Vitals", v), &v
 	case event.RoomDescription:
-		info := roomInfo{Num: roomNum(m.Id), Id: m.Id, Name: m.Name, Area: m.Area, Exits: map[string]uint32{}}
+		info := roomInfo{Num: roomNum(m.Id), Id: m.Id, Name: m.Name, Area: m.Area, Exits: map[string]uint32{},
+			Grid: grid{m.X, m.Y, m.Z}}
 		for _, ex := range m.ExitTo {
 			info.Exits[strings.ToLower(ex.Direction.Abbrev())] = roomNum(ex.To)
 		}

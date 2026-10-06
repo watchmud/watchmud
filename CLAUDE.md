@@ -248,13 +248,21 @@ from: `Char.Vitals` from `event.Prompt` -- only when the numbers changed, since 
 goes out every second -- and `Room.Info` from every `event.RoomDescription`, in IRE's
 shape so existing mapper scripts read it. The world sends nothing new for it: the room
 description carries `Id` ("zone/room"), `Area` and `ExitTo` for this and nothing renders
-them. A room's `num` is an FNV hash of its "zone/room", stable with nothing stored;
+them -- and `X`/`Y`/`Z`, the room's place on its zone's grid (`spaces.Zone.LayGrid`,
+walking exits out from the first room by id when content loads), sent as `"grid"` so
+a mapper never guesses where a room it recalled, logged or died into goes;
+`TestGrid_theContentFits` fails on an exit that doesn't fit it or two rooms on one
+spot. A room's `num` is an FNV hash of its "zone/room", stable with nothing stored;
 `TestRoomNum_uniqueInTheWorld` fails on a collision in the real content. What a client
 sends back (`Core.Hello`, `Core.Supports.Set`) is ignored.
 
 **`mudlet/` is the other end of it**: `watchmud.lua`, a Mudlet script drawing health and
-mana bars from `Char.Vitals` and a map from `Room.Info` (rooms keyed on `num`, placed a
-step from a neighbour already on the map, linked both ways as they turn up). `mudlet.Build`
+mana bars from `Char.Vitals` and a map from `Room.Info` (rooms keyed on `num`, placed
+at their `grid` -- a step from a neighbour only for a server too old to send one --
+linked both ways as they turn up; `sysUninstall` takes the bars, map and handlers away).
+It was checked against Mudlet's source (wiki.mudlet.org was out of reach): Mudlet
+asks for Char and Room itself, a dotted handler name works, and a running
+`generic_mapper` or Mudlet's own map window can get in its way -- the site says so. `mudlet.Build`
 wraps it as a `.mpackage`; `cmd/watchmud-mudlet` writes one, and the pages workflow builds
 it into the site rather than anyone checking it in. There's no Mudlet in CI, so
 `mudlet/script_test.go` runs the script in gopher-lua against a stand-in for the slice of

@@ -61,11 +61,20 @@ func Build(w io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if _, err := fmt.Fprintf(cfg, "mpackage = %q\nauthor = %q\ntitle = %q\ndescription = %q\nversion = %q\n",
-		Name, "WatchMUD", "WatchMUD bars and map",
-		"Health and mana bars, and a map that draws itself as you walk, from the game's GMCP.",
-		version()); err != nil {
-		return err
+	// Lua long strings, not Go's %q: Go may escape what Lua 5.1 can't read
+	for _, kv := range [][2]string{
+		{"mpackage", Name},
+		{"author", "WatchMUD"},
+		{"title", "WatchMUD bars and map"},
+		{"description", "Health and mana bars, and a map that draws itself as you walk, from the game's GMCP."},
+		{"version", version()},
+	} {
+		if strings.Contains(kv[1], "]]") {
+			return fmt.Errorf("mudlet: config.lua %s can't hold ]]", kv[0])
+		}
+		if _, err := fmt.Fprintf(cfg, "%s = [[%s]]\n", kv[0], kv[1]); err != nil {
+			return err
+		}
 	}
 
 	body, err := xml.MarshalIndent(mudletPackage{

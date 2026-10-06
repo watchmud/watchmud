@@ -29,6 +29,8 @@ type Room struct {
 	directions  map[rules.Direction]*Room
 	doors       map[rules.Direction]*Door
 	flags       map[rules.RoomFlag]bool
+	// Grid is where it sits on its zone's map; Zone.LayGrid sets it.
+	Grid Coord
 }
 
 // NewRoom creates a new room in this zone.
@@ -190,6 +192,9 @@ func (r *Room) DescriptionExcept(exclude *player.Player) event.RoomDescription {
 		Description: r.Description,
 		Exits:       r.ExitString(),
 		Id:          r.ref(),
+		X:           r.Grid.X,
+		Y:           r.Grid.Y,
+		Z:           r.Grid.Z,
 	}
 	if r.Zone != nil {
 		desc.Area = r.Zone.Name

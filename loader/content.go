@@ -75,6 +75,11 @@ func LoadContent(fsys fs.FS) (*Content, error) {
 	if err := c.loadRooms(worldFS); err != nil {
 		return nil, err
 	}
+	// every room on its zone's grid, for a client that maps; the exits are
+	// all connected by now
+	for _, z := range c.Zones {
+		z.LayGrid()
+	}
 	if err := c.loadObjectDefinitions(worldFS); err != nil {
 		return nil, err
 	}

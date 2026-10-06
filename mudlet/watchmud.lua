@@ -10,7 +10,7 @@
 WatchMUD = WatchMUD or {}
 local W = WatchMUD
 
-W.version = "1"
+W.version = "2"
 
 -- ---- the bars --------------------------------------------------------------
 
@@ -75,9 +75,15 @@ local function areaId(name)
   return id
 end
 
--- place puts a new room next to a neighbour it's already got, in the same area,
--- or at the area's origin when it has none.
+-- place puts a room where the server says it is on its area's grid (Room.Info
+-- "grid"). A server too old to say gets the guess: next to a neighbour it's
+-- already got, in the same area, or at the area's origin when it has none --
+-- which a room arrived at by recall or login hasn't, so it can land on another.
 local function place(num, info, area)
+  if info.grid then
+    setRoomCoordinates(num, tonumber(info.grid.x), tonumber(info.grid.y), tonumber(info.grid.z))
+    return
+  end
   for dir, to in pairs(info.exits or {}) do
     if roomExists(to) and getRoomArea(to) == area and step[dir] then
       local x, y, z = getRoomCoordinates(to)
@@ -114,13 +120,16 @@ function W.onRoom()
   for dir, to in pairs(info.exits or {}) do
     exits[dir] = tonumber(to)
   end
-  info = { name = info.name, area = info.area, exits = exits }
+  info = { name = info.name, area = info.area, exits = exits, grid = info.grid }
 
   if not roomExists(num) then
     addRoom(num)
     local area = areaId(info.area)
     setRoomArea(num, area)
     place(num, info, area)
+  elseif info.grid then
+    -- every visit: a map drawn by guessing, before the server said, mends
+    place(num, info, getRoomArea(num))
   end
   setRoomName(num, info.name)
   W.exits[num] = exits
@@ -146,7 +155,25 @@ if W.handlers then
     killAnonymousEventHandler(id)
   end
 end
+-- Uninstalled, it takes itself away: the handlers, the bars, the map and the
+-- room it made for them. (Mudlet keeps the map it drew, as it keeps any.)
+function W.onUninstall(_, package)
+  if package ~= "WatchMUD" then
+    return
+  end
+  for _, id in ipairs(W.handlers or {}) do
+    killAnonymousEventHandler(id)
+  end
+  W.hp:hide()
+  W.mp:hide()
+  W.map:hide()
+  setBorderBottom(0)
+  setBorderRight(0)
+  WatchMUD = nil
+end
+
 W.handlers = {
   registerAnonymousEventHandler("gmcp.Char.Vitals", "WatchMUD.onVitals"),
   registerAnonymousEventHandler("gmcp.Room.Info", "WatchMUD.onRoom"),
+  registerAnonymousEventHandler("sysUninstall", "WatchMUD.onUninstall"),
 }

@@ -23,26 +23,39 @@ local function styled()
   return { setStyleSheet = function(self, css) self.css = css end }
 end
 
+local function hideable(t)
+  function t:hide() self.hidden = true end
+  return t
+end
+
 Geyser = {
   Gauge = { new = function(self, opts)
-    local g = { name = opts.name, front = styled(), back = styled() }
+    local g = hideable({ name = opts.name, front = styled(), back = styled() })
     function g:setValue(cur, max, text) self.cur, self.max, self.text = cur, max, text end
     calls.gauges[opts.name] = g
     return g
   end },
-  Mapper = { new = function(self, opts) calls.mapper = opts; return {} end },
+  Mapper = { new = function(self, opts) calls.mapper = hideable(opts); return calls.mapper end },
 }
 
 function setBorderBottom(px) calls.borders.bottom = px end
 function setBorderRight(px) calls.borders.right = px end
 
 local nextHandler = 0
+calls.killed = {}
 function registerAnonymousEventHandler(event, fn)
   nextHandler = nextHandler + 1
   calls.handlers[event] = fn
   return nextHandler
 end
-function killAnonymousEventHandler(id) end
+function killAnonymousEventHandler(id) calls.killed[id] = true end
+
+-- what Mudlet raises on any package's uninstall: the event, then the name
+function uninstall(name)
+  local f = _G
+  for part in string.gmatch(calls.handlers.sysUninstall, "[^.]+") do f = f[part] end
+  f("sysUninstall", name)
+end
 
 areas, rooms = {}, {}
 local nextArea = 0
@@ -145,6 +158,38 @@ func TestScript_linksLateAndNewAreas(t *testing.T) {
 	assert.Equal(t, "-1 0", eval(t, L, `rooms[3].x .. " " .. rooms[3].y`).String(), "west of it")
 }
 
+// With the server's grid a room goes where it says, wherever the player
+// came from: a recall into a room with no mapped neighbour no longer lands on
+// the area's origin, on top of the first room seen.
+func TestScript_placesByTheGrid(t *testing.T) {
+	L := loaded(t)
+	require.NoError(t, L.DoString(`
+		arrive("Room.Info", { num = 1, name = "Market Square", area = "Wrathrock", exits = { s = 9 }, grid = { x = 0, y = -1, z = 0 } })
+		arrive("Room.Info", { num = 2, name = "Temple Square", area = "Wrathrock", exits = {}, grid = { x = 0, y = 0, z = 0 } })
+	`))
+	assert.Equal(t, "0 -1 0", eval(t, L, `rooms[1].x .. " " .. rooms[1].y .. " " .. rooms[1].z`).String())
+	assert.Equal(t, "0 0 0", eval(t, L, `rooms[2].x .. " " .. rooms[2].y .. " " .. rooms[2].z`).String(), "recalled to: its own spot")
+
+	// and a room the old guess put somewhere is moved to its spot
+	require.NoError(t, L.DoString(`
+		rooms[1].x, rooms[1].y = 5, 5
+		arrive("Room.Info", { num = 1, name = "Market Square", area = "Wrathrock", exits = {}, grid = { x = 0, y = -1, z = 0 } })
+	`))
+	assert.Equal(t, "0 -1", eval(t, L, `rooms[1].x .. " " .. rooms[1].y`).String())
+}
+
+// Uninstalled, it takes itself away -- and only for its own package.
+func TestScript_uninstall(t *testing.T) {
+	L := loaded(t)
+	require.NoError(t, L.DoString(`uninstall("SomethingElse")`))
+	assert.Equal(t, lua.LTrue, eval(t, L, `WatchMUD ~= nil`))
+
+	require.NoError(t, L.DoString(`hp, map = WatchMUD.hp, WatchMUD.map; uninstall("WatchMUD")`))
+	assert.Equal(t, lua.LTrue, eval(t, L, `WatchMUD == nil and hp.hidden and map.hidden`))
+	assert.Equal(t, lua.LTrue, eval(t, L, `calls.killed[1] and calls.killed[2] and calls.killed[3]`))
+	assert.Equal(t, "0", eval(t, L, `calls.borders.right`).String())
+}
+
 // The package is what Mudlet installs: config.lua naming it, and an XML file
 // of that name holding the script, intact.
 func TestBuild(t *testing.T) {
@@ -162,8 +207,8 @@ func TestBuild(t *testing.T) {
 		files[f.Name] = string(b)
 	}
 	require.Contains(t, files, "config.lua")
-	assert.Contains(t, files["config.lua"], `mpackage = "WatchMUD"`)
-	assert.Contains(t, files["config.lua"], `version = "1"`)
+	assert.Contains(t, files["config.lua"], `mpackage = [[WatchMUD]]`)
+	assert.Contains(t, files["config.lua"], `version = [[2]]`)
 
 	var pkg mudletPackage
 	require.NoError(t, xml.Unmarshal([]byte(files[Name+".xml"]), &pkg))

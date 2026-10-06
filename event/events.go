@@ -87,6 +87,8 @@ type RoomDescription struct {
 	Id     string
 	Area   string
 	ExitTo []ExitTo
+	// X, Y, Z are where the room sits on its zone's grid (spaces.LayGrid).
+	X, Y, Z int
 }
 
 // ExitTo is one way out of a room and the room it leads to, "zone/room".

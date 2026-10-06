@@ -94,3 +94,20 @@ func TestKeys_everyLockHasAKeyToBeHad(t *testing.T) {
 	}
 	assert.Positive(t, checked, "the content has locks to check")
 }
+
+// Every exit in the real content fits its zone's grid, so a client mapping
+// from Room.Info draws what a player walks: no step that lands somewhere it
+// shouldn't, no two rooms on one spot. A zone that needs a bent passage can
+// have one, but should know it's bending the map.
+func TestGrid_theContentFits(t *testing.T) {
+	c, err := LoadContent(os.DirFS("../content"))
+	require.NoError(t, err)
+	for id, z := range c.Zones {
+		assert.Empty(t, z.LayGrid(), id)
+		seen := map[spaces.Coord]string{}
+		for _, r := range z.Rooms {
+			assert.Empty(t, seen[r.Grid], "%s and %s share %v", seen[r.Grid], r.Id, r.Grid)
+			seen[r.Grid] = r.Id
+		}
+	}
+}
