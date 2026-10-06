@@ -1,4 +1,4 @@
-From 5f32dd4ecef5e1a07f16e5be90c335e7df193c30 Mon Sep 17 00:00:00 2001
+From 91d37d3b3bfacee95098218adec4569a2baa1ec0 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 6 Oct 2026 11:33:59 +0000
 Subject: [PATCH 3/7] The target grammar refuses what would panic or pick the

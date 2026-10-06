@@ -1,4 +1,4 @@
-From c2b706aec9b7bcb34f3ded056c35392001dd09b9 Mon Sep 17 00:00:00 2001
+From db3fcbb86788e330a6c65ee6b030d980ffa6ce05 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 6 Oct 2026 11:34:03 +0000
 Subject: [PATCH 4/7] kill takes the whole name

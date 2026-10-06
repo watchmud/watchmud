@@ -1,4 +1,4 @@
-From 37fe078c1cf8f9182759d58a4543b84c2b2c3175 Mon Sep 17 00:00:00 2001
+From a1f9e3eb584126546f3f6a41294cc3366ad0c93a Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 6 Oct 2026 11:33:39 +0000
 Subject: [PATCH 2/7] Saves that fail are retried on their own, and trusted

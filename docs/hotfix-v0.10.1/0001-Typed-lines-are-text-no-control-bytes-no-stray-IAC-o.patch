@@ -1,4 +1,4 @@
-From 2fd952b716a19c585d22fcfac48faa752aa10ed1 Mon Sep 17 00:00:00 2001
+From e1fb67f7a04ab360ccfdf94e66ff1ad15dfa6e29 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 6 Oct 2026 11:33:39 +0000
 Subject: [PATCH 1/7] Typed lines are text: no control bytes, no stray IAC out

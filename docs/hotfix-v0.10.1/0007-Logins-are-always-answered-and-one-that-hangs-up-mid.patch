@@ -1,4 +1,4 @@
-From c98b678064f2fdc924059c023bdbe30cf023b7e5 Mon Sep 17 00:00:00 2001
+From 0960ef7b9704ac12fb2aa0ecd3be1c11b428c231 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 6 Oct 2026 11:35:26 +0000
 Subject: [PATCH 7/7] Logins are always answered, and one that hangs up midway
@@ -7,12 +7,12 @@ Subject: [PATCH 7/7] Logins are always answered, and one that hangs up midway
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_0165cfX3CZMtTWVCk9QNEtcV
 ---
- server/gameserver.go      | 42 ++++++++++++++++++++++++++++++++++++++-
- server/gameserver_test.go | 29 +++++++++++++++++++++++++++
- 2 files changed, 70 insertions(+), 1 deletion(-)
+ server/gameserver.go      | 46 +++++++++++++++++++++++++++++++++++++-
+ server/gameserver_test.go | 47 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 92 insertions(+), 1 deletion(-)
 
 diff --git a/server/gameserver.go b/server/gameserver.go
-index 3788c7e..a094d2c 100644
+index 3788c7e..7fd4447 100644
 --- a/server/gameserver.go
 +++ b/server/gameserver.go
 @@ -27,6 +27,10 @@ type GameServer struct {
@@ -35,7 +35,7 @@ index 3788c7e..a094d2c 100644
  	}
  }
  
-@@ -170,14 +176,39 @@ func (gs *GameServer) dispatch(msg *gameserver.HandlerParameter) error {
+@@ -170,14 +176,43 @@ func (gs *GameServer) dispatch(msg *gameserver.HandlerParameter) error {
  	case command.CreatePlayer:
  		return gs.handleCreatePlayer(msg, cmd)
  	case loginChecked:
@@ -49,7 +49,11 @@ index 3788c7e..a094d2c 100644
 +		}
  		return gs.handleCreateHashed(msg, cmd)
 +	case command.Logout:
-+		if msg.Client.Player() == nil && gs.inFlight[msg.Client] {
++		// the parameter's player was snapshotted when the Logout was built,
++		// maybe before a login queued ahead of it attached one: go by the
++		// connection's, or that just-logged-in character is left a ghost
++		msg.Player = msg.Client.Player()
++		if msg.Player == nil && gs.inFlight[msg.Client] {
 +			// gone mid-login: what comes back for it is dropped, or the
 +			// character would be in the world with nobody to play them and
 +			// no Logout ever to come
@@ -75,7 +79,7 @@ index 3788c7e..a094d2c 100644
  func (gs *GameServer) Receive(msg *gameserver.HandlerParameter) {
  	gs.incomingBuffer <- msg
  }
-@@ -231,6 +262,7 @@ func (gs *GameServer) handleLogin(msg *gameserver.HandlerParameter, cmd command.
+@@ -231,6 +266,7 @@ func (gs *GameServer) handleLogin(msg *gameserver.HandlerParameter, cmd command.
  		return nil
  	}
  
@@ -83,7 +87,7 @@ index 3788c7e..a094d2c 100644
  	go func() {
  		ok := bcrypt.CompareHashAndPassword([]byte(rec.PasswordHash), []byte(cmd.Password)) == nil
  		gs.Receive(gameserver.NewHandlerParameter(msg.Client, loginChecked{Name: playerName, Ok: ok}))
-@@ -301,8 +333,10 @@ func (gs *GameServer) handleCreatePlayer(msg *gameserver.HandlerParameter, cmd c
+@@ -301,8 +337,10 @@ func (gs *GameServer) handleCreatePlayer(msg *gameserver.HandlerParameter, cmd c
  		return nil
  	}
  	if len(cmd.Password) == 0 {
@@ -95,7 +99,7 @@ index 3788c7e..a094d2c 100644
  	}
  	if gs.world.IsReservedName(playerName) {
  		msg.Client.Send(event.CreateFailed{Reason: event.NameReserved})
-@@ -337,6 +371,7 @@ func (gs *GameServer) handleCreatePlayer(msg *gameserver.HandlerParameter, cmd c
+@@ -337,6 +375,7 @@ func (gs *GameServer) handleCreatePlayer(msg *gameserver.HandlerParameter, cmd c
  
  	// separate go func because bcrypt is slooooow and can't be on the gameserver's goroutine.
  	// its ok because this doesn't modify any game / world state.
@@ -103,7 +107,7 @@ index 3788c7e..a094d2c 100644
  	go func() {
  		hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), gs.bcryptCost)
  		if err != nil {
-@@ -438,6 +473,11 @@ func (gs *GameServer) recovering(msg *gameserver.HandlerParameter, handle func(*
+@@ -438,6 +477,11 @@ func (gs *GameServer) recovering(msg *gameserver.HandlerParameter, handle func(*
  	if err := handle(msg); err != nil {
  		// don't return error, we're not halting the server
  		log.Error().Err(err).Msg("error dispatching message")
@@ -116,7 +120,7 @@ index 3788c7e..a094d2c 100644
  }
  
 diff --git a/server/gameserver_test.go b/server/gameserver_test.go
-index 6d78bb4..1904dd5 100644
+index 6d78bb4..d35b8ce 100644
 --- a/server/gameserver_test.go
 +++ b/server/gameserver_test.go
 @@ -2,6 +2,7 @@ package server
@@ -127,7 +131,7 @@ index 6d78bb4..1904dd5 100644
  	"os"
  	"testing"
  	"time"
-@@ -399,3 +400,31 @@ func TestCreatePlayer_roomHearsAFirstArrival(t *testing.T) {
+@@ -399,3 +400,49 @@ func TestCreatePlayer_roomHearsAFirstArrival(t *testing.T) {
  
  	assert.Contains(t, old.sent, event.EnteredGame{Actor: "Newbie", First: true})
  }
@@ -158,6 +162,24 @@ index 6d78bb4..1904dd5 100644
 +		return errors.New("store unreachable")
 +	})
 +	assert.Equal(t, []any{event.LoginFailed{Reason: event.Unknown}}, c.sent)
++}
++
++// A Logout built before the login queued ahead of it attached a player still
++// takes that player out: it goes by the connection, not by its snapshot.
++func TestLogout_builtBeforeTheLoginLanded(t *testing.T) {
++	gs, _ := newTestGameServer(t)
++	first := &testConn{}
++	create(t, gs, first, "bob", "sekrit")
++	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(first, command.Logout{})))
++
++	c := &testConn{}
++	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Login{Name: "bob", Password: "sekrit"})))
++	logout := gameserver.NewHandlerParameter(c, command.Logout{Cause: "client disconnected"}) // no player yet
++	settle(t, gs)                                                                             // checked: Bob is in
++	require.True(t, gs.world.IsPlaying("Bob"))
++	require.NoError(t, gs.dispatch(logout))
++
++	assert.False(t, gs.world.IsPlaying("Bob"), "no ghost")
 +}
 -- 
 2.43.0

@@ -1,4 +1,4 @@
-From 7123101c60240c59682a849fe3c63bf1fa4cdde1 Mon Sep 17 00:00:00 2001
+From c7eecac80701f1301c4000212a5b39be44af05a5 Mon Sep 17 00:00:00 2001
 From: Claude <noreply@anthropic.com>
 Date: Tue, 6 Oct 2026 11:34:46 +0000
 Subject: [PATCH 6/7] drop saves at once: no duplicates after a crash
