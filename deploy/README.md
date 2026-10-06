@@ -76,6 +76,20 @@ docker compose -f deploy/compose.yaml exec mongo mongosh -u root -p \
 It asks for the password (`MONGO_ROOT_PASSWORD`). The name is capitalized the way the
 game stores it: `Bob`, not `bob`.
 
+What a wizard can do in the game, beside playing:
+
+| | |
+|---|---|
+| `gecho <words>` | say something to everyone -- "restarting in five minutes" before a deploy |
+| `users` | who's playing, where, and who's muted or frozen |
+| `mute <name>`, `freeze <name>` | a player can't talk to anyone; can only look and quit. Again to undo. Kept on their record |
+| `goto <zone/room or name>`, `transfer <name>` | go somewhere; bring someone to you |
+| `purge [thing]`, `zreset [zone]` | clear the room; reset a zone now |
+| `reports` | the latest `bug`/`idea`/`typo` reports since the restart (all of them: see "Reports") |
+| `slay`, `restore`, `load`, `gold`, `nohassle`, `roomstatus`, `echo` | the older tools |
+
+Every one is logged at warn with `commandType=wiz`.
+
 ## Releasing
 
 `master` is development. A release is a `release/X.Y` branch cut from it, and each
