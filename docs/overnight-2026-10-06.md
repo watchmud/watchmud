@@ -1,5 +1,32 @@
 # Overnight, 2026-10-06
 
+## Start here (written for 07:30)
+
+Everything below is on PR #36's branch, CI green, nothing released or deployed.
+
+**Wants you:**
+1. **A hotfix for v0.10.0?** Seven fixes are for bugs live today -- telnet injection
+   (anyone can hide what the room types), saves that are never retried after a mongo
+   blip, a login freezing the game during one, the Barrow resetting mid-fight, crash
+   duplicates. "If you want a hotfix" below lists the commits; the first four were
+   tried on the tag and pass.
+2. **Try Mudlet** (the PR's add-on; merging publishes its site section). If the map
+   misbehaves: close Mudlet's own map window, uninstall its `generic_mapper`. Rooms now
+   come with grid coordinates from the server, so a recall shouldn't stack rooms.
+3. **Calls I made that are yours to undo:** potions (a small version: `quaff`, a
+   healing draught at the General Store); 10 new characters a day per address; 200
+   connections at most; a 1s pause before a name is asked again and 2s after a wrong
+   password; "nothing" became a reserved name; keys are `noSell`.
+4. **Still open from before:** a fleeing bandit takes its loot with it; the
+   placeholder numbers (position regen, full-moon effects, potion price/cooldown).
+
+**What the night was:** the CircleMUD list you picked (socials, wizard tools, reports,
+positions, small commands, track, the moon), potions, then reviews -- nine of them,
+each finding checked before fixing: the night's own code, the morning's, the first
+night's, security, saving, Mudlet, core mechanics and the bots. About forty real bugs
+fixed; the worst are listed under "Fixes found along the way" in the PR.
+
+
 Unattended work on `claude/watchmud-roadmap-development-2gbc8l` (PR #36), in order, until
 the session's credit runs out. Each task is its own commit with `make check` green,
 pushed when it lands, so whatever is ticked here is on the branch. Nothing touches
