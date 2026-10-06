@@ -156,6 +156,14 @@ type Put struct {
 	Into  string
 }
 
+// Gave is one thing, or some coins, passed from Actor to Recipient: the
+// giver, the one given to and the room each see it their own way.
+type Gave struct {
+	Actor     string
+	Recipient string
+	Item      string
+}
+
 type Got struct {
 	Actor string
 	Item  string

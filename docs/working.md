@@ -65,6 +65,7 @@ inhabitant bots (v0.4.0).
 - Bags: a leather satchel (holds 10) at the General Store; `put`/`get from`/`look in`
   work on one you carry, and what's in it is saved with you. Bags don't nest, coins stay
   in the purse, and `inventory` shows how full each one is
+- `give <item|coins> to <player>`, in the same room
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

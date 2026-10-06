@@ -74,6 +74,13 @@ func parseCommand(tokens []string) (command.Command, error) {
 		}
 		return command.Put{Target: rest}, nil
 
+	case "give":
+		// "give knife to bob"; a missing recipient is the handler's to answer
+		if target, to, ok := strings.Cut(rest, " to "); ok {
+			return command.Give{Target: strings.TrimSpace(target), To: strings.TrimSpace(to)}, nil
+		}
+		return command.Give{Target: rest}, nil
+
 	case "repair":
 		return command.Repair{Target: rest}, nil
 

@@ -7,7 +7,7 @@ production, and nothing here is released.
 
 - [x] **1. Review PR #36's own diff** for bugs before anyone merges it (doors, chests,
   put, bags, the status tables, the mill) and fix what's real.
-- [ ] **2. `give <item|coins> to <player>`**: `object.Move` between two inventories,
+- [x] **2. `give <item|coins> to <player>`**: `object.Move` between two inventories,
   in the same room; worn things stay on, as with `drop` and `put`.
 - [ ] **3. `examine <item>`**: what one thing is -- power, condition, armor, the
   abilities it grants, a bag's room -- for something carried, worn or on the floor.
@@ -29,3 +29,8 @@ Feel and tuning calls met along the way are noted below rather than decided.
   counts the definition now. Read and found sound: put, get-from, findContainer, the
   door handler and its lock errors, bag persistence (writebehind compares records with
   `reflect.DeepEqual`, so a change inside a bag is saved).
+- **2.** `give` is put towards a player. To fit `help` on one screen (45 lines, a test)
+  `inventory` and `equipment` now share a line. `give coins to bob` with no number gives
+  every coin, as `put coins in chest` does -- consistent, but easy to fat-finger;
+  requiring a number is a one-line change if that reads as a trap. The site guide
+  isn't touched (it waits for a release).

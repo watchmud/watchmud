@@ -891,3 +891,22 @@ func TestParse_put(t *testing.T) {
 	assert.Equal(t, "You put a knife in a strongbox.\n", plain(render(m, "testdood")))
 	assert.Equal(t, "testdood puts a knife in a strongbox.\n", plain(render(m, "otherdood")))
 }
+
+// "give x to y"; the giver, the one given to, and the room
+func TestParse_give(t *testing.T) {
+	for line, want := range map[string]command.Give{
+		"give knife to bob":    {Target: "knife", To: "bob"},
+		"give 20 coins to Bob": {Target: "20 coins", To: "Bob"},
+		"give all.pelt to bob": {Target: "all.pelt", To: "bob"},
+		"give knife":           {Target: "knife"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err, line)
+		assert.Equal(t, want, cmd, line)
+	}
+	m := event.Gave{Actor: "testdood", Recipient: "bob", Item: "a knife"}
+	assert.Equal(t, "You give a knife to bob.\n", plain(render(m, "testdood")))
+	assert.Equal(t, "testdood gives you a knife.\n", plain(render(m, "bob")))
+	assert.Equal(t, "testdood gives a knife to bob.\n", plain(render(m, "otherdood")))
+	assert.Equal(t, "Give it to whom?\n", failureText("give", "NO_RECIPIENT"))
+}

@@ -39,6 +39,7 @@ var helpSections = []helpSection{
 		{"get <item>", "pick it up; get all, get 2.knife", []string{"get"}},
 		{"get <item> from <corpse>", "loot, or take from a bag or chest", []string{"get"}},
 		{"put <item> in <bag|chest>", "put it away; put all.pelt in satchel", []string{"put"}},
+		{"give <item> to <player>", "hand it over; give 20 coins to bob", []string{"give"}},
 		{"drop <item>", "put it down", []string{"drop"}},
 		{"wear <item>, wield <item>", "put it on, take up a weapon", []string{"wear", "wield"}},
 		{"remove <item>", "take it off", []string{"remove"}},
@@ -47,8 +48,7 @@ var helpSections = []helpSection{
 		{"repair <item>", "mend worn gear, at the smithy; repair all", []string{"repair"}},
 		{"list, buy <item>", "the General Store's stock, and buying it", []string{"list", "buy"}},
 		{"sell <item>, value <item>", "sell it there (sell all.pelt), or ask first", []string{"sell", "value"}},
-		{"inventory", "what you're carrying (i)", []string{"inventory", "i"}},
-		{"equipment", "what you're wearing (eq)", []string{"equipment", "eq"}},
+		{"inventory, equipment", "what you carry (i), and wear (eq)", []string{"inventory", "i", "equipment", "eq"}},
 	}},
 	{"Fighting", []helpEntry{
 		{"kill <mob>", "start a fight", []string{"kill"}},

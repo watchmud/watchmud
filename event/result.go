@@ -75,6 +75,9 @@ const (
 	CantNest      ResultCode = "CANT_NEST"
 	CoinsInPurse  ResultCode = "COINS_IN_PURSE"
 	NotEmpty      ResultCode = "NOT_EMPTY"
+	// give: to whom, and not to yourself
+	NoRecipient ResultCode = "NO_RECIPIENT"
+	GiveSelf    ResultCode = "GIVE_SELF"
 
 	// movement and combat
 	CantGoThatWay   ResultCode = "CANT_GO_THAT_WAY"

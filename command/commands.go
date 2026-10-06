@@ -85,6 +85,15 @@ type Put struct {
 
 func (Put) Verb() string { return "put" }
 
+// Give is "give knife to bob": something carried, or coins, to another player
+// in the same room. Target takes get's grammar.
+type Give struct {
+	Target string
+	To     string
+}
+
+func (Give) Verb() string { return "give" }
+
 type Drop struct {
 	Target string
 }

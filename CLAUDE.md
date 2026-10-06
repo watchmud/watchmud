@@ -891,6 +891,9 @@ looks for a lidded container on the floor (`findLidded`) and answers with
 `put <item> in <container>` (`world/h_put.go`) is get-from run backwards: get's target
 grammar, coins included, into an open container; worn things stay on the way `drop`
 leaves them, and nothing put away decays.
+`give <item> to <player>` (`world/h_give.go`) is the same again towards another player
+in the room (`Room.FindPlayer`, any case): coins too, worn things stay on, and a bag goes
+with what's in it. One `event.Gave` renders three ways -- giver, recipient, room.
 
 **Bags** are containers with `"portable": true` (and an optional `"capacity"`): not
 `noTake`, and no lid or lock -- the loader refuses either, since a lid's state would have
