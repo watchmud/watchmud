@@ -196,6 +196,19 @@ reach from here): nothing found that would stop it loading, but --
   stays empty, and uninstall Mudlet's `generic_mapper` if the map jumps about -- it
   reads our `[ Exits: ]` line and recentres the map itself. Neither checked live.
 
+### If you want a hotfix before this PR ships
+
+Five of the night's fixes are for bugs in v0.10.0. Releasing is yours; this is only
+which commits carry them, for a `hotfix/` branch off the release tag:
+- `bd01955` -- typed lines cleaned, IAC doubled (telnet/conn.go). Self-contained.
+- `2e59676` -- write-behind retries and distrusts failed writes (writebehind/).
+  Self-contained apart from the docs.
+- `78b5d45` -- only `world/zone_activity.go` and `spaces/zone.go`'s `HasPlayers` are
+  the Barrow fix; the rest is the mill (not in v0.10.0).
+- `516e354` -- only `server/gameserver.go`'s `recovering` answering a failed login is
+  the hung-login fix; the pacing and limits came with it and could ride along.
+I haven't built or tested such a branch.
+
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes
 back it explains itself. Chasing it found two real problems, both fixed:
