@@ -1,0 +1,59 @@
+# Is the game answering? From outside, every 15 minutes.
+#
+# /healthz only listens on the droplet's loopback (deploy/compose.yaml's
+# healthcheck asks it), so nothing off the box notices the game being down.
+# This connects the way a player does, to both ports, and fails if the game
+# doesn't answer -- a failed scheduled run is what emails the owner. It also
+# fails when the TLS certificate has under 10 days left: a renewal that quietly
+# stopped working would otherwise show up as every TLS client refusing.
+#
+# The banner alone isn't enough: the connection's own goroutine writes it and
+# the name question, so a wedged game loop -- the failure /healthz exists for
+# -- would still print both. So it gives a name and waits for the world's
+# answer ("Create them?" for a new name, a password question for a taken one),
+# then hangs up without answering. No character is ever made or logged into.
+# Scheduled workflows run from master only.
+
+name: uptime
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      HOST: watchmud.com
+      NAME: Uptimeprobe
+      ANSWERED: "Create them|Password"
+    steps:
+      # Three tries, 20s apart: a deploy restarts the game, and one blip
+      # shouldn't page anybody.
+      - name: telnet (4000) answers
+        run: |
+          for try in 1 2 3; do
+            got=$(timeout 12 bash -c 'exec 3<>/dev/tcp/$HOST/4000; sleep 2; printf "%s\r\n" "$NAME" >&3; timeout 4 cat <&3' 2>/dev/null | LC_ALL=C tr -cd '[:print:]\n' || true)
+            if grep -qE "$ANSWERED" <<<"$got"; then echo "$got"; exit 0; fi
+            echo "try $try: no answer (got: ${got:-nothing})"; sleep 20
+          done
+          exit 1
+
+      - name: TLS (4443) answers
+        run: |
+          for try in 1 2 3; do
+            got=$( (sleep 2; printf "%s\r\n" "$NAME"; sleep 4) | timeout 12 openssl s_client -quiet -connect "$HOST:4443" -servername "$HOST" 2>/dev/null | LC_ALL=C tr -cd '[:print:]\n' || true)
+            if grep -qE "$ANSWERED" <<<"$got"; then echo "$got"; exit 0; fi
+            echo "try $try: no answer (got: ${got:-nothing})"; sleep 20
+          done
+          exit 1
+
+      - name: TLS certificate has 10 days left
+        run: |
+          cert=$(timeout 10 openssl s_client -connect "$HOST:4443" -servername "$HOST" </dev/null 2>/dev/null)
+          openssl x509 -noout -enddate <<<"$cert"
+          openssl x509 -noout -checkend $((10 * 86400)) <<<"$cert"

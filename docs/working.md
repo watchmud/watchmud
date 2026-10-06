@@ -76,4 +76,5 @@ in with the release (the live `look goose` row only becomes true with it).
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots
 that wear what they find). The Barrow-King's AC waits for a real group to try him.
-Leftovers: `watchmud.games` DNS points nowhere; nothing alerts on an unhealthy game.
+Leftovers: `watchmud.games` DNS points nowhere. (An unhealthy game now fails the
+`uptime` workflow, once it is on master.)

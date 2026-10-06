@@ -227,6 +227,14 @@ A restart disconnects everyone, but a wedged world already has: look at the logs
 panic in a pulse is recovered and logged, a hang isn't), then `docker compose -f
 deploy/compose.yaml restart watchmud`. The bots wait for healthy before they start.
 
+**From outside**, `.github/workflows/uptime.yaml` checks every 15 minutes that both ports
+get an answer from the world -- not just the banner, which the connection writes on its
+own and a wedged loop would still print -- by giving a name, `Uptimeprobe`, and hanging
+up at "Create them?". It also fails when the TLS certificate has under 10 days left. A
+failed run is GitHub emailing you; three tries 20s apart keep a deploy's restart from
+setting it off. It runs from master only. Never create `Uptimeprobe`: the check would
+still pass (a taken name asks for a password), but there's no reason to.
+
 ## Backups
 
 The `backup` service writes `deploy/backups/watchmud-<time>.archive.gz` when it starts
@@ -321,6 +329,6 @@ docker compose -f deploy/compose.yaml up -d watchmud
 
 ## Not done yet
 
-- **Nothing acts on unhealthy.** The health check (above) notices a hang; a person
-  restarts it. An alert -- or an autoheal sidecar, if restarts become routine -- is
-  later.
+- **Nothing acts on unhealthy.** The health check (above) notices a hang, and the uptime
+  workflow emails about it; a person restarts it. An autoheal sidecar, if restarts
+  become routine, is later.
