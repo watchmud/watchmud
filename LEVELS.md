@@ -62,6 +62,23 @@ move is one change.
 | Damage per point of delta | ±5%, rounded, a hit does at least 1 | how long fights above your power take |
 | Loot power bump | 10% chance of +1, 2% of +2 | **the pace of the whole game** |
 | Corpse decay | 5 minutes (`rules.CorpseDecay`) | time to loot vs. rooms filling up |
+| Janitor sweeps | after 5 minutes on the floor (`world.JunkAfter`) | time to drop a thing for a friend |
+
+**Measure before tuning:** `go run ./cmd/watchmud-sim` fights a simulated player
+against every mob, a thousand times at each power, through the real combat code, and
+prints win rates (`-mob zone/id` for rounds and health left; `-kit` for other gear).
+Melee only: no abilities, summons, wear or regeneration. What it said on 2026-10-06,
+for a tuning pass to start from rather than a decision:
+
+- **A new character is stronger than the bands say.** The starting kit at power 1
+  beats a power-4 bandit 96% of the time and a power-5 wolf about 80%. Players have
+  100 health against mobs' 20-35; a fight's outcome is mostly hit points, and the
+  power delta's ±5% damage and +½ to-hit barely move it.
+- **The mill's bosses are group fights even before their scripts.** The Drowned
+  Miller alone: barrow plate, helm and the stalker's spear win 27% at power 7 and
+  85% at 10. The Barrow-King: 0% alone at any power.
+- Win rates aren't always monotonic in power (drowned millhands, 87% at 5, 82% at 6):
+  `PowerHitModifier`'s half points round, so a power step can buy nothing.
 
 ## Phases
 

@@ -36,6 +36,7 @@ make db-up            # start the local mongo (docker compose, host port 27018)
 make test-db          # the mongostore tests that need a real mongo
 go test ./bot         # the smoke bot, including the real world in-process
 go run ./cmd/watchmud-load -players 100 -duration 1m   # load test, in-process only
+go run ./cmd/watchmud-sim                               # fight simulator: win rates by power
 make docker-build     # build the deploy image (deploy/README.md for the rest)
 go test ./world -run TestLook_successful          # single test
 go test ./player -run TestPlayerTestSuite/TestX   # testify suite: Suite/Method
@@ -986,6 +987,14 @@ to the baseline. It is a pointer in `loader.mobEntry` so that an absent key and 
 `"ac": 0` stay distinguishable: zero means a thing a d20 can never miss, and that is what
 every mob missing the key silently used to be. A player sees their own on `stat`, and a
 mob's through `cast assess`.
+
+**`sim/`** (and `cmd/watchmud-sim`) fights a simulated player -- `player.New` wearing a
+`sim.Kit` made at one power -- against fresh `mobile.NewInstance`s of real content, both
+swinging once a round, player first, through `combat.AttemptMeleeAttack` and
+`TakeMeleeDamage` exactly as `DoViolence` does. Melee only: no abilities, scripts,
+wear, regeneration or groups, and it says so in its output. It's the measuring stick
+for tuning (LEVELS.md); if `DoViolence` grows something that changes a fight's odds,
+teach `sim.Fight` the same or say what it leaves out.
 
 `combat` splits its interfaces by lifetime, not by entity:
 
