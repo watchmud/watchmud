@@ -241,6 +241,10 @@ Later in the night, two more fixes for v0.10.0 bugs (not tried on the tag):
   per login). A bigger change to `server/`; would need the login tests reworked.
 - `71e9c95` -- hand-overs save everyone in the room at once (crash duplicates).
   Small: `world/handlers.go` and `world/playersave.go`.
+- `8d04177` -- a login whose connection hangs up midway leaves no ghost. v0.10.0 has
+  the same hole in its bcrypt window; the fix there would be the same idea (note
+  connections that log out with a hash away, drop what comes back for them) without
+  the lookup changes it's written against here.
 - `45d7a57` -- the bots' patterns anchored, so a player can't knock one off by
   talking. `bot/` only (and "nothing" reserved in `world/names.go`); the bots ship in
   the same image, so it rides any release.
