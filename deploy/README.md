@@ -120,7 +120,9 @@ It fetches the tag, checks the checkout has no local edits, moves the checkout t
 tag (so compose.yaml and the scripts are that release's), records the version in
 `.env`, and pulls the image -- all before anything stops. If any of that fails, it puts
 the checkout and `.env` back and the running version carries on. Then it asks, and
-restarts. It ends with the smoke test (below, "Smoke test").
+restarts, and waits for the game's health check to pass (below, "Health") -- up to two
+minutes, or it stops there and says how to roll back. It ends with the smoke test
+(below, "Smoke test").
 
 **Restarting disconnects everyone.** The game gets SIGTERM, saves everyone who is
 logged in, and exits; compose waits up to 30s (`stop_grace_period`) before it would
@@ -200,6 +202,25 @@ The game logs where each connection came from (`telnet 1.2.3.4:5678`). After the
 first real players connect, **check those are their addresses**. If every
 connection comes from the same address (a gateway, a proxy), the 5-per-address
 connection cap is counting that address, and the sixth player is refused.
+
+## Health
+
+The game answers `GET /healthz` on 127.0.0.1:4080 inside the container (`health:` in
+`app.yaml`): 200 while its loop has ticked in the last 30 seconds, 503 once it hasn't.
+That is the failure a crash-restart can't see -- the world goroutine wedged while the
+listeners still accept connections nobody will ever answer. compose.yaml's healthcheck
+runs `watchmud -healthcheck` every 10s (the image has no curl), and the port isn't
+published.
+
+```sh
+docker compose -f deploy/compose.yaml ps        # (healthy) / (unhealthy)
+docker compose -f deploy/compose.yaml exec watchmud /app/watchmud -config /app/app.yaml -healthcheck
+```
+
+**Unhealthy is not restarted for you.** Docker only restarts a container that exits.
+A restart disconnects everyone, but a wedged world already has: look at the logs (a
+panic in a pulse is recovered and logged, a hang isn't), then `docker compose -f
+deploy/compose.yaml restart watchmud`. The bots wait for healthy before they start.
 
 ## Backups
 
@@ -295,6 +316,6 @@ docker compose -f deploy/compose.yaml up -d watchmud
 
 ## Not done yet
 
-- **A health check.** `restart: unless-stopped` brings the game back if it crashes,
-  but nothing notices it hanging. A TCP check wouldn't either, and would show up as a
-  connection in the logs every time it ran.
+- **Nothing acts on unhealthy.** The health check (above) notices a hang; a person
+  restarts it. An alert -- or an autoheal sidecar, if restarts become routine -- is
+  later.

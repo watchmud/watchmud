@@ -15,9 +15,7 @@ type Config struct {
 		File  string
 		Level string
 	}
-	ServerPort int `yaml:"serverPort"`
-	WebPort    int `yaml:"webPort"`
-	Telnet     struct {
+	Telnet struct {
 		Host string `yaml:"host"`
 		Port int    `yaml:"port"`
 	}
@@ -30,6 +28,14 @@ type Config struct {
 		Cert string `yaml:"cert"`
 		Key  string `yaml:"key"`
 	} `yaml:"tls"`
+
+	// Health is an HTTP port answering /healthz: 200 while the game loop is
+	// ticking, 503 once it has stopped. Off when port is 0. It says nothing
+	// a player needs, so bind it where only the box can reach it.
+	Health struct {
+		Host string `yaml:"host"`
+		Port int    `yaml:"port"`
+	} `yaml:"health"`
 
 	Mongo MongoConfig `yaml:"mongo"`
 }
@@ -67,6 +73,9 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.TLS.Port != 0 && (cfg.TLS.Cert == "" || cfg.TLS.Key == "") {
 		return nil, fmt.Errorf("tls.port is set, so tls.cert and tls.key must be too")
+	}
+	if cfg.Health.Port != 0 && cfg.Health.Host == "" {
+		cfg.Health.Host = "127.0.0.1"
 	}
 	return &cfg, nil
 }

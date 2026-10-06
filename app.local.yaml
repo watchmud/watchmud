@@ -9,14 +9,15 @@ log:
 # Content Configuration
 contentPath: ./content
 
-# GRPC listener
-serverPort: 10000
-# HTTP listener
-webPort: 8888
 # Telnet listener
 telnet:
   host: localhost
   port: 4000
+
+# /healthz: 200 while the game loop is ticking. `curl localhost:4080/healthz`
+health:
+  host: localhost
+  port: 4080
 
 # Persistence. Characters are stored one document per character in mongo.
 # `make db-up` starts the one in docker-compose.yml -- on port 27018, so it

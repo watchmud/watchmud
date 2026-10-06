@@ -6,6 +6,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
+	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -42,6 +45,7 @@ func main() {
 func run() error {
 	configPath := flag.String("config", "app.local.yaml", "location of the server configuration file")
 	contentPath := flag.String("content", "", "override location of the content files")
+	healthcheck := flag.Bool("healthcheck", false, "ask the running server's health port whether it is ticking, and exit 0 if so")
 	flag.Parse()
 
 	// load and verify the serverconfig.Config from YAML
@@ -54,6 +58,11 @@ func run() error {
 	// the config struct, not in the flag definition.
 	if *contentPath != "" {
 		cfg.ContentPath = *contentPath
+	}
+
+	// before logging, so a probe every 30s doesn't write a startup banner
+	if *healthcheck {
+		return probeHealth(cfg)
 	}
 
 	closeLog, err := logging.Initialize(cfg.Log.File, cfg.Log.Level)
@@ -130,6 +139,12 @@ func run() error {
 		}
 	}()
 
+	if cfg.Health.Port != 0 {
+		if err := serveHealth(ctx, cfg, gameServer); err != nil {
+			return fmt.Errorf("health: %w", err)
+		}
+	}
+
 	// run the game server
 	runErr := gameServer.Run(ctx)
 	if cause := context.Cause(ctx); cause != nil && !errors.Is(cause, context.Canceled) {
@@ -139,6 +154,61 @@ func run() error {
 		return fmt.Errorf("game server: %w", runErr)
 	}
 
+	return nil
+}
+
+// healthMaxAge is how long the loop can go without a tick before /healthz
+// says so. A tick is a second; this is room for a slow pulse or a long GC,
+// and short enough that a wedged world is noticed within a minute.
+const healthMaxAge = 30 * time.Second
+
+// serveHealth listens on the health port and answers /healthz until ctx ends.
+// The listen happens here, so a port in use fails startup like the telnet
+// port does; serving is on its own goroutine, and reads only an atomic.
+func serveHealth(ctx context.Context, cfg *serverconfig.Config, gs *server.GameServer) error {
+	addr := net.JoinHostPort(cfg.Health.Host, fmt.Sprint(cfg.Health.Port))
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+	mux := http.NewServeMux()
+	mux.Handle("GET /healthz", gs.HealthHandler(healthMaxAge))
+	srv := &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+	go func() {
+		<-ctx.Done()
+		_ = srv.Close()
+	}()
+	go func() {
+		if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error().Err(err).Msg("health server")
+		}
+	}()
+	log.Info().Str("addr", addr).Msg("health: /healthz")
+	return nil
+}
+
+// probeHealth is `watchmud -healthcheck`: what compose.yaml's healthcheck
+// runs, since the image is distroless and has no curl. It reads the same
+// config the server did to find the port.
+func probeHealth(cfg *serverconfig.Config) error {
+	if cfg.Health.Port == 0 {
+		return errors.New("healthcheck: no health.port in the config")
+	}
+	host := cfg.Health.Host
+	if host == "0.0.0.0" || host == "::" {
+		host = "127.0.0.1"
+	}
+	client := http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Get("http://" + net.JoinHostPort(host, fmt.Sprint(cfg.Health.Port)) + "/healthz")
+	if err != nil {
+		return fmt.Errorf("healthcheck: %w", err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+	fmt.Print(string(body))
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("healthcheck: %s", resp.Status)
+	}
 	return nil
 }
 

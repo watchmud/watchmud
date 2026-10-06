@@ -25,6 +25,17 @@ services:
     volumes:
       # filled by certbot-hook.sh; see README, "TLS"
       - ./certs:/app/certs:ro
+    # Asks /healthz (app.yaml, health:) whether the game loop is still
+    # ticking -- the binary does it itself, since distroless has no curl. A
+    # wedged world, the listeners still accepting, shows as (unhealthy) in
+    # `docker compose ps`; docker doesn't restart it for that, a person does.
+    # deploy.sh waits for healthy before the smoke test.
+    healthcheck:
+      test: ["CMD", "/app/watchmud", "-config", "/app/app.yaml", "-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     # docker stop waits this long after SIGTERM before SIGKILL. The flush of
     # queued saves gets 10s and the mongo disconnect 5s (cmd/watchmud), so the
     # default of 10s could kill it mid-save.
@@ -43,7 +54,8 @@ services:
     image: ghcr.io/watchmud/watchmud:${WATCHMUD_VERSION:?run deploy/deploy.sh <version> -- see deploy/README.md}
     restart: unless-stopped
     depends_on:
-      - watchmud
+      watchmud:
+        condition: service_healthy
     entrypoint: ["/app/watchmud-bots", "-addr", "watchmud:4000"]
     environment:
       WATCHMUD_BOTS: ${WATCHMUD_BOTS:-}

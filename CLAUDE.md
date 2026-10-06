@@ -71,6 +71,15 @@ single-threaded and carries no locks. **Don't add goroutines that touch world st
 push work onto `incomingBuffer` or into the heartbeat instead. Connection goroutines are
 allowed to exist only because all they do is send on that channel.
 
+**`/healthz` reads the loop, not the world** (`server/health.go`). `Run` stamps
+`GameServer.lastBeat` -- an `atomic.Int64`, the one thing another goroutine may read --
+at the end of every tick, and `HealthHandler` answers 503 once it is older than
+`healthMaxAge` (30s, `cmd/watchmud`). A handler or pulse that never returns stops the
+ticks while the listeners carry on accepting, which is the failure it exists to see.
+It listens on `health:` in the config (loopback; off when the port is 0), and
+`watchmud -healthcheck` asks it, because the distroless image has no curl --
+`deploy/compose.yaml`'s healthcheck runs that.
+
 ### Message routing
 
 Two-level dispatch, both of them type switches. `GameServer.dispatch` handles the pre-world
