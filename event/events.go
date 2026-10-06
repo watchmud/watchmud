@@ -335,12 +335,14 @@ type Attacking struct {
 }
 
 // Struck is one swing, seen by the whole room. The renderer picks the second
-// person for whichever end of it is reading.
+// person for whichever end of it is reading. Damage is what got through;
+// Absorbed is what the target's ward took first.
 type Struck struct {
 	Attacker string
 	Target   string
 	Hit      bool
 	Damage   int
+	Absorbed int
 }
 
 // Broke is a piece of equipment giving out, seen by the room the way a blow
@@ -413,6 +415,21 @@ type Stunned struct {
 	Actor  string
 	Target string
 	Rounds int
+}
+
+// Warded goes to the whole room: Target's ward will take the next Amount
+// damage. Amount is the ward as it now stands, which after a refresh may be
+// what was left of the old one.
+type Warded struct {
+	Actor  string
+	Target string
+	Amount int
+}
+
+// WardBroken is a ward used up by a blow, after the Struck that did it. One
+// that runs out of time fades without a word.
+type WardBroken struct {
+	Name string
 }
 
 // Staggered is a stunned combatant's round going by without a swing.

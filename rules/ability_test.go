@@ -74,6 +74,7 @@ func TestCatalog_setAbilitiesRefuses(t *testing.T) {
 		"no name":           {Id: "heal", Target: TargetSelf},
 		"negative mana":     {Id: "heal", Name: "heal", Target: TargetSelf, Mana: -1},
 		"negative cooldown": {Id: "heal", Name: "heal", Target: TargetSelf, Cooldown: -time.Second},
+		"negative duration": {Id: "ward", Name: "ward", Target: TargetSelf, Duration: -time.Second},
 		"unknown target":    {Id: "heal", Name: "heal", Target: "everyone"},
 		"no target":         {Id: "heal", Name: "heal"},
 	} {
@@ -99,4 +100,14 @@ func TestAbility_flags(t *testing.T) {
 	assert.True(t, a.NotInFight)
 	assert.True(t, a.Wizards)
 	assert.Equal(t, TargetNone, a.Target)
+}
+
+// ward's shield lasts a while; most abilities leave nothing behind
+func TestAbility_duration(t *testing.T) {
+	var a Ability
+	require.NoError(t, json.Unmarshal([]byte(`{"id": "ward", "name": "ward", "target": "friend",
+		"duration": "30s"}`), &a))
+	assert.Equal(t, 30*time.Second, a.Duration)
+
+	assert.Error(t, json.Unmarshal([]byte(`{"id": "ward", "duration": "a while"}`), &a))
 }

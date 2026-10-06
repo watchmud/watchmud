@@ -185,7 +185,7 @@ Needed for that fight, and not yet anywhere else on this page:
   on someone else, every 15s at most. No threat table: damage and heals never pull him,
   so a pull gone wrong is the tank's to fix, not the healer's to avoid.
 
-### 5. Abilities from gear -- heal, smite, provoke, stun, recall done
+### 5. Abilities from gear -- heal, smite, provoke, stun, recall, ward done
 
 Gear decides what you can *do*, as well as how strong you are: a censer lets you
 `cast heal`, and taking it off takes the heal with it. Spec:
@@ -217,8 +217,14 @@ Gear decides what you can *do*, as well as how strong you are: a censer lets you
   spent, against a bone charm -- with a 60s cooldown and never mid-fight; wizards always
   have it. Every character made before it was handed one at their next login, and the
   bots wait out the cooldown rather than walk.
-- **Still to come**, each an entry in abilities.json plus a Go effect: defensive and
-  informative.
+- **Ward** (done 2026-10-06): the first defensive ability -- a shield on yourself or a
+  player in the room that takes the next `10 + 2 per power` damage before health does,
+  for 30s or until it's used up. 20 mana, 20s cooldown, fine mid-fight, never starts
+  one. A second ward refreshes to the larger, never stacks, and a blow it takes all of
+  doesn't wear your armor. The ring of mending grants it -- the hedge-witch's other
+  drop, so a healer can hold the censer's heal and wear the ring's ward without one item
+  granting both. Prevention to heal's cure: it's cast *before* the King swings.
+- **Still to come**, each an entry in abilities.json plus a Go effect: informative.
 
 ### 6. Crafting (later)
 

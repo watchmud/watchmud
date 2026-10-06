@@ -51,10 +51,12 @@ Released and deployed: **v0.9.0** (nohassle, slay, smite). Earlier: heal and man
 - `wear` and `wield` understand `2.thing` and pass over what can't go on; both name
   what they put on
 - Wizard `gold <amount>`
+- `cast ward` (a shield on yourself or a friend that takes damage before health does)
+  -- the ring of mending, from the hedge-witch
 - `/healthz` and a compose healthcheck; `deploy.sh` waits for healthy before the smoke
   test (no site change -- it isn't something players see)
 
-**Next, roughly:** a release of the above; content; more abilities (defensive,
-informative); the bots ROADMAP lists (Wanderer, Socialite, explore-and-map, bots that
+**Next, roughly:** a release of the above; content; more abilities
+(informative); the bots ROADMAP lists (Wanderer, Socialite, explore-and-map, bots that
 wear what they find). The Barrow-King's AC waits for a real group to try him.
 Leftovers: `watchmud.games` DNS points nowhere; nothing alerts on an unhealthy game.

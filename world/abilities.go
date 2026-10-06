@@ -28,6 +28,7 @@ var effects = map[string]effect{
 	"smite":   smiteEffect,
 	"provoke": provokeEffect,
 	"stun":    stunEffect,
+	"ward":    wardEffect,
 	"recall":  recallEffect,
 }
 
@@ -108,6 +109,18 @@ func stunEffect(w *World, c cast) {
 	w.fightLedger.Stun(c.foe, rounds)
 	w.playerRoom(c.caster).Send(event.Stunned{Actor: c.caster.Name(), Target: c.foe.Name(), Rounds: rounds})
 	w.openFight(c)
+}
+
+// wardEffect shields the target: the next amount of damage done to them goes
+// into the ward instead, until it's spent or its duration is up. Like heal,
+// it neither starts nor joins a fight, and is fine in one.
+func wardEffect(w *World, c cast) {
+	c.target.SetWard(c.ability.Amount.For(c.power), w.now(), c.ability.Duration)
+	w.playerRoom(c.caster).Send(event.Warded{
+		Actor:  c.caster.Name(),
+		Target: c.target.Name(),
+		Amount: c.target.Ward(w.now()),
+	})
 }
 
 // recallEffect takes the caster back to the start room -- what the recall

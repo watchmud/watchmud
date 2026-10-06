@@ -92,7 +92,8 @@
     "equipment_slot": "fingers",
     "roles": {
       "healer": 3
-    }
+    },
+    "abilities": [ "ward" ]
   },
   {
     "id": "sprig_censer",

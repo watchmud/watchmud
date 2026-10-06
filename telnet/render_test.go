@@ -373,6 +373,20 @@ var commandCases = []commandCase{
 		wantOther: "testdood stuns Little Drone!\n",
 	},
 	{
+		name:      "ward yourself",
+		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { wearTestWardRing(p) },
+		input:     "cast ward",
+		want:      "A ward settles over you. (12)\n",
+		wantOther: "testdood casts ward.\n",
+	},
+	{
+		name:      "ward another",
+		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { wearTestWardRing(p) },
+		input:     "cast ward otherdood",
+		want:      "You ward otherdood. (12)\n",
+		wantOther: "testdood wards you. (12)\n",
+	},
+	{
 		name:      "healing the unhurt is wasted",
 		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { holdTestCenser(p) },
 		input:     "cast heal otherdood",
@@ -570,6 +584,17 @@ func wieldTestStunMace(p *player.Player) {
 	p.Equipment().Equip(rules.SlotWield, inst)
 }
 
+// wearTestWardRing puts a ring granting ward on p's finger
+func wearTestWardRing(p *player.Player) {
+	d := object.NewDefinition("ring", "ring", "wrathrock", rules.ObjectCategoryTreasure,
+		nil, "a ring", "A ring is here.", rules.SlotFingers, rules.ArmorTypeNone, nil)
+	d.Abilities = []string{"ward"}
+	inst := object.NewInstance(uuid.New(), d)
+	inst.Power = 1
+	_ = p.Inventory().Add(inst)
+	p.Equipment().Equip(rules.SlotFingers, inst)
+}
+
 // wearTestToken puts testcontent's temple token, which grants recall, on p's neck
 func wearTestToken(w *world.World, p *player.Player) {
 	d, _ := w.ObjectDefinition("wrathrock", "temple_token")
@@ -733,4 +758,21 @@ func TestRender_gold(t *testing.T) {
 
 func TestRender_equipped(t *testing.T) {
 	assert.Equal(t, "You wield a knife.\n", plain(render(event.Equipped{Item: "a knife"}, "testdood")))
+}
+
+// a blow on a warded player, as each end and a bystander read it
+func TestRender_struckThroughAWard(t *testing.T) {
+	part := event.Struck{Attacker: "Little Drone", Target: "testdood", Hit: true, Damage: 3, Absorbed: 4}
+	assert.Equal(t, "Little Drone hits you for 3 damage; your ward takes 4.\n", plain(render(part, "testdood")))
+	assert.Equal(t, "Little Drone hits testdood.\n", plain(render(part, "otherdood")))
+
+	all := event.Struck{Attacker: "Little Drone", Target: "testdood", Hit: true, Absorbed: 5}
+	assert.Equal(t, "Little Drone hits you, but your ward takes it. (5)\n", plain(render(all, "testdood")))
+	assert.Equal(t, "Little Drone hits testdood.\n", plain(render(all, "otherdood")))
+}
+
+func TestRender_wardBroken(t *testing.T) {
+	m := event.WardBroken{Name: "testdood"}
+	assert.Equal(t, "Your ward shatters.\n", plain(render(m, "testdood")))
+	assert.Equal(t, "testdood's ward shatters.\n", plain(render(m, "otherdood")))
 }

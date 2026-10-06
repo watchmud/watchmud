@@ -507,6 +507,16 @@ round is used -- `LastPulse` moves -- with an `event.Staggered` and no swing, we
 script pulse. Rounds rather than seconds because the world only knows the pulse
 inside `DoViolence`, while cooldowns run on `w.now`.
 Smite, provoke and stun all draw the mob in through `World.openFight`.
+**Ward** (`friend`, granted by the ring of mending) is the first defensive ability: a
+shield of `amount` damage on the target that `DoViolence` takes each landed blow out
+of before health (`Player.AbsorbWard`), so `event.Struck.Damage` is what got through
+and `Absorbed` what the ward took; the blow that empties it is followed by
+`event.WardBroken`. It lasts the ability's `duration` (`rules.Ability.Duration`, its
+first user) on `w.now`, and expiry is read rather than scheduled, so it fades in
+silence. In memory like cooldowns (`Player.ward`), cleared by `Revive`. A second ward
+refreshes to the larger of what's left and what's new, never stacks. Like heal it
+neither starts nor joins a fight. A blow the ward takes all of never reaches the armor:
+no `wearFromBlow`.
 Nothing about abilities reads a role; the Healer label and the censer's heal are two
 separate consequences of the same item, as are Striker and the cudgel's smite.
 
