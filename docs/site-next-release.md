@@ -41,6 +41,10 @@ list.
 After the `tell` row:
 
 ```html
+<tr><td><code>reply thanks</code></td><td>Answer whoever last sent you a tell (<code>r</code> for short)</td></tr>
+<tr><td><code>whisper Ana hi</code>, <code>ask keeper prices</code></td><td>To one person (or creature) in the room; the rest see only that something was said</td></tr>
+<tr><td><code>emote waves</code>, <code>smile</code>, <code>bow Ana</code></td><td>Act something out (<code>:</code> for short). <code>socials</code> lists the ready-made ones</td></tr>
+<tr><td><code>toggle</code></td><td>What you're hearing -- tells, shouts, ooc, color -- and <code>toggle tells</code> to switch one</td></tr>
 <tr><td><code>ooc hello</code></td><td>Chat with everyone playing who's on the channel: questions, plans, anything out of the game. <code>ooc off</code> leaves it. The Temple Square bot answers questions there too</td></tr>
 <tr><td><code>follow Ana</code></td><td>Walk wherever Ana walks, as her group. <code>follow</code> on its own stops</td></tr>
 <tr><td><code>group</code>, <code>gt hello</code></td><td>How your group is doing and where; <code>gt</code> talks to just them</td></tr>

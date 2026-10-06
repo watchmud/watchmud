@@ -80,6 +80,18 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleAssist(msg, cmd)
 	case command.OOC:
 		w.handleOOC(msg, cmd)
+	case command.Social:
+		w.handleSocial(msg, cmd)
+	case command.Socials:
+		w.handleSocials(msg, cmd)
+	case command.Emote:
+		w.handleEmote(msg, cmd)
+	case command.Reply:
+		w.handleReply(msg, cmd)
+	case command.Whisper:
+		w.handleWhisper(msg, cmd)
+	case command.Toggle:
+		w.handleToggle(msg, cmd)
 	case command.GroupTell:
 		w.handleGroupTell(msg, cmd)
 	case command.Open:

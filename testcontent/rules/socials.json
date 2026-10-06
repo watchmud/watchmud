@@ -1,0 +1,7 @@
+[
+  { "name": "smile",
+    "alone": { "self": "You smile.", "room": "$n smiles." },
+    "at": { "self": "You smile at $N.", "victim": "$n smiles at you.", "room": "$n smiles at $N." } },
+  { "name": "stretch",
+    "alone": { "self": "You stretch.", "room": "$n stretches." } }
+]

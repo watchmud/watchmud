@@ -1,0 +1,613 @@
+[
+  {
+    "name": "smile",
+    "alone": {
+      "self": "You smile.",
+      "room": "$n smiles."
+    },
+    "at": {
+      "self": "You smile at $N.",
+      "victim": "$n smiles at you.",
+      "room": "$n smiles at $N."
+    }
+  },
+  {
+    "name": "grin",
+    "alone": {
+      "self": "You grin.",
+      "room": "$n grins."
+    },
+    "at": {
+      "self": "You grin at $N.",
+      "victim": "$n grins at you.",
+      "room": "$n grins at $N."
+    }
+  },
+  {
+    "name": "laugh",
+    "alone": {
+      "self": "You laugh.",
+      "room": "$n laughs."
+    },
+    "at": {
+      "self": "You laugh at $N.",
+      "victim": "$n laughs at you.",
+      "room": "$n laughs at $N."
+    }
+  },
+  {
+    "name": "chuckle",
+    "alone": {
+      "self": "You chuckle.",
+      "room": "$n chuckles."
+    },
+    "at": {
+      "self": "You chuckle at $N.",
+      "victim": "$n chuckles at you.",
+      "room": "$n chuckles at $N."
+    }
+  },
+  {
+    "name": "giggle",
+    "alone": {
+      "self": "You giggle.",
+      "room": "$n giggles."
+    },
+    "at": {
+      "self": "You giggle at $N.",
+      "victim": "$n giggles at you.",
+      "room": "$n giggles at $N."
+    }
+  },
+  {
+    "name": "nod",
+    "alone": {
+      "self": "You nod.",
+      "room": "$n nods."
+    },
+    "at": {
+      "self": "You nod to $N.",
+      "victim": "$n nods to you.",
+      "room": "$n nods to $N."
+    }
+  },
+  {
+    "name": "shake",
+    "alone": {
+      "self": "You shake your head.",
+      "room": "$n shakes their head."
+    },
+    "at": {
+      "self": "You shake your head at $N.",
+      "victim": "$n shakes their head at you.",
+      "room": "$n shakes their head at $N."
+    }
+  },
+  {
+    "name": "bow",
+    "alone": {
+      "self": "You bow.",
+      "room": "$n bows."
+    },
+    "at": {
+      "self": "You bow to $N.",
+      "victim": "$n bows to you.",
+      "room": "$n bows to $N."
+    }
+  },
+  {
+    "name": "curtsey",
+    "alone": {
+      "self": "You curtsey.",
+      "room": "$n curtseys."
+    },
+    "at": {
+      "self": "You curtsey to $N.",
+      "victim": "$n curtseys to you.",
+      "room": "$n curtseys to $N."
+    }
+  },
+  {
+    "name": "wave",
+    "alone": {
+      "self": "You wave.",
+      "room": "$n waves."
+    },
+    "at": {
+      "self": "You wave at $N.",
+      "victim": "$n waves at you.",
+      "room": "$n waves at $N."
+    }
+  },
+  {
+    "name": "greet",
+    "alone": {
+      "self": "You greet everyone.",
+      "room": "$n greets everyone."
+    },
+    "at": {
+      "self": "You greet $N warmly.",
+      "victim": "$n greets you warmly.",
+      "room": "$n greets $N warmly."
+    }
+  },
+  {
+    "name": "hug",
+    "alone": {
+      "self": "Hug who?",
+      "room": "$n looks around for someone to hug."
+    },
+    "at": {
+      "self": "You hug $N.",
+      "victim": "$n hugs you.",
+      "room": "$n hugs $N."
+    }
+  },
+  {
+    "name": "pat",
+    "alone": {
+      "self": "You pat yourself on the back.",
+      "room": "$n pats themself on the back."
+    },
+    "at": {
+      "self": "You pat $N on the shoulder.",
+      "victim": "$n pats you on the shoulder.",
+      "room": "$n pats $N on the shoulder."
+    }
+  },
+  {
+    "name": "poke",
+    "alone": {
+      "self": "Poke who?",
+      "room": "$n pokes at the air."
+    },
+    "at": {
+      "self": "You poke $N.",
+      "victim": "$n pokes you.",
+      "room": "$n pokes $N."
+    }
+  },
+  {
+    "name": "thank",
+    "alone": {
+      "self": "You thank everyone.",
+      "room": "$n thanks everyone."
+    },
+    "at": {
+      "self": "You thank $N.",
+      "victim": "$n thanks you.",
+      "room": "$n thanks $N."
+    }
+  },
+  {
+    "name": "applaud",
+    "alone": {
+      "self": "You applaud.",
+      "room": "$n applauds."
+    },
+    "at": {
+      "self": "You applaud $N.",
+      "victim": "$n applauds you.",
+      "room": "$n applauds $N."
+    }
+  },
+  {
+    "name": "clap",
+    "alone": {
+      "self": "You clap.",
+      "room": "$n claps."
+    },
+    "at": {
+      "self": "You clap for $N.",
+      "victim": "$n claps for you.",
+      "room": "$n claps for $N."
+    }
+  },
+  {
+    "name": "cheer",
+    "alone": {
+      "self": "You cheer.",
+      "room": "$n cheers."
+    },
+    "at": {
+      "self": "You cheer for $N.",
+      "victim": "$n cheers for you.",
+      "room": "$n cheers for $N."
+    }
+  },
+  {
+    "name": "shrug",
+    "alone": {
+      "self": "You shrug.",
+      "room": "$n shrugs."
+    },
+    "at": {
+      "self": "You shrug at $N.",
+      "victim": "$n shrugs at you.",
+      "room": "$n shrugs at $N."
+    }
+  },
+  {
+    "name": "sigh",
+    "alone": {
+      "self": "You sigh.",
+      "room": "$n sighs."
+    },
+    "at": {
+      "self": "You sigh at $N.",
+      "victim": "$n sighs at you.",
+      "room": "$n sighs at $N."
+    }
+  },
+  {
+    "name": "groan",
+    "alone": {
+      "self": "You groan.",
+      "room": "$n groans."
+    },
+    "at": {
+      "self": "You groan at $N.",
+      "victim": "$n groans at you.",
+      "room": "$n groans at $N."
+    }
+  },
+  {
+    "name": "frown",
+    "alone": {
+      "self": "You frown.",
+      "room": "$n frowns."
+    },
+    "at": {
+      "self": "You frown at $N.",
+      "victim": "$n frowns at you.",
+      "room": "$n frowns at $N."
+    }
+  },
+  {
+    "name": "glare",
+    "alone": {
+      "self": "You glare at nothing in particular.",
+      "room": "$n glares at nothing in particular."
+    },
+    "at": {
+      "self": "You glare at $N.",
+      "victim": "$n glares at you.",
+      "room": "$n glares at $N."
+    }
+  },
+  {
+    "name": "stare",
+    "alone": {
+      "self": "You stare into the distance.",
+      "room": "$n stares into the distance."
+    },
+    "at": {
+      "self": "You stare at $N.",
+      "victim": "$n stares at you.",
+      "room": "$n stares at $N."
+    }
+  },
+  {
+    "name": "wink",
+    "alone": {
+      "self": "You wink.",
+      "room": "$n winks."
+    },
+    "at": {
+      "self": "You wink at $N.",
+      "victim": "$n winks at you.",
+      "room": "$n winks at $N."
+    }
+  },
+  {
+    "name": "blush",
+    "alone": {
+      "self": "You blush.",
+      "room": "$n blushes."
+    },
+    "at": {
+      "self": "You blush at $N.",
+      "victim": "$n blushes at you.",
+      "room": "$n blushes at $N."
+    }
+  },
+  {
+    "name": "cry",
+    "alone": {
+      "self": "You burst into tears.",
+      "room": "$n bursts into tears."
+    },
+    "at": {
+      "self": "You cry on $N's shoulder.",
+      "victim": "$n cries on your shoulder.",
+      "room": "$n cries on $N's shoulder."
+    }
+  },
+  {
+    "name": "comfort",
+    "alone": {
+      "self": "Comfort who?",
+      "room": "$n looks around for someone who needs comforting."
+    },
+    "at": {
+      "self": "You comfort $N.",
+      "victim": "$n comforts you.",
+      "room": "$n comforts $N."
+    }
+  },
+  {
+    "name": "cackle",
+    "alone": {
+      "self": "You cackle.",
+      "room": "$n cackles."
+    },
+    "at": {
+      "self": "You cackle at $N.",
+      "victim": "$n cackles at you.",
+      "room": "$n cackles at $N."
+    }
+  },
+  {
+    "name": "ponder",
+    "alone": {
+      "self": "You ponder.",
+      "room": "$n ponders."
+    },
+    "at": {
+      "self": "You ponder $N.",
+      "victim": "$n ponders you.",
+      "room": "$n ponders $N."
+    }
+  },
+  {
+    "name": "think",
+    "alone": {
+      "self": "You think hard.",
+      "room": "$n thinks hard."
+    },
+    "at": {
+      "self": "You think about $N.",
+      "victim": "$n thinks about you.",
+      "room": "$n thinks about $N."
+    }
+  },
+  {
+    "name": "yawn",
+    "alone": {
+      "self": "You yawn.",
+      "room": "$n yawns."
+    },
+    "at": {
+      "self": "You yawn at $N.",
+      "victim": "$n yawns at you.",
+      "room": "$n yawns at $N."
+    }
+  },
+  {
+    "name": "stretch",
+    "alone": {
+      "self": "You stretch.",
+      "room": "$n stretches."
+    }
+  },
+  {
+    "name": "dance",
+    "alone": {
+      "self": "You dance.",
+      "room": "$n dances."
+    },
+    "at": {
+      "self": "You dance with $N.",
+      "victim": "$n dances with you.",
+      "room": "$n dances with $N."
+    }
+  },
+  {
+    "name": "salute",
+    "alone": {
+      "self": "You salute.",
+      "room": "$n salutes."
+    },
+    "at": {
+      "self": "You salute $N.",
+      "victim": "$n salutes you.",
+      "room": "$n salutes $N."
+    }
+  },
+  {
+    "name": "beckon",
+    "alone": {
+      "self": "You beckon.",
+      "room": "$n beckons."
+    },
+    "at": {
+      "self": "You beckon to $N.",
+      "victim": "$n beckons to you.",
+      "room": "$n beckons to $N."
+    }
+  },
+  {
+    "name": "point",
+    "alone": {
+      "self": "You point.",
+      "room": "$n points."
+    },
+    "at": {
+      "self": "You point at $N.",
+      "victim": "$n points at you.",
+      "room": "$n points at $N."
+    }
+  },
+  {
+    "name": "peer",
+    "alone": {
+      "self": "You peer around.",
+      "room": "$n peers around."
+    },
+    "at": {
+      "self": "You peer at $N.",
+      "victim": "$n peers at you.",
+      "room": "$n peers at $N."
+    }
+  },
+  {
+    "name": "scream",
+    "alone": {
+      "self": "You scream.",
+      "room": "$n screams."
+    },
+    "at": {
+      "self": "You scream at $N.",
+      "victim": "$n screams at you.",
+      "room": "$n screams at $N."
+    }
+  },
+  {
+    "name": "whistle",
+    "alone": {
+      "self": "You whistle.",
+      "room": "$n whistles."
+    },
+    "at": {
+      "self": "You whistle at $N.",
+      "victim": "$n whistles at you.",
+      "room": "$n whistles at $N."
+    }
+  },
+  {
+    "name": "hmm",
+    "alone": {
+      "self": "You hmm.",
+      "room": "$n hmms."
+    },
+    "at": {
+      "self": "You hmm at $N.",
+      "victim": "$n hmms at you.",
+      "room": "$n hmms at $N."
+    }
+  },
+  {
+    "name": "snicker",
+    "alone": {
+      "self": "You snicker.",
+      "room": "$n snickers."
+    },
+    "at": {
+      "self": "You snicker at $N.",
+      "victim": "$n snickers at you.",
+      "room": "$n snickers at $N."
+    }
+  },
+  {
+    "name": "facepalm",
+    "alone": {
+      "self": "You put your face in your palm.",
+      "room": "$n puts their face in their palm."
+    },
+    "at": {
+      "self": "You facepalm at $N.",
+      "victim": "$n facepalms at you.",
+      "room": "$n facepalms at $N."
+    }
+  },
+  {
+    "name": "highfive",
+    "alone": {
+      "self": "High-five who?",
+      "room": "$n holds up a hand for a high five."
+    },
+    "at": {
+      "self": "You high-five $N.",
+      "victim": "$n high-fives you.",
+      "room": "$n high-fives $N."
+    }
+  },
+  {
+    "name": "thumbsup",
+    "alone": {
+      "self": "You give a thumbs up.",
+      "room": "$n gives a thumbs up."
+    },
+    "at": {
+      "self": "You give $N a thumbs up.",
+      "victim": "$n gives you a thumbs up.",
+      "room": "$n gives $N a thumbs up."
+    }
+  },
+  {
+    "name": "sulk",
+    "alone": {
+      "self": "You sulk.",
+      "room": "$n sulks."
+    }
+  },
+  {
+    "name": "strut",
+    "alone": {
+      "self": "You strut.",
+      "room": "$n struts."
+    }
+  },
+  {
+    "name": "flex",
+    "alone": {
+      "self": "You flex.",
+      "room": "$n flexes."
+    },
+    "at": {
+      "self": "You flex at $N.",
+      "victim": "$n flexes at you.",
+      "room": "$n flexes at $N."
+    }
+  },
+  {
+    "name": "snore",
+    "alone": {
+      "self": "You snore.",
+      "room": "$n snores."
+    }
+  },
+  {
+    "name": "hiccup",
+    "alone": {
+      "self": "You hiccup.",
+      "room": "$n hiccups."
+    }
+  },
+  {
+    "name": "sneeze",
+    "alone": {
+      "self": "You sneeze.",
+      "room": "$n sneezes."
+    },
+    "at": {
+      "self": "You sneeze on $N.",
+      "victim": "$n sneezes on you.",
+      "room": "$n sneezes on $N."
+    }
+  },
+  {
+    "name": "cough",
+    "alone": {
+      "self": "You cough.",
+      "room": "$n coughs."
+    },
+    "at": {
+      "self": "You cough at $N.",
+      "victim": "$n coughs at you.",
+      "room": "$n coughs at $N."
+    }
+  },
+  {
+    "name": "tip",
+    "alone": {
+      "self": "You tip your hat.",
+      "room": "$n tips their hat."
+    },
+    "at": {
+      "self": "You tip your hat to $N.",
+      "victim": "$n tips their hat to you.",
+      "room": "$n tips their hat to $N."
+    }
+  }
+]

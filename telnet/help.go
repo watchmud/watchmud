@@ -57,17 +57,17 @@ var helpSections = []helpSection{
 		{"cast <ability> [target]", "gear's spells: cast heal bob, cast smite goose (c)", []string{"cast", "c"}},
 	}},
 	{"You", []helpEntry{
-		{"stat", "health and power", []string{"stat"}},
-		{"role", "what your gear makes you, and why", []string{"role"}},
-		{"abilities", "what your gear lets you cast", []string{"abilities"}},
+		{"stat, role, abilities", "you; what your gear makes you; what it casts", []string{"stat", "role", "abilities"}},
 		{"color [on|off]", "ANSI color, on or off; just color switches it", []string{"color"}},
 	}},
 	{"Talking", []helpEntry{
-		{"say <words>", "to the room (')", []string{"say", "'"}},
-		{"tell <who> <words>", "to one player, anywhere", []string{"tell"}},
+		{"say <words>, emote <act>", "to the room ('), or act it out (:)", []string{"say", "'", "emote", ":"}},
+		{"tell <who> <words>, reply", "to one player, anywhere; reply to the last", []string{"tell", "reply"}},
+		{"whisper, ask <who> <words>", "to one in the room, player or mob", []string{"whisper", "ask"}},
 		{"shout, ooc <words>", "to everyone; ooc is chat, for questions (ooc off)", []string{"shout", "ooc"}},
 		{"follow <who>, group, gt", "walk and fight as one; gt talks (assist, ungroup)",
 			[]string{"follow", "group", "gt", "gtell", "ungroup", "assist"}},
+		{"socials, toggle", "smile, bow, wave and more; what you hear", []string{"socials", "toggle"}},
 		{"who, quit", "who's playing; save and leave", []string{"who", "quit"}},
 	}},
 }

@@ -228,6 +228,48 @@ type Swept struct {
 	Item    string
 }
 
+// Socialized is a social done, its lines already filled in: ToActor for the
+// one who did it, ToTarget for a player it was done to, ToRoom for everyone
+// else. Target is empty when it was done alone.
+type Socialized struct {
+	Actor    string
+	Target   string
+	ToActor  string
+	ToTarget string
+	ToRoom   string
+}
+
+// SocialList is "socials": every one, by name.
+type SocialList struct {
+	Names []string
+}
+
+// Emoted is an emote: the actor's name, then the text, for everyone.
+type Emoted struct {
+	Actor string
+	Text  string
+}
+
+// Whispered is a whisper or an ask: the words for the two ends, and only
+// that something was said for the room.
+type Whispered struct {
+	From  string
+	To    string
+	Value string
+	Ask   bool
+}
+
+// Toggles is "toggle": what a player has switched on.
+type Toggles struct {
+	Color, OOC, Tells, Shouts, Assist bool
+}
+
+// Toggled is one toggle switched.
+type Toggled struct {
+	Name string
+	On   bool
+}
+
 // Junked is something destroyed by its owner, seen by the room.
 type Junked struct {
 	Actor string

@@ -70,5 +70,15 @@ func LoadCatalog(rulesFS fs.FS) (*rules.Catalog, error) {
 		return nil, err
 	}
 
+	// Optional too: absent is a game with no socials, and every one an
+	// unknown request.
+	socials, err := readOptionalJSONFile[[]*rules.Social](rulesFS, "socials.json")
+	if err != nil {
+		return nil, err
+	}
+	if err := c.SetSocials(socials); err != nil {
+		return nil, err
+	}
+
 	return c, nil
 }

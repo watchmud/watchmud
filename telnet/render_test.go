@@ -1,6 +1,7 @@
 package telnet
 
 import (
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
+	"github.com/watchmud/watchmud/loader"
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
@@ -204,10 +206,26 @@ var commandCases = []commandCase{
 	{
 		name:  "a verb nobody knows",
 		input: "florb the thing",
-		want:  "",
-		// parseCommand rejects it before the world ever sees it; the
-		// connection prints the parser's error itself.
-		wantParseError: "Unknown request: florb",
+		// the parser sends any verb it doesn't know to the world, which might
+		// have a social by that name; it hasn't, so it's an unknown request
+		want: "Unknown request: florb\n",
+	},
+	{
+		name:      "a social, alone",
+		input:     "smile",
+		want:      "You smile.\n",
+		wantOther: "testdood smiles.\n",
+	},
+	{
+		name:      "a social, at someone",
+		input:     "smile otherdood",
+		want:      "You smile at otherdood.\n",
+		wantOther: "testdood smiles at you.\n",
+	},
+	{
+		name:  "a social that takes no target",
+		input: "stretch otherdood",
+		want:  "That's one you do alone.\n",
 	},
 	{
 		name:  "role with nothing equipped",
@@ -1030,5 +1048,50 @@ func TestRender_junkAndDonate(t *testing.T) {
 		cmd, err := parseCommand(strings.Fields(line))
 		require.NoError(t, err)
 		assert.Equal(t, want, cmd, line)
+	}
+}
+
+func TestRender_talk(t *testing.T) {
+	sz := event.Socialized{Actor: "ann", Target: "bob", ToActor: "You bow to bob.", ToTarget: "ann bows to you.", ToRoom: "ann bows to bob."}
+	assert.Equal(t, "You bow to bob.\n", plain(render(sz, "ann")))
+	assert.Equal(t, "ann bows to you.\n", plain(render(sz, "bob")))
+	assert.Equal(t, "ann bows to bob.\n", plain(render(sz, "cal")))
+	assert.Equal(t, "ann waves.\n", plain(render(event.Emoted{Actor: "ann", Text: "waves."}, "bob")))
+
+	w := event.Whispered{From: "ann", To: "bob", Value: "psst"}
+	assert.Equal(t, "You whisper to bob, 'psst'\n", plain(render(w, "ann")))
+	assert.Equal(t, "ann whispers to you, 'psst'\n", plain(render(w, "bob")))
+	assert.Equal(t, "ann whispers something to bob.\n", plain(render(w, "cal")))
+	w.Ask = true
+	assert.Equal(t, "You ask bob, 'psst'\n", plain(render(w, "ann")))
+	assert.Equal(t, "ann asks bob something.\n", plain(render(w, "cal")))
+
+	assert.Equal(t, "Toggles\n  color   on\n  ooc     on\n  tells   off\n  shouts  on\n  assist  on\n  'toggle <name>' switches one.\n",
+		plain(render(event.Toggles{Color: true, OOC: true, Shouts: true, Assist: true}, "ann")))
+
+	for line, want := range map[string]command.Command{
+		": waves":           command.Emote{Text: "waves"},
+		"r on my way":       command.Reply{Value: "on my way"},
+		"ask keeper prices": command.Whisper{To: "keeper", Value: "prices", Ask: true},
+		"whisper bob hi":    command.Whisper{To: "bob", Value: "hi"},
+		"notell":            command.Toggle{Name: "tell"},
+		"bow bob":           command.Social{Name: "bow", Target: "bob"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, want, cmd, line)
+	}
+}
+
+// every social in the real content is reachable: no verb the parser knows
+// shadows one
+func TestSocials_noneShadowed(t *testing.T) {
+	cat, err := loader.LoadCatalog(os.DirFS("../content/rules"))
+	require.NoError(t, err)
+	require.NotEmpty(t, cat.SocialList())
+	for _, s := range cat.SocialList() {
+		cmd, err := parseCommand([]string{s.Name})
+		require.NoError(t, err)
+		assert.Equal(t, command.Social{Name: s.Name}, cmd, "%s is taken by another command", s.Name)
 	}
 }

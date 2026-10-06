@@ -979,6 +979,24 @@ without `assist off` (`groups.noAssist`, in memory), join against the mob throug
 `joinFight`, which assists no one, so there's no chain. Kill, aggro, smite and summons
 all start fights through `startFight`, so a group fights together however one began.
 
+**Socials** are content, `content/rules/socials.json` (`rules.Social`, checked by
+`Catalog.SetSocials`): lines for doing it alone (self, room) and, optionally, at a player
+or mob in the room (self, victim, room), with `$n` the doer and `$N` the target -- our own
+wording, not CircleMUD's, whose licence is DikuMUD's. **Any verb `parse.go` doesn't
+know becomes `command.Social`**, whose `Verb()` is what was typed: the world answers a
+name that isn't a social with `UNKNOWN_COMMAND`, so "Unknown request: florb" now comes
+from `handleSocial` rather than the parser. `TestSocials_noneShadowed` fails if a new
+command's verb hides a social. `emote` (`em`, `:`), `reply` (`r`, to `World.lastTeller`,
+in memory), `whisper` and `ask` (one in the room; to a scripted mob it's heard like a
+say, by that mob alone) and `toggle` (color, ooc, tells, shouts, assist; `notell` and
+`noshout` its shorthands, the switches kept on the record as `NoTell`/`NoShout`)
+round out the talking.
+
+`telnet/resultcode.go`: a bare code goes in `failureByCode`, a `verb/CODE` override in
+`failureByVerb` -- a bare code filed under the verb map is never found, which is how the
+bag messages went unseen for a day. `TestFailureText_everyCodeHasWords` reads
+`event/result.go` and fails on any code with no words.
+
 **The ooc channel** (`world/h_ooc.go`; `ooc`, `newbie`, `nb`): out-of-character chat
 to everyone playing who's on it, wherever they are. `ooc off`/`ooc on` leave and rejoin,
 kept on the record as `NoOOC` (inverted like `NoColor`, so everyone starts on it); off

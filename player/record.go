@@ -18,6 +18,7 @@ type Record struct {
 	Bot                  bool
 	NoColor              bool // inverted: a record from before the choice is color on
 	NoOOC                bool // inverted the same way: everyone starts on the channel
+	NoTell, NoShout      bool // and the same again
 	Coins                int
 	CurHealth, MaxHealth int
 	// CurMana is a pointer for the durability reason: a record from before
@@ -88,6 +89,7 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 	p.bot = rec.Bot
 	p.noColor = rec.NoColor
 	p.noOOC = rec.NoOOC
+	p.noTell, p.noShout = rec.NoTell, rec.NoShout
 	p.coins = max(rec.Coins, 0)
 	p.backfilled = slices.Clone(rec.Backfilled)
 
@@ -173,6 +175,8 @@ func (p *Player) Record() *Record {
 		Bot:          p.bot,
 		NoColor:      p.noColor,
 		NoOOC:        p.noOOC,
+		NoTell:       p.noTell,
+		NoShout:      p.noShout,
 		Coins:        p.coins,
 		CurHealth:    p.curHealth,
 		MaxHealth:    p.maxHealth,

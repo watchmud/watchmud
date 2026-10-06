@@ -80,6 +80,23 @@ func parseCommand(tokens []string) (command.Command, error) {
 		return command.Follow{Target: rest}, nil
 	case "ungroup":
 		return command.Ungroup{Target: rest}, nil
+	case "emote", "em", ":":
+		return command.Emote{Text: rest}, nil
+	case "socials":
+		return command.Socials{}, nil
+	case "reply", "r":
+		return command.Reply{Value: rest}, nil
+	case "whisper", "ask":
+		if len(tokens) < 2 {
+			return command.Whisper{Ask: verb == "ask"}, nil
+		}
+		return command.Whisper{To: tokens[1], Value: strings.Join(tokens[2:], " "), Ask: verb == "ask"}, nil
+	case "toggle":
+		return command.Toggle{Name: rest}, nil
+	case "notell":
+		return command.Toggle{Name: "tell"}, nil
+	case "noshout":
+		return command.Toggle{Name: "shout"}, nil
 	case "ooc", "newbie", "nb":
 		return command.OOC{Value: rest}, nil
 	case "assist":
@@ -217,5 +234,7 @@ func parseCommand(tokens []string) (command.Command, error) {
 			return nil, errors.New("try: `load (mob|obj) [zone] id`")
 		}
 	}
-	return nil, errors.New("Unknown request: " + tokens[0])
+	// anything else may be a social; the world knows which, and answers an
+	// unknown request for the rest
+	return command.Social{Name: verb, Target: rest}, nil
 }

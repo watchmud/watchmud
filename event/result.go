@@ -79,6 +79,14 @@ const (
 	OffChannel ResultCode = "OFF_CHANNEL"
 	// donate: content names no donation room that exists
 	NoDonationRoom ResultCode = "NO_DONATION_ROOM"
+	// talking: a social with no target form, nobody to reply to, tells and
+	// shouts switched off, an unknown toggle
+	SocialAlone   ResultCode = "SOCIAL_ALONE"
+	NoOneToReply  ResultCode = "NO_ONE_TO_REPLY"
+	TellsOff      ResultCode = "TELLS_OFF"
+	YourTellsOff  ResultCode = "YOUR_TELLS_OFF"
+	ShoutsOff     ResultCode = "SHOUTS_OFF"
+	UnknownToggle ResultCode = "UNKNOWN_TOGGLE"
 	// groups
 	NotInGroup       ResultCode = "NOT_IN_GROUP"
 	NotFollowing     ResultCode = "NOT_FOLLOWING"

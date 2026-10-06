@@ -131,6 +131,28 @@ func render(msg any, self string) string {
 	case event.Swept:
 		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
 
+	case event.Socialized:
+		switch self {
+		case m.Actor:
+			return m.ToActor + "\n"
+		case m.Target:
+			return m.ToTarget + "\n"
+		}
+		return m.ToRoom + "\n"
+	case event.SocialList:
+		return paint(colorHeading, "Socials") + "\n" + wrapWords(m.Names, 76)
+	case event.Emoted:
+		return m.Actor + " " + m.Text + "\n"
+	case event.Whispered:
+		return renderWhispered(m, self)
+	case event.Toggles:
+		return renderToggles(m)
+	case event.Toggled:
+		if m.On {
+			return "You'll hear " + m.Name + " again.\n"
+		}
+		return "You won't hear " + m.Name + " now. 'toggle' shows what's on.\n"
+
 	case event.Junked:
 		if m.Actor == self {
 			return "You junk " + m.Item + ". It's gone.\n"
@@ -1059,4 +1081,54 @@ func renderGroupList(m event.GroupList) string {
 		})
 	}
 	return paint(colorHeading, "Group") + "\n" + table(rows)
+}
+
+// wrapWords lays words out in lines of at most width, two spaces in.
+func wrapWords(words []string, width int) string {
+	var b strings.Builder
+	line := " "
+	for _, w := range words {
+		if len(line)+1+len(w) > width {
+			b.WriteString(line + "\n")
+			line = " "
+		}
+		line += " " + w
+	}
+	if strings.TrimSpace(line) != "" {
+		b.WriteString(line + "\n")
+	}
+	return b.String()
+}
+
+func renderWhispered(m event.Whispered, self string) string {
+	verb, past := "whisper to", "whispers to"
+	if m.Ask {
+		verb, past = "ask", "asks"
+	}
+	switch self {
+	case m.From:
+		return "You " + verb + " " + m.To + ", '" + m.Value + "'\n"
+	case m.To:
+		return m.From + " " + past + " you, '" + m.Value + "'\n"
+	}
+	if m.Ask {
+		return m.From + " asks " + m.To + " something.\n"
+	}
+	return m.From + " whispers something to " + m.To + ".\n"
+}
+
+func renderToggles(m event.Toggles) string {
+	onOff := func(on bool) cell {
+		if on {
+			return colored(colorReady, "on")
+		}
+		return plainCell("off")
+	}
+	return paint(colorHeading, "Toggles") + "\n" + table([][]cell{
+		{plainCell("color"), onOff(m.Color)},
+		{plainCell("ooc"), onOff(m.OOC)},
+		{plainCell("tells"), onOff(m.Tells)},
+		{plainCell("shouts"), onOff(m.Shouts)},
+		{plainCell("assist"), onOff(m.Assist)},
+	}) + "  'toggle <name>' switches one.\n"
 }

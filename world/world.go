@@ -45,6 +45,10 @@ type World struct {
 	reservedNames map[string]bool // by player.NameKey; see IsReservedName
 
 	groups *groups // who follows whom; see world/group.go
+
+	// lastTeller is who last told each player something, by name, for
+	// reply. In memory; RemovePlayer forgets it.
+	lastTeller map[*player.Player]string
 }
 
 // New creates a brand-new World based on this content
@@ -55,6 +59,7 @@ func New(c *loader.Content, s player.Store, roller rules.Roller) (w *World, err 
 		occupancy:   spaces.NewOccupancy(),
 		fightLedger: combat.NewFightLedger(),
 		groups:      newGroups(),
+		lastTeller:  map[*player.Player]string{},
 		now:         time.Now,
 		pace:        1,
 		roller:      roller,
@@ -171,6 +176,7 @@ func (w *World) RemovePlayer(p *player.Player) {
 	p.Log().Debug().Msg("Removing player")
 	w.fightLedger.EndAllFightsWith(p.Id())
 	w.leaveGroups(p)
+	delete(w.lastTeller, p)
 	w.occupancy.RemovePlayer(p)
 	w.playerList.Remove(p)
 }

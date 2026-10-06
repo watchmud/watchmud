@@ -32,6 +32,8 @@ type Player struct {
 	noColor bool
 	// noOOC is the player leaving the ooc channel; inverted the same way.
 	noOOC bool
+	// noTell and noShout are tells and shouts switched off, the same way.
+	noTell, noShout bool
 	// coins is the purse. Never negative: Spend refuses what it can't pay.
 	coins int
 	// backfilled is the backfill starting gear this character has been
@@ -260,6 +262,12 @@ func (p *Player) SetColor(on bool) { p.noColor = !on }
 // OOC is whether the player hears the ooc channel.
 func (p *Player) OOC() bool      { return !p.noOOC }
 func (p *Player) SetOOC(on bool) { p.noOOC = !on }
+
+// Tells and Shouts are whether the player hears them.
+func (p *Player) Tells() bool       { return !p.noTell }
+func (p *Player) SetTells(on bool)  { p.noTell = !on }
+func (p *Player) Shouts() bool      { return !p.noShout }
+func (p *Player) SetShouts(on bool) { p.noShout = !on }
 
 // Backfilled is the backfill starting gear this character has been handed.
 func (p *Player) Backfilled() []string { return p.backfilled }

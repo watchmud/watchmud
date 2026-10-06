@@ -85,6 +85,59 @@ type Put struct {
 
 func (Put) Verb() string { return "put" }
 
+// Social is a gesture from rules/socials.json: "smile", "bow bob". It is
+// what the parser makes of any verb it doesn't know, so Verb is the name
+// typed -- one that names no social fails as an unknown request.
+type Social struct {
+	Name   string
+	Target string
+}
+
+func (s Social) Verb() string { return s.Name }
+
+// Socials lists them.
+type Socials struct{}
+
+func (Socials) Verb() string { return "socials" }
+
+// Emote is "emote waves hello" or ": waves hello": the room reads the
+// player's name and then the text.
+type Emote struct {
+	Text string
+}
+
+func (Emote) Verb() string { return "emote" }
+
+// Reply is a tell to whoever last told you something.
+type Reply struct {
+	Value string
+}
+
+func (Reply) Verb() string { return "reply" }
+
+// Whisper is "whisper bob hello" or, with Ask, "ask bob hello": to one in the
+// room, player or mob; the rest of the room sees that something was said.
+type Whisper struct {
+	To    string
+	Value string
+	Ask   bool
+}
+
+func (w Whisper) Verb() string {
+	if w.Ask {
+		return "ask"
+	}
+	return "whisper"
+}
+
+// Toggle is "toggle" for the list of what a player can switch, or "toggle
+// tell" to switch one. notell and noshout are its shorthands.
+type Toggle struct {
+	Name string
+}
+
+func (Toggle) Verb() string { return "toggle" }
+
 // Junk is "junk <item>": destroyed, nothing back.
 type Junk struct {
 	Target string
