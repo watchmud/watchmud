@@ -11,7 +11,7 @@ production, and nothing here is released.
   in the same room; worn things stay on, as with `drop` and `put`.
 - [x] **3. `examine <item>`**: what one thing is -- power, condition, armor, the
   abilities it grants, a bag's room -- for something carried, worn or on the floor.
-- [ ] **4. A script hook for speech, `on_hear(me, speaker, text)`**, and the
+- [x] **4. A script hook for speech, `on_hear(me, speaker, text)`**, and the
   hedge-witch answering `say heal` with a line (words only: healing a player from a
   script would be a new Go action, raised rather than decided).
 - [ ] **5. Small cleanup**: `world/settings.go`'s lone `VERBOSE_LOGGING` const.
@@ -39,3 +39,9 @@ Feel and tuning calls met along the way are noted below rather than decided.
   worn, then the floor), with `examine`/`exa` as aliases. A mob shows how hurt it looks
   in words (perfect / slightly hurt / wounded / badly hurt / near death at 100/75/50/25)
   and nothing assess gives; the bands are a feel call, easy to move.
+- **4.** `on_hear(me, speaker, said)`, with `said.words` as a set because scripts
+  have no `string.find`. Mobs don't hear mobs. The hedge-witch answers heal / healing /
+  hurt / wounded / mend with two placeholder lines -- the second tells players she
+  carries a censer they'd have to take off her, which is true (she drops it, 15%) but
+  is a nudge to kill her: reword it if that's not wanted. No new Go action: she talks,
+  she doesn't heal.

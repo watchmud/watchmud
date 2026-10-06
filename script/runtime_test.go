@@ -1,6 +1,7 @@
 package script
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -759,4 +760,67 @@ func TestSummoningAScriptedMob(t *testing.T) {
 
 	assert.Equal(t, []string{"after", "imp opener"}, h.texts())
 	assert.Empty(t, *logged)
+}
+
+// on_hear gets who spoke, what they said, and its words to look up
+func TestHear(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/witch": `
+		function on_hear(me, speaker, said)
+			if said.words.heal then
+				me:say(speaker.name .. " wants healing: " .. said.text)
+			end
+		end`})
+	witch := mob("Witch", "z/witch")
+
+	h.rt.Hear(witch, bob, "Can you HEAL me, please?")
+	h.rt.Hear(witch, bob, "nice weather")
+	h.rt.Hear(witch, bob, "healer?")
+
+	assert.Equal(t, []string{"Bob wants healing: Can you HEAL me, please?"}, h.texts(), "a word, not part of one")
+}
+
+func TestHear_wordsKeepApostrophesInside(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/witch": `
+		function on_hear(me, speaker, said)
+			if said.words["don't"] and said.words["go"] then me:say("ok") end
+		end`})
+	h.rt.Hear(mob("Witch", "z/witch"), bob, "'Don't' go!")
+	assert.Equal(t, []string{"ok"}, h.texts())
+}
+
+// a wait in on_hear isn't about a fight, so no fight doesn't end it
+func TestHear_waitNeedsNoFight(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/witch": `
+		function on_hear(me, speaker, said)
+			wait(1)
+			me:say("Hm?")
+		end`})
+	witch := mob("Witch", "z/witch")
+	h.out[witch] = true // not fighting
+
+	h.rt.Hear(witch, bob, "hello")
+	assert.Empty(t, h.said)
+	h.tick()
+	assert.Equal(t, []string{"Hm?"}, h.texts())
+}
+
+func TestHear_isAHook(t *testing.T) {
+	_, err := Compile("z/witch", `function on_hear(me, speaker, said) end`)
+	assert.NoError(t, err)
+}
+
+// the real hedge-witch: asked about healing, a beat, then her two lines
+func TestHedgeWitch(t *testing.T) {
+	src, err := os.ReadFile("../content/world/hollowfield/scripts/hedge_witch.lua")
+	require.NoError(t, err)
+	h := newHarness(t, map[string]string{"hollowfield/hedge_witch": string(src)})
+	witch := mob("hedge-witch", "hollowfield/hedge_witch")
+	h.out[witch] = true
+
+	h.rt.Hear(witch, bob, "lovely herbs")
+	h.rt.Hear(witch, bob, "I'm hurt, can you help?")
+	assert.Empty(t, h.said)
+	h.tick()
+	require.Len(t, h.said, 2)
+	assert.Contains(t, h.said[1].text, "Bob")
 }

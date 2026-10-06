@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
+	"unicode"
 	"uuid"
 
 	"github.com/rs/zerolog/log"
@@ -88,6 +90,9 @@ type hookRun struct {
 	call   *hookCall
 	me     *lua.LTable
 	pulses int // left to wait
+	// fight is whether the run is about a fight, and so ends if the fight
+	// does while it waits. on_hear isn't.
+	fight bool
 }
 
 // NewRuntime loads each program into one Lua state. The programs were proved
@@ -115,13 +120,35 @@ func NewRuntime(programs map[string]*Program, roller Roller, actions Actions) (*
 // FightStart is on_fight_start: mob has just gone from not fighting to
 // fighting foe.
 func (r *Runtime) FightStart(mob *mobile.Instance, foe Foe) {
-	r.fire(mob, "on_fight_start", foe)
+	r.fire(mob, "on_fight_start", foe, nil)
 }
 
 // FightPulse is on_fight_pulse: mob has just swung at foe, and neither of
 // them is dead.
 func (r *Runtime) FightPulse(mob *mobile.Instance, foe Foe) {
-	r.fire(mob, "on_fight_pulse", foe)
+	r.fire(mob, "on_fight_pulse", foe, nil)
+}
+
+// Hear is on_hear: someone in mob's room said text. speaker is a Foe for its
+// shape -- a name, and whether a player -- not because they're fighting.
+// said.text is what was said and said.words the set of its words, lowercased:
+// scripts have no pattern functions, so a word is looked up, not searched for.
+func (r *Runtime) Hear(mob *mobile.Instance, speaker Foe, text string) {
+	r.fire(mob, "on_hear", speaker, func() lua.LValue { return r.said(text) })
+}
+
+func (r *Runtime) said(text string) *lua.LTable {
+	L := r.sb.L
+	t := L.NewTable()
+	t.RawSetString("text", lua.LString(text))
+	words := L.NewTable()
+	for _, w := range strings.FieldsFunc(strings.ToLower(text), func(c rune) bool {
+		return !unicode.IsLetter(c) && !unicode.IsDigit(c) && c != '\''
+	}) {
+		words.RawSetString(strings.Trim(w, "'"), lua.LTrue)
+	}
+	t.RawSetString("words", words)
+	return t
 }
 
 // Forget drops a mob's memory. The world calls it when the mob leaves the
@@ -131,9 +158,11 @@ func (r *Runtime) Forget(mob *mobile.Instance) {
 	r.drop(func(run *hookRun) bool { return run.mob == mob })
 }
 
-func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe) {
+// fire calls hook(me, foe), and the third argument extra makes, if any --
+// made only once the hook is known to run.
+func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe, extra func() lua.LValue) {
 	if r.sb.current != nil {
-		r.pending = append(r.pending, func() { r.fire(mob, hook, foe) })
+		r.pending = append(r.pending, func() { r.fire(mob, hook, foe, extra) })
 		return
 	}
 	lp := r.programs[mob.Definition.Script]
@@ -154,8 +183,12 @@ func (r *Runtime) fire(mob *mobile.Instance, hook string, foe Foe) {
 	}
 	th, _ := r.sb.L.NewThread()
 	run := &hookRun{mob: mob, lp: lp, hook: hook, fn: fn, th: th, call: call,
-		me: r.me(mob, call)}
-	r.run(run, run.me, r.foe(foe))
+		me: r.me(mob, call), fight: hook != "on_hear"}
+	args := []lua.LValue{run.me, r.foe(foe)}
+	if extra != nil {
+		args = append(args, extra())
+	}
+	r.run(run, args...)
 }
 
 // run starts or carries on a hook run -- args start it -- and deals with
@@ -180,7 +213,8 @@ func (r *Runtime) run(run *hookRun, args ...lua.LValue) {
 // Tick is one pulse for every hook run waiting on wait(), in the order they
 // began waiting. One that comes due carries on, with me's health and summons
 // read fresh -- unless the fight it was about is over (inFight, the world's
-// answer) or its program has been switched off, and then it simply ends.
+// answer; on_hear is about no fight) or its program has been switched off,
+// and then it simply ends.
 func (r *Runtime) Tick(inFight func(*mobile.Instance) bool) {
 	var due, still []*hookRun
 	for _, run := range r.waiting {
@@ -195,7 +229,7 @@ func (r *Runtime) Tick(inFight func(*mobile.Instance) bool) {
 	for _, run := range due {
 		// the fight it was about is over, or another mob's errors switched
 		// its program off: it simply ends.
-		if run.lp.failures >= MaxFailures || !inFight(run.mob) {
+		if run.lp.failures >= MaxFailures || (run.fight && !inFight(run.mob)) {
 			continue
 		}
 		r.refresh(run.mob, run.me)

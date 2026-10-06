@@ -720,9 +720,16 @@ file, a syntax error, a top level that errors or runs too long, or an unknown `o
 fails startup. `world.New` loads them into one `script.Runtime`: one gopher-lua state, on
 the world goroutine, no locks.
 
-Hooks, both optional: `on_fight_start(me, foe)` (fired by `World.startFight` -- which
-`kill` and aggro both use -- for each mob that wasn't already fighting) and
-`on_fight_pulse(me, foe)` (from `DoViolence`, after the blow, never over a body). `me` is
+Hooks, all optional: `on_fight_start(me, foe)` (fired by `World.startFight` -- which
+`kill` and aggro both use -- for each mob that wasn't already fighting),
+`on_fight_pulse(me, foe)` (from `DoViolence`, after the blow, never over a body), and
+`on_hear(me, speaker, said)` (from `handleSay`, for each scripted mob in the room, after
+the room has heard it). `said.text` is what was said and `said.words` the set of its
+words, lowercased -- a script has no pattern functions, so it looks a word up
+(`said.words.heal`) rather than searching. Only a player's `say` fires it: a mob's
+`me:say` doesn't, so two scripts can't talk each other round in circles. The
+hedge-witch (`hollowfield/hedge_witch`) is its first user: ask about healing and she
+answers. `me` is
 copies (`name`, `health`, `max_health`), `me.memory` (a table per mob instance, dropped
 with the mob in `World.RemoveMobile`), `me.summons` (how many of its summons are alive),
 and `me:say` and `me:summon`, bound to that one call. `foe` is
@@ -747,7 +754,8 @@ Rules that hold across a wait:
 - **Each resume gets a fresh `CallTimeout`, set on the thread** -- `SetContext` is what
   switches a state onto the loop that checks the deadline, and a coroutine runs its own.
 - **What ends a wait early, silently** (none is a failure): the mob leaving the world
-  (`Forget`), its fight being over when the wait comes due, its program being switched off.
+  (`Forget`), its fight being over when the wait comes due (fight hooks only --
+  `hookRun.fight`; `on_hear` is about no fight), its program being switched off.
   "In a fight" is checked at resume, not tracked, so a fight that ends and another that
   starts inside one wait carries on into the new one.
 - **Not inside `pcall` or `xpcall`.** gopher-lua's `pcall` takes a yield for a return, so

@@ -68,6 +68,7 @@ inhabitant bots (v0.4.0).
 - `give <item|coins> to <player>`, in the same room
 - `look <thing>` (and `examine`) works at last: an item's stats, how hurt a mob looks,
   what another player has on
+- Scripts hear: `on_hear(me, speaker, said)`; ask the hedge-witch about healing
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

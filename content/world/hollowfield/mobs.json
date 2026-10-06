@@ -185,6 +185,7 @@
     ],
     "short_description": "The hedge-witch.",
     "description_in_room": "The hedge-witch sorts herbs and pays you no mind at all.",
+    "script": "hedge_witch",
     "max_health": 28,
     "wandering_definition": {
       "can_wander": false
