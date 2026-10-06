@@ -263,8 +263,8 @@ Two more reviews, of the core mechanics and of the bots:
 - The smoke test can fail on a full-moon night (a wild dog catches it on the walk): it
   now says "attacked on the way", and deploy/README says that isn't a bad deploy.
   `TestKeepOut_safe` counts moonstruck mobs, and a wanderer's whole zone.
-- Not done: an explorer would keep trying a door it once saw open (none in reach
-  today); recall's cooldown wait ignores shutdown.
+- An explorer now forgets an exit a room no longer shows (a door shut since), and a
+  bot waiting out recall's cooldown stops when it's told to shut down.
 
 The hunter test that failed once under -race (10 kills, 1 looted): not reproduced in 26
 race runs since, and the hunter now logs what an empty loot attempt saw, so if it comes

@@ -84,3 +84,16 @@ func TestExplorer_mapsTheWorld(t *testing.T) {
 	assert.Equal(t, want, st.Mapped, "nothing past a door it may not take")
 	assert.Zero(t, st.Looted)
 }
+
+// A door seen open and shut since isn't a way any more: routed through, the
+// explorer would try it, fail, and try it again for ever.
+func TestAtlas_forgetsAShutDoor(t *testing.T) {
+	m := newAtlas()
+	m.see("Cellar", []string{"west"})
+	m.learn("Cellar", "west", "Pit")
+	m.see("Pit", []string{"east"})
+	require.Equal(t, []string{"west"}, m.route("Cellar", func(r string) bool { return r == "Pit" }))
+
+	m.see("Cellar", nil) // the grate is shut now
+	assert.Nil(t, m.route("Cellar", func(r string) bool { return r == "Pit" }))
+}

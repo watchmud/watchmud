@@ -212,7 +212,7 @@ func TestRecall_waitsOutTheCooldown(t *testing.T) {
 	t.Cleanup(func() { recallRetry = retry })
 	a, g := adventurer(t)
 	done := make(chan error, 1)
-	go func() { done <- a.recall() }()
+	go func() { done <- a.recall(context.Background()) }()
 
 	assert.Equal(t, "recall", g.heard())
 	g.say("You can't recall again yet.\r\n<100/100hp 100/100m> ")

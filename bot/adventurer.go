@@ -257,7 +257,7 @@ func (a *Adventurer) goHome(ctx context.Context) (stateFn, error) {
 	if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
 		return nil, err
 	}
-	if err := a.recall(); err != nil {
+	if err := a.recall(ctx); err != nil {
 		return nil, err
 	}
 	a.say(momentTown)
@@ -390,7 +390,7 @@ func (a *Adventurer) donate(ctx context.Context) (stateFn, error) {
 	if a.attacked {
 		return a.fightThen(a.donate), nil
 	}
-	if err := a.recall(); err != nil {
+	if err := a.recall(ctx); err != nil {
 		return nil, err
 	}
 	if _, err := a.walk(ctx, step{"east", "Donation Room"}); err != nil {
@@ -503,7 +503,7 @@ func (a *Adventurer) walk(ctx context.Context, s step) (string, error) {
 
 // recall goes home, the one way back that works from anywhere -- once its
 // cooldown allows: a bot that died twice in a minute waits it out.
-func (a *Adventurer) recall() error {
+func (a *Adventurer) recall(ctx context.Context) error {
 	for range recallTries {
 		_, m, err := a.ask("recall", adventurerRecallRe)
 		switch {
@@ -512,7 +512,13 @@ func (a *Adventurer) recall() error {
 		case strings.HasPrefix(m[0], noRecallText):
 			return errors.New(noRecallError)
 		case m[0] == notReadyText:
-			time.Sleep(recallRetry)
+			// waiting out the cooldown -- unless told to stop: a shutdown
+			// mustn't wait past compose's grace for the bot to quit
+			select {
+			case <-time.After(recallRetry):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 			continue
 		}
 		a.here = home

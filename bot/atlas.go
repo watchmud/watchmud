@@ -10,16 +10,25 @@ type atlas struct {
 
 func newAtlas() *atlas { return &atlas{rooms: map[string]map[string]string{}} }
 
-// see records a room and its exits, keeping whatever is already known of them.
+// see records a room and its open exits, keeping what's known of those, and
+// forgetting any it no longer shows: a door that was open and is shut now
+// isn't a way to route through, or the explorer tries it for ever.
 func (m *atlas) see(room string, exits []string) {
 	known := m.rooms[room]
 	if known == nil {
 		known = map[string]string{}
 		m.rooms[room] = known
 	}
+	open := map[string]bool{}
 	for _, dir := range exits {
+		open[dir] = true
 		if _, ok := known[dir]; !ok {
 			known[dir] = ""
+		}
+	}
+	for dir := range known {
+		if !open[dir] {
+			delete(known, dir)
 		}
 	}
 }
