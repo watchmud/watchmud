@@ -85,3 +85,40 @@ Feel and tuning calls met along the way are noted below rather than decided.
 - CI caught what `make check` can't: `TestStore_documentShape` (real-mongo only)
   counted two inventory items, and the bags commit added a third to the shared test
   record. It now counts the record's own, and checks the bag survives a real round trip.
+
+## Second night (owner asleep from about 08:40 UTC; back 07:30 PDT)
+
+Picked by the owner from the CircleMUD comparison: 1 and 2 (socials, talking), 4 (wizard
+tools), 5 (reports), 3 (positions), 6 (small commands), 7 (track); not 8, 9 (mudmail --
+Discord, later), 10; and, low priority, the moon. All done, each its own commit:
+
+- [x] Socials (53, our own words), emote, reply, whisper/ask (mobs too), toggle
+- [x] Wizard tools: goto, transfer, purge, zreset, echo/gecho, users, mute, freeze
+- [x] Player reports: bug, idea, typo -> log, mongo, wizards' `reports`
+- [x] Positions: sit, rest, sleep, stand, wake
+- [x] wimpy, split, where, time, commands; hit, hold, score
+- [x] track <mob>
+- [x] The moon over Seattle: full-moon nights (moonstruck wild dogs, luckier loot,
+  "Full moon tonight. Be careful.")
+
+Found along the way, fixed:
+- A whole set of failure texts (bags, groups, ooc, donate) had been filed under the
+  per-verb map with no verb, so players saw "You can't do that." A test now reads
+  `event/result.go` and fails on any code without words. `CANT_FLEE` had none either.
+- The moon reads its own clock, pinned in tests: otherwise every full-moon night would
+  have changed what the tests saw.
+
+Calls made without the owner (cheap to change):
+- Positions regen 150/200/300%; waking stands you up (Circle sits you up).
+- A sleeping player can wake, stand, check stat/inventory/equipment/abilities/group/
+  toggle/who, and quit -- nothing else.
+- Mute and freeze are a second `mute`/`freeze` to undo; wizards can't be moderated.
+- Reports: 500 characters, the latest 50 kept in memory.
+- Full-moon effects: wild dogs (power 2) moonstruck; loot bump chance doubled; the
+  night is 6 pm to 6 am Seattle time.
+- `give`'s, `whisper`'s and `ask`'s room lines say only that something was said.
+
+Still open:
+- `TestAdventurer_huntsLootsAndDonates` failed once under -race (10 kills, 1 looted).
+  Not chance; not reproduced in sixteen runs since. The hunter now logs what an empty
+  loot attempt saw, so the next failure explains itself.
