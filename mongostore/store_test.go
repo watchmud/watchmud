@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/watchmud/watchmud/player"
+	"github.com/watchmud/watchmud/report"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
@@ -177,4 +178,15 @@ func TestStore_saveAllReportsWhichFailed(t *testing.T) {
 	_, found, err := s.Load("other")
 	require.NoError(t, err)
 	assert.True(t, found, "the good one was written")
+}
+
+// a report is one document in its own collection
+func TestStore_fileReport(t *testing.T) {
+	s := newTestStore(t)
+	r := report.Report{Kind: "bug", Player: "Ann", Room: "wrathrock/market_square", Text: "the fountain hums", At: time.Now().UTC().Truncate(time.Millisecond)}
+	require.NoError(t, s.File(r))
+
+	var got reportDoc
+	require.NoError(t, s.reports.FindOne(context.Background(), bson.D{{Key: "player", Value: "Ann"}}).Decode(&got))
+	assert.Equal(t, reportDoc(r), got)
 }

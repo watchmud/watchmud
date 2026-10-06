@@ -32,6 +32,7 @@ var wizardCommands = []command.Command{
 	command.Echo{Text: "hello"},
 	command.Echo{Text: "hello", Global: true},
 	command.Users{},
+	command.Reports{},
 	command.Moderate{Target: "nobody"},
 	command.Moderate{Target: "nobody", Freeze: true},
 }

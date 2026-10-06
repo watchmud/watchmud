@@ -42,6 +42,9 @@ func failureText(verb, code string) string {
 }
 
 var failureByVerb = map[string]string{
+	"typo/NO_VALUE":               "What's the typo? 'typo <what happened, or what you'd like>'.",
+	"idea/NO_VALUE":               "What's the idea? 'idea <what happened, or what you'd like>'.",
+	"bug/NO_VALUE":                "What's the bug? 'bug <what happened, or what you'd like>'.",
 	"color/BAD_REQUEST":           "Color on, color off, or just color to switch it.",
 	"nohassle/BAD_REQUEST":        "Nohassle on, nohassle off, or just nohassle to switch it.",
 	"gold/BAD_REQUEST":            "Gold how much? A number from 1 to a million.",
@@ -106,6 +109,7 @@ var failureByVerb = map[string]string{
 }
 
 var failureByCode = map[string]string{
+	"TOO_LONG":          "That's a bit long: say it in 500 characters or so.",
 	"MUTED":             "You've been muted: nobody can hear you.",
 	"FROZEN":            "You're frozen solid. You can look around, or quit.",
 	"CANT_FLEE":         "You couldn't get away!",

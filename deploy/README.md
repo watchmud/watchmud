@@ -236,6 +236,19 @@ failed run is GitHub emailing you; three tries 20s apart keep a deploy's restart
 setting it off. It runs from master only. Never create `Uptimeprobe`: the check would
 still pass (a taken name asks for a password), but there's no reason to.
 
+## Reports
+
+Players file `bug`, `idea` and `typo` reports in the game. Each is a warn-level log
+line (`report=bug player=... room=zone/room`) and a document in mongo's `reports`
+collection; a wizard reads the latest 50 since the restart with `reports`. To read
+them all:
+
+```sh
+docker compose -f deploy/compose.yaml exec mongo mongosh -u root -p \
+  --authenticationDatabase admin watchmud --quiet \
+  --eval 'db.reports.find().sort({at: -1}).limit(50)'
+```
+
 ## Backups
 
 The `backup` service writes `deploy/backups/watchmud-<time>.archive.gz` when it starts

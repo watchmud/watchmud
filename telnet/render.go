@@ -131,6 +131,18 @@ func render(msg any, self string) string {
 	case event.Swept:
 		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
 
+	case event.Reported:
+		return "Thanks -- your " + m.Kind + " is noted, for whoever runs the game.\n"
+	case event.ReportList:
+		if len(m.Reports) == 0 {
+			return "No reports since the last restart.\n"
+		}
+		var b strings.Builder
+		b.WriteString(paint(colorHeading, "Reports") + "\n")
+		for _, r := range m.Reports {
+			fmt.Fprintf(&b, "  %s %s, %s at %s: %s\n", r.When, r.Kind, r.Player, r.Room, r.Text)
+		}
+		return b.String()
 	case event.Echoed:
 		return m.Text + "\n"
 	case event.UserList:

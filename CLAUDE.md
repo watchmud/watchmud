@@ -1105,6 +1105,11 @@ table -- damage and healing never pull a mob.
   The wizard's toolkit (`world/h_wiz_admin.go`): `goto` (zone/room, player or mob),
   `transfer`, `purge [target]`, `zreset [zone]`, `echo`/`gecho` (say a restart is
   coming), `users`, `mute`, `freeze` -- each logged through `logWizCommand`.
+- **Player reports** (`bug`, `idea`, `typo`; `world/h_report.go`, the leaf `report/`):
+  logged at warn with the player and "zone/room", the latest 50 kept in memory for a
+  wizard's `reports`, and filed to mongo's `reports` collection when there is one --
+  through `World.SetReportFiler`, which `cmd/watchmud` points at `mongostore.File` on a
+  goroutine of its own, since the world mustn't wait on a database.
   `Bot` on the record is the same kind of hand-set flag (`make bot NAME=...`); it only
   lists the character among the bots at the bottom of `who`, and nothing may branch on it.
 - **`Send` returns nothing.** `player.Sender` is `Send(msg any)`. The only error any

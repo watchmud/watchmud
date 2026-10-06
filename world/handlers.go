@@ -119,6 +119,10 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleUsers(msg, cmd)
 	case command.Moderate:
 		w.handleModerate(msg, cmd)
+	case command.Report:
+		w.handleReport(msg, cmd)
+	case command.Reports:
+		w.handleReports(msg, cmd)
 	case command.GroupTell:
 		w.handleGroupTell(msg, cmd)
 	case command.Open:

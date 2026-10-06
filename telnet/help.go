@@ -44,8 +44,8 @@ var helpSections = []helpSection{
 			[]string{"drop", "junk", "donate"}},
 		{"wear <item>, wield <item>", "put it on, take up a weapon", []string{"wear", "wield"}},
 		{"remove <item>", "take it off", []string{"remove"}},
-		{"open <door|chest>, close", "a door by name or direction, or a chest", []string{"open", "close"}},
-		{"unlock <door|chest>, lock", "with its key, if you carry it", []string{"unlock", "lock"}},
+		{"open, close, unlock, lock", "doors and chests, by name or way; keys as needed",
+			[]string{"open", "close", "unlock", "lock"}},
 		{"repair <item>", "mend worn gear, at the smithy; repair all", []string{"repair"}},
 		{"list, buy <item>", "the General Store's stock, and buying it", []string{"list", "buy"}},
 		{"sell <item>, value <item>", "sell it there (sell all.pelt), or ask first", []string{"sell", "value"}},
@@ -68,6 +68,7 @@ var helpSections = []helpSection{
 		{"follow <who>, group, gt", "walk and fight as one; gt talks (assist, ungroup)",
 			[]string{"follow", "group", "gt", "gtell", "ungroup", "assist"}},
 		{"socials, toggle", "smile, bow, wave and more; what you hear", []string{"socials", "toggle"}},
+		{"bug, idea, typo <words>", "tell whoever runs the game", []string{"bug", "idea", "typo"}},
 		{"who, quit", "who's playing; save and leave", []string{"who", "quit"}},
 	}},
 }

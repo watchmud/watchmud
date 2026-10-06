@@ -87,6 +87,8 @@ const (
 	YourTellsOff  ResultCode = "YOUR_TELLS_OFF"
 	ShoutsOff     ResultCode = "SHOUTS_OFF"
 	UnknownToggle ResultCode = "UNKNOWN_TOGGLE"
+	// a report longer than report.MaxLength
+	TooLong ResultCode = "TOO_LONG"
 	// moderation: what a muted or frozen player is told
 	Muted  ResultCode = "MUTED"
 	Frozen ResultCode = "FROZEN"

@@ -3,6 +3,7 @@ package world
 import (
 	"errors"
 	"fmt"
+	"github.com/watchmud/watchmud/report"
 	"iter"
 	"maps"
 	"slices"
@@ -49,6 +50,12 @@ type World struct {
 	// lastTeller is who last told each player something, by name, for
 	// reply. In memory; RemovePlayer forgets it.
 	lastTeller map[*player.Player]string
+
+	// reports is the latest of what players filed with bug, idea and typo,
+	// for a wizard's "reports"; fileReport, if set, keeps each one somewhere
+	// that outlives a restart. See world/h_report.go.
+	reports    []report.Report
+	fileReport func(report.Report)
 }
 
 // New creates a brand-new World based on this content

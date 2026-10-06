@@ -228,6 +228,20 @@ type Swept struct {
 	Item    string
 }
 
+// Reported thanks a player for a report.
+type Reported struct {
+	Kind string
+}
+
+// ReportList is "reports": the latest, newest first.
+type ReportList struct {
+	Reports []ReportEntry
+}
+
+type ReportEntry struct {
+	Kind, Player, Room, Text, When string
+}
+
 // Echoed is a wizard's echo or gecho: the text, as it is.
 type Echoed struct {
 	Text string

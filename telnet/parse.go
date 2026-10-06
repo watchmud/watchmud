@@ -215,6 +215,10 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "nohassle":
 		return command.NoHassle{Setting: strings.ToLower(rest)}, nil
 
+	case "bug", "idea", "typo":
+		return command.Report{Kind: verb, Text: rest}, nil
+	case "reports":
+		return command.Reports{}, nil
 	case "goto":
 		return command.Goto{Target: rest}, nil
 	case "transfer", "trans":

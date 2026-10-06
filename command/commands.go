@@ -393,6 +393,20 @@ func (Reply) talk()     {}
 func (Social) talk()    {}
 func (GroupTell) talk() {}
 
+// Report is bug, idea or typo: a note for whoever runs the game.
+type Report struct {
+	Kind string
+	Text string
+}
+
+func (r Report) Verb() string { return r.Kind }
+
+// Reports lists the latest reports, for a wizard.
+type Reports struct{}
+
+func (Reports) Verb() string { return "reports" }
+func (Reports) wizard()      {}
+
 // Goto takes a wizard to a room ("zone/room"), a player, or a mob.
 type Goto struct{ Target string }
 
