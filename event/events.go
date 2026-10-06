@@ -268,11 +268,15 @@ type WhereEntry struct{ Name, Room string }
 // CommandList is "commands": the telnet side knows them, so this just asks.
 type CommandList struct{}
 
+// MoonWarning is told to anyone arriving on a full-moon day.
+type MoonWarning struct{}
+
 // TimeOfDay is "time": Wrathrock's clock, which is Seattle's.
 type TimeOfDay struct {
 	Clock string // "9:41 pm"
 	Day   string // "Tuesday, October 6"
 	Part  string // "night", "morning", ...
+	Moon  string // its phase: "waxing gibbous", "full", ...
 }
 
 // WimpySet answers wimpy: the health under which you'll flee, 0 for never.

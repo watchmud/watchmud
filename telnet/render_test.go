@@ -1133,3 +1133,9 @@ func TestRender_smallCommands(t *testing.T) {
 		assert.Equal(t, want, cmd, line)
 	}
 }
+
+func TestRender_moon(t *testing.T) {
+	assert.Equal(t, "Full moon tonight. Be careful.\n", plain(render(event.MoonWarning{}, "ann")))
+	assert.Equal(t, "It's 10:00 pm in Wrathrock, Saturday, September 26: night.\nThe moon is full.\n",
+		plain(render(event.TimeOfDay{Clock: "10:00 pm", Day: "Saturday, September 26", Part: "night", Moon: "full"}, "ann")))
+}

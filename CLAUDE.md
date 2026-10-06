@@ -1000,6 +1000,15 @@ breadth-first search out from the player's room, through open exits within the z
 answering the first step towards the nearest mob of that name -- a trail, not a map:
 step, then track again. It's how you chase a bandit that ran.
 
+**The moon** (`moon/`, `world/moon.go`): its phase from the date (a mean synodic month
+from a known new moon, checked against the almanac), and night from Seattle's clock --
+the moon over Wrathrock is the one over the Pacific Northwest. A full-moon night
+(6 pm to 6 am) turns `moonstruck` mobs aggressive (the Hollowfields' wild dogs) and
+doubles the chance of a loot power bump; anyone arriving on a full-moon day is told
+"Full moon tonight. Be careful." `time` names the phase. The moon reads its own clock,
+`World.SetMoonClock`: `NewTestWorld` and the bot tests pin it to `world.NewMoon`, so a
+full moon never changes what a test sees, and a moon test sets `world.FullMoonNight`.
+
 **Socials** are content, `content/rules/socials.json` (`rules.Social`, checked by
 `Catalog.SetSocials`): lines for doing it alone (self, room) and, optionally, at a player
 or mob in the room (self, victim, room), with `$n` the doer and `$N` the target -- our own

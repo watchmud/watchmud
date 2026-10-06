@@ -153,7 +153,13 @@ func render(msg any, self string) string {
 	case event.CommandList:
 		return renderCommands()
 	case event.TimeOfDay:
-		return fmt.Sprintf("It's %s in Wrathrock, %s: %s.\n", m.Clock, m.Day, m.Part)
+		s := fmt.Sprintf("It's %s in Wrathrock, %s: %s.\n", m.Clock, m.Day, m.Part)
+		if m.Moon != "" {
+			s += "The moon is " + m.Moon + ".\n"
+		}
+		return s
+	case event.MoonWarning:
+		return paint(colorWounded, "Full moon tonight. Be careful.") + "\n"
 	case event.WimpySet:
 		switch {
 		case m.At == 0 && m.Changed:

@@ -9,6 +9,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
+	"github.com/watchmud/watchmud/moon"
 	"github.com/watchmud/watchmud/player"
 )
 
@@ -79,7 +80,8 @@ func (w *World) handleCommands(msg *gameserver.HandlerParameter, cmd command.Com
 // handleTime is Wrathrock's clock, which is Seattle's.
 func (w *World) handleTime(msg *gameserver.HandlerParameter, cmd command.Time) {
 	now := w.now().In(wrathrockTime)
-	msg.Player.Send(event.TimeOfDay{Clock: now.Format("3:04 pm"), Day: now.Format("Monday, January 2"), Part: partOfDay(now.Hour())})
+	msg.Player.Send(event.TimeOfDay{Clock: now.Format("3:04 pm"), Day: now.Format("Monday, January 2"),
+		Part: partOfDay(now.Hour()), Moon: string(moon.PhaseAt(w.moonTime()))})
 }
 
 func partOfDay(hour int) string {

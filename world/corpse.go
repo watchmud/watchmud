@@ -113,6 +113,9 @@ func (w *World) rollLoot(m *mobile.Instance) []*object.Instance {
 			log.Error().Err(err).Msgf("rollLoot: %s", m.Definition.Id)
 			bump = 100 // no bump
 		}
+		if w.fullMoonNight() {
+			bump /= 2 // the moon's luck: twice the chance of a bump
+		}
 		item := object.NewInstance(uuid.New(), entry.Object)
 		item.Power = m.Power() + rules.LootPowerBump(bump)
 		drops = append(drops, item)

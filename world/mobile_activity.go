@@ -27,7 +27,8 @@ func (w *World) DoMobileActivity() {
 		} else {
 			// actions where the mob is NOT in a fight.
 
-			if mob.Definition.HasFlag(rules.MobileFlagAggressive) {
+			if mob.Definition.HasFlag(rules.MobileFlagAggressive) ||
+				(mob.Definition.HasFlag(rules.MobileFlagMoonstruck) && w.fullMoonNight()) {
 				w.doMobAggro(mob)
 			} else if mob.CanWander() {
 				w.doMobWander(mob)

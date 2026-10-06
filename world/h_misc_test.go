@@ -60,7 +60,7 @@ func (s *miscSuite) TestWhere() {
 func (s *miscSuite) TestTime() {
 	s.w.now = func() time.Time { return time.Date(2026, 10, 7, 4, 41, 0, 0, time.UTC) }
 	s.as(s.p, command.Time{})
-	s.Assert().Equal(event.TimeOfDay{Clock: "9:41 pm", Day: "Tuesday, October 6", Part: "night"}, sent[event.TimeOfDay](s.T(), s.r, 0))
+	s.Assert().Equal(event.TimeOfDay{Clock: "9:41 pm", Day: "Tuesday, October 6", Part: "night", Moon: "new"}, sent[event.TimeOfDay](s.T(), s.r, 0))
 }
 
 // wimpy: hit below the line in a fight, the player runs on their own

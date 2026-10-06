@@ -27,6 +27,7 @@ func startGame(t *testing.T, tick time.Duration) string {
 	store := memstore.New()
 	w, err := world.New(content, store, dice.New([32]byte{}))
 	require.NoError(t, err)
+	w.SetMoonClock(func() time.Time { return world.NewMoon }) // no full moons in a test
 	gs := server.New(w, content.Catalog, store)
 	gs.SetTickInterval(tick)
 

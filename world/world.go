@@ -51,6 +51,9 @@ type World struct {
 	// reply. In memory; RemovePlayer forgets it.
 	lastTeller map[*player.Player]string
 
+	// moonNow is the clock the moon reads; nil is now. See world/moon.go.
+	moonNow func() time.Time
+
 	// reports is the latest of what players filed with bug, idea and typo,
 	// for a wizard's "reports"; fileReport, if set, keeps each one somewhere
 	// that outlives a restart. See world/h_report.go.
@@ -162,6 +165,9 @@ func (w *World) arrive(p *player.Player, first bool) {
 	p.Send(event.Color{On: p.Color()}) // ahead of the first thing worth coloring
 	p.Send(r.DescriptionExcept(p))
 	w.backfill(p)
+	if w.fullMoon() {
+		p.Send(event.MoonWarning{})
+	}
 }
 
 // Welcome tells a brand-new character where to go first. After Arrive, so it

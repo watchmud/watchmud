@@ -80,6 +80,7 @@
     ],
     "short_description": "A wild dog.",
     "description_in_room": "A mangy wild dog watches you, hackles up.",
+    "flags": [ "moonstruck" ],
     "max_health": 14,
     "wandering_definition": {
       "can_wander": true,

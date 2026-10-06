@@ -62,6 +62,7 @@ move is one change.
 | Damage per point of delta | ±5%, rounded, a hit does at least 1 | how long fights above your power take |
 | Loot power bump | 10% chance of +1, 2% of +2 | **the pace of the whole game** |
 | Corpse decay | 5 minutes (`rules.CorpseDecay`) | time to loot vs. rooms filling up |
+| Full-moon night | wild dogs aggressive; loot bump chance doubled (`world/moon.go`) | a night to be careful, and a night to be out |
 | Janitor sweeps | after 5 minutes on the floor (`world.JunkAfter`) | time to drop a thing for a friend |
 
 **Measure before tuning:** `go run ./cmd/watchmud-sim` fights a simulated player
