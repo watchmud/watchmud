@@ -246,6 +246,8 @@ Later in the night, two more fixes for v0.10.0 bugs (not tried on the tag):
   the same hole in its bcrypt window; the fix there would be the same idea (note
   connections that log out with a hash away, drop what comes back for them) without
   the lookup changes it's written against here.
+- the commit after `3ab69cb` -- `parseTarget` refuses `-1.x`, `2.` and `0 coins`
+  (`world/target_parser.go` only).
 - `3ab69cb` -- `kill` takes the whole name (one line in `telnet/parse.go`; the rest of
   the commit is smaller fixes that can ride along or not).
 - `45d7a57` -- the bots' patterns anchored, so a player can't knock one off by
@@ -290,6 +292,15 @@ A review of what players read (render, wrap, tables, prompts, GMCP, help):
 - `commands` showed help instead of its list of verbs: help caught the word first.
 - `'hello` and `:waves` (no space) were "Unknown request".
 - `gold 1` said "1 coins appear"; tables counted bytes, so a "café" would misalign.
+
+A review of the item commands (no duplicates or minted coins found; three bugs, all in
+the target grammar, the first two in v0.10.0 too):
+- `get -1.knife` (or any handler's `-1.x`) panicked: recovered, but a stack trace in the
+  log per attempt -- a free log flood.
+- `2.` with nothing after the dot acted on whatever was second: a half-typed `junk 2.`
+  destroyed an item. `all.` the same, as everything.
+- `put 0 coins in chest` put every coin in it.
+All three are refused as parse errors now (`parseTarget`).
 
 Checks against the real thing:
 - **tintin++** (2.02.20, installed here): a scripted session made a character with no

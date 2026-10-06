@@ -7,7 +7,11 @@ import (
 	"uuid"
 
 	"github.com/stretchr/testify/suite"
+	"github.com/watchmud/watchmud/command"
+	"github.com/watchmud/watchmud/event"
+	"github.com/watchmud/watchmud/gameserver"
 	"github.com/watchmud/watchmud/object"
+	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -158,4 +162,28 @@ func (suite *TargetParserSuite) TestTargetsIn_EmptyContainer() {
 	target, err = parseTarget("knife")
 	suite.Require().NoError(err)
 	suite.Assert().Empty(targetsIn(target, empty))
+}
+
+// What would act on the wrong thing, or panic, is refused instead: an index
+// before the first, a number or "all." with no name after it (a half-typed
+// "junk 2." mustn't junk whatever's second), and a count of none -- "put 0
+// coins" isn't "put coins", which is all of them.
+func (suite *TargetParserSuite) TestParseRefuses() {
+	for _, bad := range []string{"-1.knife", "0.knife", "2.", "all.", "0 coins", "-5 coins"} {
+		_, err := parseTarget(bad)
+		suite.Assert().Error(err, bad)
+	}
+}
+
+// and from the player's side: get -1.knife used to panic
+func (suite *TargetParserSuite) TestNegativeIndexDoesntPanic() {
+	w, err := NewTestWorld()
+	suite.Require().NoError(err)
+	r := &player.Recorder{}
+	p := player.NewTestPlayer(uuid.New(), "dood", r)
+	w.PlacePlayer(p, w.StartRoom)
+	suite.Require().NotPanics(func() {
+		suite.Require().NoError(w.HandleIncomingMessage(gameserver.NewHandlerParameter(gameserver.NewTestConn(p), command.Get{Target: "-1.knife"})))
+	})
+	suite.Assert().Equal(event.ParseError, sent[event.Failed](suite.T(), r, len(r.Sent)-1).Code)
 }

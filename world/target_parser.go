@@ -40,6 +40,11 @@ func parseTarget(target string) (result Target, err error) {
 		if err != nil {
 			return
 		}
+		// "0 coins" isn't "coins", which means all of them
+		if quant < 1 {
+			err = errors.New("QUANTITY_BELOW_ONE")
+			return
+		}
 		result.Quantity = quant
 		item = parts[1]
 	} else {
@@ -59,6 +64,12 @@ func parseTarget(target string) (result Target, err error) {
 		}
 	} else if len(dotparts) == 2 {
 		// "x.foo"
+		// "all." and "2." name nothing; only bare "all" means everything, and
+		// a line sent half-typed mustn't junk whatever is second in the pack
+		if dotparts[1] == "" {
+			err = errors.New("NOTHING_AFTER_THE_DOT")
+			return
+		}
 		if strings.EqualFold(dotparts[0], "all") {
 			// "all.foo"
 			result.All = true
@@ -68,6 +79,11 @@ func parseTarget(target string) (result Target, err error) {
 			var identifier int
 			identifier, err = strconv.Atoi(dotparts[0])
 			if err != nil {
+				return
+			}
+			// counted from 1: "-1.knife" would index before the start
+			if identifier < 1 {
+				err = errors.New("INDEX_BELOW_ONE")
 				return
 			}
 			result.Identifier = identifier
@@ -106,7 +122,7 @@ func targetsIn(t Target, contents iter.Seq[*object.Instance]) []*object.Instance
 	if n == 0 {
 		n = 1
 	}
-	if n > len(matches) {
+	if n < 1 || n > len(matches) {
 		return nil
 	}
 	return matches[n-1 : n]
