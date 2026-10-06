@@ -32,9 +32,23 @@ The `look` row, extended:
 After the `list` row's neighbours, nothing: the satchel is just on the General Store's
 list.
 
+After the `tell` row:
+
+```html
+<tr><td><code>follow Ana</code></td><td>Walk wherever Ana walks, as her group. <code>follow</code> on its own stops</td></tr>
+<tr><td><code>group</code>, <code>gt hello</code></td><td>How your group is doing and where; <code>gt</code> talks to just them</td></tr>
+```
+
 "Things that surprise people" could gain one:
 
 ```html
 <dt>My coins won't go in my bag</dt>
 <dd>Coins stay in your purse. Bags hold things, ten of them for the leather satchel, and nothing that holds things goes inside another.</dd>
+```
+
+And one for the janitor:
+
+```html
+<dt>Something I dropped vanished</dt>
+<dd>The town janitor sweeps up what's been left lying in Wrathrock for five minutes or more. Give it to someone instead, or leave it in the donation room, east of Temple Square, which he never touches.</dd>
 ```
