@@ -504,3 +504,23 @@ func TestCreate_hungUpMidwayMakesNothing(t *testing.T) {
 	assert.False(t, found)
 	assert.Empty(t, gs.creating)
 }
+
+// A Logout built before the login queued ahead of it attached a player --
+// the connection hanging up just as its password came back good -- still
+// takes that player out: it goes by the connection, not by its snapshot.
+func TestLogout_builtBeforeTheLoginLanded(t *testing.T) {
+	gs, _ := newTestGameServer(t)
+	first := &testConn{}
+	create(t, gs, first, "bob", "sekrit")
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(first, command.Logout{})))
+
+	c := &testConn{}
+	require.NoError(t, gs.dispatch(gameserver.NewHandlerParameter(c, command.Login{Name: "bob", Password: "sekrit"})))
+	settle(t, gs)                                                                             // looked up; off to bcrypt
+	logout := gameserver.NewHandlerParameter(c, command.Logout{Cause: "client disconnected"}) // no player yet
+	settle(t, gs)                                                                             // checked: Bob is in
+	require.True(t, gs.world.IsPlaying("Bob"))
+	require.NoError(t, gs.dispatch(logout))
+
+	assert.False(t, gs.world.IsPlaying("Bob"), "no ghost")
+}

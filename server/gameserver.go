@@ -204,9 +204,14 @@ func (gs *GameServer) dispatch(msg *gameserver.HandlerParameter) error {
 		}
 		return gs.handleLoginChecked(msg, cmd)
 	case command.Logout:
+		// The parameter's player was snapshotted when the Logout was built,
+		// on the connection's goroutine -- maybe before a login queued ahead
+		// of it attached one. The connection's own is the one to log out, or
+		// a nil snapshot leaves the just-logged-in character a ghost.
+		msg.Player = msg.Client.Player()
 		// a character's record changes as they leave: a login still being
 		// checked for them loads it again (handleLoginChecked)
-		if p := msg.Client.Player(); p != nil {
+		if p := msg.Player; p != nil {
 			gs.logouts[p.Name()]++
 		} else if gs.inFlight[msg.Client] {
 			// gone mid-login: whatever comes back for it is dropped, or the
