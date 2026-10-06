@@ -309,6 +309,15 @@ A review of the small commands and the loader:
   copy-paste would have cut Temple Square off. Refused now.
 - A dropped item with the same name hid a chest from `unlock`.
 
+A review of the Lua script engine (every removal path forgets a mob's runs; caps
+span waits; the real scripts behave) found two sandbox bugs:
+- **One script could change string methods for every other**: each program's copy of
+  `string` still carried `string.__index`, the one table all `("x"):upper()` calls
+  go through. A bad script could have had the Barrow-King and the shopkeeper switched
+  off. Strings now have a metatable no program can reach.
+- `wait` inside an iterator or a metamethod didn't pause -- gopher-lua swallows that
+  yield -- and the hook ran straight on. Now it's an error that says why.
+
 Checks against the real thing:
 - **tintin++** (2.02.20, installed here): a scripted session made a character with no
   typing -- its `#action`s fire on our GA-marked prompts -- and played; wrapping,

@@ -851,6 +851,10 @@ Rules that hold across a wait:
 - **Not inside `pcall` or `xpcall`.** gopher-lua's `pcall` takes a yield for a return, so
   the hook would carry on at once; the sandbox wraps both to count protected calls in
   progress, and `wait` refuses inside one -- the script gets `false` and the error.
+  **Nor inside an iterator or a metamethod** (`for x in it`, `__index`, `__concat`):
+  gopher-lua swallows a yield from a Lua function called through Go, and the hook ran
+  straight on. A wait sets `hookCall.yielding` until `resume` sees the hook pause;
+  anything the hook does meanwhile, or its ending, fails with an error saying so.
 - **A hook fired during another waits its turn.** `me:summon` of a scripted mob fires the
   summon's `on_fight_start` from inside the summoner's coroutine, which would come back to
   find its call gone. `fire` queues it on `Runtime.pending` while a hook is running
@@ -875,8 +879,11 @@ that loads code or prints. Three limits exist because of what the deadline can't
   connection whose queue fills is hung up on, so a say in a loop would disconnect the
   room inside the deadline.
 - **Each program has its own globals**: a copy of the base functions and of the
-  `string`/`table`/`math` tables, with `_G` pointing at itself, and strings' shared
-  metatable is locked. A script can break itself, not another script.
+  `string`/`table`/`math` tables, with `_G` pointing at itself; strings' metatable
+  is a table of its own (its `__index` a copy of the library no program holds),
+  locked against `getmetatable`, and the library carries no `__index` of its own --
+  it used to point every program's copy back at the one table all their
+  `("x"):upper()` calls go through. A script can break itself, not another script.
 
 **Summoning.** `me:summon(id, count)` calls up mobs into the summoner's room and answers
 how many came. What a mob may summon is content: `"summons": ["barrow_skeleton"]` in

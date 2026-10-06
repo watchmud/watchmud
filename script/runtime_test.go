@@ -378,6 +378,10 @@ func TestProgramsCantPoisonEachOther(t *testing.T) {
 				pcall(function() string.format = function() return "pwned" end end)
 				pcall(function() _G.pick = nil end)
 				pcall(function() getmetatable("").__index = {} end)
+				-- the way round getmetatable: the library's own __index, which
+				-- was strings' metatable itself
+				pcall(function() string.__index.upper = function() return "pwned" end end)
+				pcall(function() string.__index.__metatable = nil end)
 				me:say("done")
 			end`,
 		"z/b": `function on_fight_start(me, foe)
@@ -968,4 +972,27 @@ func TestTake_oneACall(t *testing.T) {
 	h.said = nil
 	h.rt.Arrive(mob("crow", "z/crow"))
 	assert.Equal(t, []string{"nil nil"}, h.texts())
+}
+
+// gopher-lua can't yield from inside an iterator or a metamethod: a wait
+// there was swallowed and the hook ran straight on. Now whatever it does
+// next, or its ending, is refused with an error that says why.
+func TestWaitSwallowedIsAnError(t *testing.T) {
+	for name, body := range map[string]string{
+		"iterator": `local function it(_, i) if i == nil then wait(1) return 1 end end
+			for x in it do me:say("x") end
+			me:say("done")`,
+		"index": `local t = setmetatable({}, {__index = function() wait(1) return "v" end})
+			local v = t.anything
+			me:say(v)`,
+		"ending": `local t = setmetatable({}, {__index = function() wait(1) return "v" end})
+			local v = t.anything`,
+	} {
+		h := newHarness(t, map[string]string{"z/w": "function on_fight_start(me, foe) " + body + " end"})
+		logged := h.failures()
+		h.rt.FightStart(mob("M", "z/w"), bob)
+		assert.Empty(t, h.said, name)
+		require.Len(t, *logged, 1, name)
+		assert.Contains(t, (*logged)[0], "iterator or a metamethod", name)
+	}
 }

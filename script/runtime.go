@@ -308,6 +308,7 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		if r.sb.current != call {
 			L.RaiseError("say: this me belongs to an earlier call")
 		}
+		call.notSwallowed(L)
 		if len(text) > MaxSayLength {
 			L.RaiseError("say: %d bytes is longer than %d", len(text), MaxSayLength)
 		}
@@ -328,6 +329,7 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		if r.sb.current != call {
 			L.RaiseError("summon: this me belongs to an earlier call")
 		}
+		call.notSwallowed(L)
 		def := summonable(mob, id)
 		if def == nil {
 			L.RaiseError("summon: %s may not summon %q -- see \"summons\" in mobs.json", mob.Definition.Id, id)
@@ -351,6 +353,7 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		if r.sb.current != call {
 			L.RaiseError("take: this me belongs to an earlier call")
 		}
+		call.notSwallowed(L)
 		// one thing a call: a magpie, not a moving van
 		if call.took {
 			L.Push(lua.LNil)
@@ -371,6 +374,7 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		if r.sb.current != call {
 			L.RaiseError("flee: this me belongs to an earlier call")
 		}
+		call.notSwallowed(L)
 		// once a call: a mob that got away is out of the fight, and one that
 		// couldn't won't find a door by trying again this round
 		if call.fled {
@@ -388,6 +392,7 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		if r.sb.current != call {
 			L.RaiseError("junk: this me belongs to an earlier call")
 		}
+		call.notSwallowed(L)
 		L.Push(lua.LNumber(r.actions.Junk(mob)))
 		return 1
 	}))
@@ -399,6 +404,7 @@ func (r *Runtime) me(mob *mobile.Instance, call *hookCall) *lua.LTable {
 		if r.sb.current != call {
 			L.RaiseError("sweep: this me belongs to an earlier call")
 		}
+		call.notSwallowed(L)
 		if n < 1 {
 			L.RaiseError("sweep: a count of %d", n)
 		}
