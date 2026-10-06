@@ -856,3 +856,9 @@ func TestRender_doorChanged(t *testing.T) {
 		{Direction: rules.DirectionEast}, {Direction: rules.DirectionWest, Closed: true},
 	}}, "testdood")))
 }
+
+func TestRender_containerChanged(t *testing.T) {
+	m := event.ContainerChanged{Actor: "testdood", Container: "strongbox", Change: event.DoorUnlocked}
+	assert.Equal(t, "You unlock the strongbox.\n", plain(render(m, "testdood")))
+	assert.Equal(t, "testdood unlocks the strongbox.\n", plain(render(m, "otherdood")))
+}

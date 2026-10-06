@@ -391,7 +391,12 @@ be made stable, because a room's contents and a player's inventory were shufflin
 
 `instructions.json` entries become `spaces.ZoneCommand`s (`CreateObject`, `CreateMobile`)
 that `Zone.Reset` replays -- at startup and again on every zone reset -- which is how mobs
-and loot repopulate.
+and loot repopulate. `CreateObject` **tops up** to `instance_max` -- on the room's floor,
+or inside the first container of a definition in the room with `"container"` -- and
+makes things at the bottom of the zone's power band unless it says `"power"`. A
+container already there gets its lock reset instead. Put a container's instruction
+before the ones that fill it. (Before 2026-10-06 `instance_max` was ignored for objects,
+and every reset added another of everything.)
 
 ### command/ and event/
 
@@ -872,6 +877,15 @@ direction, name, alias or plain "door"; the key is anything in the inventory who
 `ObjectId.Ref()` ("zone/id") is the lock's; `event.DoorChanged` goes to both rooms, the
 far side without an actor. `Zone.Reset` resets the doors its content declared. Door
 state isn't saved: a restart puts every door back how content says.
+
+**Chests** are the lock's second user: an object with `"container"` in objects.json
+(`object.ContainerSpec`, fitted by `loader/chests.go` with the same key checks as a
+door, `lockKey`) gives every instance its own `Contents` and its own `Instance.Lock`. A
+container definition is made `noTake` -- furniture, which also keeps lids and contents
+out of the player record, since floors aren't saved. When no door matches, `handleDoor`
+looks for a lidded container on the floor (`findLidded`) and answers with
+`event.ContainerChanged`; `findContainer` refuses a closed one (`CONTAINER_CLOSED`), so
+`get from` and `look in` need it open. A corpse is a container with no lid: always open.
 
 A fight has no location of its own. Nobody can leave a fight without ending it (`move`
 and `recall` refuse, `flee` ends it first), so `DoViolence` reports each swing to

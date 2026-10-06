@@ -72,5 +72,31 @@
     "aliases": [ "key", "rusted" ],
     "short_description": "a rusted key",
     "description_on_ground": "A heavy key, rusted orange, lies here in a puddle."
+  },
+  {
+    "id": "grain_bin",
+    "name": "grain bin",
+    "category": "OTHER",
+    "aliases": [ "bin", "grain" ],
+    "short_description": "a grain bin",
+    "description_on_ground": "A wooden grain bin with a heavy lid stands against the wall, swollen with damp.",
+    "container": { "closed": true }
+  },
+  {
+    "id": "strongbox_key",
+    "name": "small iron key",
+    "category": "OTHER",
+    "aliases": [ "key", "small", "iron" ],
+    "short_description": "a small iron key",
+    "description_on_ground": "A small iron key lies here, crusted with flour."
+  },
+  {
+    "id": "strongbox",
+    "name": "miller's strongbox",
+    "category": "OTHER",
+    "aliases": [ "strongbox", "box", "miller" ],
+    "short_description": "the miller's strongbox",
+    "description_on_ground": "An iron-bound strongbox sits on a ledge above the water, its lock black with rust.",
+    "container": { "closed": true, "locked": true, "key": "strongbox_key" }
   }
 ]

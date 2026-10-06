@@ -58,5 +58,40 @@
     "mobile_id": "drowned_miller",
     "room_id": "wheel_pit",
     "instance_max": 1
+  },
+  {
+    "type": "CreateObject",
+    "object_id": "grain_bin",
+    "room_id": "grain_loft",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateObject",
+    "object_id": "strongbox_key",
+    "room_id": "grain_loft",
+    "container": "grain_bin",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateObject",
+    "object_id": "strongbox",
+    "room_id": "wheel_pit",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateObject",
+    "object_id": "river_stone_pendant",
+    "room_id": "wheel_pit",
+    "container": "strongbox",
+    "instance_max": 1,
+    "power": 7
+  },
+  {
+    "type": "CreateObject",
+    "object_id": "eelskin_boots",
+    "room_id": "wheel_pit",
+    "container": "strongbox",
+    "instance_max": 1,
+    "power": 7
   }
 ]

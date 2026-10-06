@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/watchmud/watchmud/lock"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -52,6 +53,19 @@ type Definition struct {
 	// unbroken, by rules.Ability id. Assigned by the loader, which refuses
 	// an id the catalog doesn't define.
 	Abilities []string
+
+	// Container makes this a chest: something that holds things, with a lid
+	// that can be shut and a lock its key fits. Nil for anything else. Each
+	// instance gets its own contents and its own lock (NewInstance).
+	// Assigned by the loader.
+	Container *ContainerSpec
+}
+
+// ContainerSpec is how a chest starts: open or closed, locked or not, and the
+// key that fits ("zone/object"; empty for a lid with no lock).
+type ContainerSpec struct {
+	Initial lock.State
+	Key     string
 }
 
 func NewDefinition(

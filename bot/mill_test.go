@@ -22,9 +22,30 @@ func TestDrownedMill_walk(t *testing.T) {
 		step{"west", "The Mill Yard"},
 		step{"west", "The Mill House"},
 		step{"up", "The Grain Loft"},
-		step{"down", "The Mill House"},
-		step{"down", "The Flooded Cellar"},
 	)
+	for _, s := range way {
+		require.NoError(t, c.Send(s.dir))
+		_, err := room(c, s.room)
+		require.NoError(t, err, "going %s to %s", s.dir, s.room)
+	}
+	// the grain bin is shut, and the strongbox key is in it
+	require.NoError(t, c.Send("look in bin"))
+	_, err := c.Expect(`It's closed\.`, 5*time.Second)
+	require.NoError(t, err)
+	require.NoError(t, c.Send("open bin"))
+	_, err = c.Expect(`You open the grain bin\.`, 5*time.Second)
+	require.NoError(t, err)
+	require.NoError(t, c.Send("get key from bin"))
+	_, err = c.Expect(`You get a small iron key from a grain bin\.`, 5*time.Second)
+	require.NoError(t, err)
+	require.NoError(t, c.Send("get bin"))
+	_, err = c.Expect(`(?i)can't|cannot`, 5*time.Second)
+	require.NoError(t, err, "a chest stays put")
+
+	way = []step{
+		{"down", "The Mill House"},
+		{"down", "The Flooded Cellar"},
+	}
 	var last string
 	for _, s := range way {
 		require.NoError(t, c.Send(s.dir))
@@ -35,7 +56,7 @@ func TestDrownedMill_walk(t *testing.T) {
 	// the miller is behind a locked grate, and the key is a millhand's
 	assert.Contains(t, last, "West (closed)")
 	require.NoError(t, c.Send("west"))
-	_, err := c.Expect(`The way is shut\.`, 5*time.Second)
+	_, err = c.Expect(`The way is shut\.`, 5*time.Second)
 	require.NoError(t, err)
 	require.NoError(t, c.Send("unlock grate"))
 	_, err = c.Expect(`You don't have the key\.`, 5*time.Second)

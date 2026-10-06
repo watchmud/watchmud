@@ -265,6 +265,13 @@ func render(msg any, self string) string {
 	case event.DoorChanged:
 		return renderDoorChanged(m, self)
 
+	case event.ContainerChanged:
+		verb := doorVerb[m.Change]
+		if m.Actor == self {
+			return "You " + verb + " the " + m.Container + ".\n"
+		}
+		return m.Actor + " " + verb + "s the " + m.Container + ".\n"
+
 	case event.Assessed:
 		return renderAssessed(m, self)
 
@@ -418,13 +425,16 @@ func renderInventory(items []event.InventoryItem) string {
 	return paint(colorHeading, "Inventory") + "\n" + table(rows)
 }
 
+// doorVerb is what a change to a lock is, as a verb.
+var doorVerb = map[event.DoorChange]string{
+	event.DoorOpened: "open", event.DoorClosed: "close",
+	event.DoorLocked: "lock", event.DoorUnlocked: "unlock",
+}
+
 // renderDoorChanged: the one who did it, the room that watched, and the far
 // side, which heard the door but saw nobody.
 func renderDoorChanged(m event.DoorChanged, self string) string {
-	verb := map[event.DoorChange]string{
-		event.DoorOpened: "open", event.DoorClosed: "close",
-		event.DoorLocked: "lock", event.DoorUnlocked: "unlock",
-	}[m.Change]
+	verb := doorVerb[m.Change]
 	switch {
 	case m.Actor == self:
 		return "You " + verb + " the " + m.Door + ".\n"

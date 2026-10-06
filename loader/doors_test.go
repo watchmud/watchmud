@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/watchmud/watchmud/lock"
+	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/rules"
 	"github.com/watchmud/watchmud/spaces"
 )
@@ -66,4 +67,28 @@ func TestHangDoors_refuses(t *testing.T) {
 	c, _, _ := doorContent(t, doorEntry{Closed: true})
 	c.pendingDoors = append(c.pendingDoors, pendingDoor{"caves", "pit", rules.DirectionEast, doorEntry{}})
 	assert.ErrorContains(t, c.hangDoors(), "one side only")
+}
+
+// A container definition gets its lid, its key resolved like a door's, and
+// can't be picked up.
+func TestFitChests(t *testing.T) {
+	c := lootContent(t)
+	chest := object.NewDefinition("chest", "chest", "caves", rules.ObjectCategoryOther, nil,
+		"a chest", "A chest is here.", rules.SlotNone, rules.ArmorTypeNone, nil)
+	c.pendingChests = []pendingChest{{"caves", chest, containerEntry{Closed: true, Locked: true, Key: "bone"}}}
+
+	require.NoError(t, c.fitChests())
+
+	require.NotNil(t, chest.Container)
+	assert.Equal(t, lock.State{Closed: true, Locked: true}, chest.Container.Initial)
+	assert.Equal(t, "caves/bone", chest.Container.Key)
+
+	for name, e := range map[string]containerEntry{
+		"locked but not closed": {Locked: true, Key: "bone"},
+		"no key to open it":     {Closed: true, Locked: true},
+		"object not defined":    {Closed: true, Key: "skull"},
+	} {
+		c.pendingChests = []pendingChest{{"caves", chest, e}}
+		assert.ErrorContains(t, c.fitChests(), name, name)
+	}
 }

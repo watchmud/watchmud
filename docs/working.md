@@ -56,7 +56,11 @@ inhabitant bots (v0.4.0).
   six new items; the socialite knows where to send players who've outgrown the farms
 - Doors, locks and keys: `open`/`close`/`lock`/`unlock`; "(closed)" in the exits line.
   The first is the mill's iron grate, locked, in front of the miller; the rusted key
-  drops from drowned millhands (25%). Chests next, on the same lock
+  drops from drowned millhands (25%)
+- Chests: `"container"` objects with their own lid and lock -- the mill's grain bin (the
+  strongbox key inside) and the miller's strongbox. Zone resets now top objects up to
+  `instance_max` instead of adding one more each time: the Sample Zone's fountains have
+  been piling up in production since it launched
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

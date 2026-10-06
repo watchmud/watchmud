@@ -10,7 +10,14 @@ type CreateObject struct {
 	ObjectDefinitionId string // what type of object
 	ZoneId             string // which zone is the definition in, leave empty for "this zone"
 	RoomId             string // where does the object go?
-	InstanceMax        int    // how many are allowed to be lying around the zone?
+	// InstanceMax is how many a reset tops the room -- or the container -- up
+	// to. Zero is no limit.
+	InstanceMax int
+	// ContainerId, if set, puts it inside the first container of that
+	// definition in the room, rather than on the floor.
+	ContainerId string
+	// Power is what it's made at; nil is the bottom of the zone's band.
+	Power *int
 }
 
 func (cmd CreateObject) String() string {

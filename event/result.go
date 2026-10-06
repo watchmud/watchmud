@@ -64,6 +64,8 @@ const (
 	NotClosed     ResultCode = "NOT_CLOSED"
 	NoKey         ResultCode = "NO_KEY"
 	NoKeyhole     ResultCode = "NO_KEYHOLE"
+	// a container whose lid is shut: nothing in it can be seen or taken
+	ContainerClosed ResultCode = "CONTAINER_CLOSED"
 
 	// movement and combat
 	CantGoThatWay   ResultCode = "CANT_GO_THAT_WAY"

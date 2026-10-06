@@ -6,44 +6,75 @@ import (
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
 	"github.com/watchmud/watchmud/lock"
+	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/player"
+	"github.com/watchmud/watchmud/spaces"
 )
 
-// handleDoor is open, close, lock and unlock: find the door the player means,
-// try the change on its lock, and tell both rooms it joins. The far side hears
-// the door, not who did it.
+// handleDoor is open, close, lock and unlock, for a door or a chest: a door
+// first (by name or direction), then a container with a lid on the floor. The
+// change is tried on its lock.Lock, and whoever can see it is told.
 func (w *World) handleDoor(msg *gameserver.HandlerParameter, target string, change event.DoorChange) {
 	if target == "" {
 		msg.Fail(event.NoTarget)
 		return
 	}
 	room := w.playerRoom(msg.Player)
-	dir, door, found := room.FindDoor(target)
-	if !found {
+	if dir, door, found := room.FindDoor(target); found {
+		if err := tryLock(door.Lock, msg.Player, change); err != nil {
+			msg.Fail(lockFailure(err))
+			return
+		}
+		room.Send(event.DoorChanged{Actor: msg.Player.Name(), Door: door.Name, Direction: dir, Change: change})
+		if far := room.DestinationRoom(dir); far != nil && far != room {
+			far.Send(event.DoorChanged{Door: door.Name, Direction: dir.Opposite(), Change: change})
+		}
+		return
+	}
+	chest := w.findLidded(room, target)
+	if chest == nil {
 		msg.Fail(event.NoDoor)
 		return
 	}
-
-	var err error
-	switch change {
-	case event.DoorOpened:
-		err = door.Open()
-	case event.DoorClosed:
-		err = door.Close()
-	case event.DoorLocked:
-		err = door.Lock.Lock(carriesKey(msg.Player, door.Key))
-	case event.DoorUnlocked:
-		err = door.Unlock(carriesKey(msg.Player, door.Key))
-	}
-	if err != nil {
+	if err := tryLock(chest.Lock, msg.Player, change); err != nil {
 		msg.Fail(lockFailure(err))
 		return
 	}
+	room.Send(event.ContainerChanged{Actor: msg.Player.Name(), Container: chest.Definition.Name, Change: change})
+}
 
-	room.Send(event.DoorChanged{Actor: msg.Player.Name(), Door: door.Name, Direction: dir, Change: change})
-	if far := room.DestinationRoom(dir); far != nil && far != room {
-		far.Send(event.DoorChanged{Door: door.Name, Direction: dir.Opposite(), Change: change})
+// findLidded is a container with a lid on the room's floor that target names,
+// or nil. The target grammar is get's -- "chest", "2.chest".
+func (w *World) findLidded(room *spaces.Room, target string) *object.Instance {
+	t, err := parseTarget(target)
+	if err != nil {
+		return nil
 	}
+	var lidded []*object.Instance
+	for _, inst := range targetsIn(t, room.Inventory.All()) {
+		if inst.Lock != nil {
+			lidded = append(lidded, inst)
+		}
+	}
+	if len(lidded) == 0 {
+		return nil
+	}
+	return lidded[0]
+}
+
+// tryLock is one change to a lock, with the player's key if they carry it.
+func tryLock(l *lock.Lock, p *player.Player, change event.DoorChange) error {
+	switch change {
+	case event.DoorOpened:
+		return l.Open()
+	case event.DoorClosed:
+		return l.Close()
+	case event.DoorLocked:
+		return l.Lock(carriesKey(p, l.Key))
+	case event.DoorUnlocked:
+		return l.Unlock(carriesKey(p, l.Key))
+	}
+	return nil
 }
 
 // carriesKey is whether anything the player has -- carried or worn, since

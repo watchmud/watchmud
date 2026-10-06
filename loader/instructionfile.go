@@ -8,4 +8,8 @@ type instructionFileEntry struct {
 	ZoneId      string `json:"zone_id"`
 	RoomId      string `json:"room_id"`
 	InstanceMax int    `json:"instance_max"`
+	// CreateObject only: put it in this container in the room, and make it
+	// at this power (otherwise the zone band's bottom).
+	Container string `json:"container"`
+	Power     *int   `json:"power"`
 }

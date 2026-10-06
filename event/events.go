@@ -121,6 +121,14 @@ const (
 	DoorUnlocked DoorChange = "unlocked"
 )
 
+// ContainerChanged is a chest opened, closed, locked or unlocked, seen by
+// the room it's in.
+type ContainerChanged struct {
+	Actor     string
+	Container string
+	Change    DoorChange
+}
+
 // DoorChanged goes to both rooms a door joins. Direction is the door's from
 // the room hearing it; Actor is empty on the far side, where nobody saw who.
 type DoorChanged struct {

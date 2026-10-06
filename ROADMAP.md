@@ -786,8 +786,8 @@ Named so they don't get rediscovered as surprises:
   resolved at startup. The real work is the hooks (entered room, died, health crossed a
   line, heard something, pulse) and a small action API over them.
   The first two examples need Go features that don't exist yet -- mobs have no inventory,
-  and ~~there are no doors or locks~~ (doors, locks and keys done 2026-10-06; chests
-  next, on the same `lock.Lock`). Taunts need nothing new: `event.Said` already takes a
+  and ~~there are no doors or locks~~ (doors, locks and keys done 2026-10-06, and
+  chests on the same `lock.Lock`). Taunts need nothing new: `event.Said` already takes a
   speaker name and renders to the room. So taunts are the first case -- a fight-started
   and a fight-pulse hook, and one action, `say` -- and the King's half-health script is
   the second.

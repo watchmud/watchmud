@@ -111,16 +111,17 @@ var failureByCode = map[string]string{
 	"CANT_WEAR_THERE": "You can't wear that there.",
 
 	// doors
-	"NO_DOOR":        "You don't see a door like that here.",
-	"DOOR_CLOSED":    "The way is shut.",
-	"ALREADY_OPEN":   "It's already open.",
-	"ALREADY_CLOSED": "It's already closed.",
-	"ALREADY_LOCKED": "It's already locked.",
-	"NOT_LOCKED":     "It isn't locked.",
-	"LOCKED":         "It's locked.",
-	"NOT_CLOSED":     "You'll have to close it first.",
-	"NO_KEY":         "You don't have the key.",
-	"NO_KEYHOLE":     "It has no lock.",
+	"NO_DOOR":          "You don't see anything like that to open here.",
+	"CONTAINER_CLOSED": "It's closed.",
+	"DOOR_CLOSED":      "The way is shut.",
+	"ALREADY_OPEN":     "It's already open.",
+	"ALREADY_CLOSED":   "It's already closed.",
+	"ALREADY_LOCKED":   "It's already locked.",
+	"NOT_LOCKED":       "It isn't locked.",
+	"LOCKED":           "It's locked.",
+	"NOT_CLOSED":       "You'll have to close it first.",
+	"NO_KEY":           "You don't have the key.",
+	"NO_KEYHOLE":       "It has no lock.",
 
 	// movement and combat
 	"CANT_GO_THAT_WAY": "You can't go that way.",

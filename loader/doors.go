@@ -23,19 +23,9 @@ func (c *Content) hangDoors() error {
 	for _, p := range c.pendingDoors {
 		where := fmt.Sprintf("%s/%s going %s", p.zone, p.room, p.dir)
 		e := p.entry
-		if e.Locked && !e.Closed {
-			return fmt.Errorf("door %s: locked but not closed", where)
-		}
-		if e.Locked && e.Key == "" {
-			return fmt.Errorf("door %s: locked, and no key to open it", where)
-		}
-		key := ""
-		if e.Key != "" {
-			defn, err := c.objectRef(p.zone, e.Key)
-			if err != nil {
-				return fmt.Errorf("door %s: key %w", where, err)
-			}
-			key = defn.ObjectId.Ref()
+		key, err := c.lockKey(p.zone, e.Closed, e.Locked, e.Key)
+		if err != nil {
+			return fmt.Errorf("door %s: %w", where, err)
 		}
 		name := e.Name
 		if name == "" {

@@ -31,4 +31,14 @@ type objectEntry struct {
 
 	// Abilities this grants while equipped, by rules.Ability id: ["heal"]
 	Abilities []string `json:"abilities"`
+
+	// Container makes it a chest (chests.go).
+	Container *containerEntry `json:"container"`
+}
+
+// containerEntry is a chest's lid: how it starts, and the key that fits.
+type containerEntry struct {
+	Closed bool   `json:"closed"`
+	Locked bool   `json:"locked"`
+	Key    string `json:"key"`
 }

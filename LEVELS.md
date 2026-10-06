@@ -149,7 +149,8 @@ for two. It drops mid-tier gear for every kind of player, one ability each -- th
 stalker's spear (smite), the river-stone pendant (heal), the miller's mallet (stun),
 iron gauntlets (provoke) -- plus eelskin boots and millhand's gloves. The miller is
 behind a locked iron grate; the rusted key drops from millhands (25%), so reaching him
-is a hunt first. Every number is a first guess.
+is a hunt first. His strongbox in the pit is locked too, and its key is in the grain bin
+up in the loft: a river-stone pendant and eelskin boots at power 7, put back each reset. Every number is a first guess.
 
 **The Barrow-King is a group fight, and it takes all three kinds of gear.** Nothing may
 branch on a role, so each has to be something the gear actually does:

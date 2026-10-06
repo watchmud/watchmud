@@ -27,6 +27,8 @@ type Content struct {
 	// pendingDoors are doors read with the rooms, waiting for the objects
 	// their keys name (doors.go).
 	pendingDoors []pendingDoor
+	// pendingChests likewise, for containers whose keys are objects.
+	pendingChests []pendingChest
 }
 
 func NewContent(settings *Settings, catalog *rules.Catalog, zones []*spaces.Zone) *Content {
@@ -76,8 +78,11 @@ func LoadContent(fsys fs.FS) (*Content, error) {
 	if err := c.loadObjectDefinitions(worldFS); err != nil {
 		return nil, err
 	}
-	// after objects: a door's key is one
+	// after objects: a door's key is one, and so is a chest's
 	if err := c.hangDoors(); err != nil {
+		return nil, err
+	}
+	if err := c.fitChests(); err != nil {
 		return nil, err
 	}
 	if err := c.loadMobileDefinitions(worldFS); err != nil {
@@ -275,6 +280,14 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 				return err
 			}
 
+			if obj.Container != nil {
+				// a chest is furniture: it stays where it is (chests.go)
+				if !d.NoTake() {
+					d.Behaviors = append(d.Behaviors, rules.ObjectBehaviorNoTake)
+				}
+				c.pendingChests = append(c.pendingChests, pendingChest{zonename, d, *obj.Container})
+			}
+
 			c.Zones[zonename].AddObjectDefinition(d)
 		}
 	}
@@ -373,6 +386,8 @@ func (c *Content) loadZoneInstructions(fsys fs.FS) error {
 					RoomId:             entry.RoomId,
 					ZoneId:             entry.ZoneId,
 					InstanceMax:        entry.InstanceMax,
+					ContainerId:        entry.Container,
+					Power:              entry.Power,
 				})
 			case "CreateMobile":
 				zone.AddCommand(spaces.CreateMobile{

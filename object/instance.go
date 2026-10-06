@@ -3,6 +3,8 @@ package object
 import (
 	"time"
 	"uuid"
+
+	"github.com/watchmud/watchmud/lock"
 )
 
 // Instance of the Definitions in the world around you.
@@ -25,8 +27,12 @@ type Instance struct {
 	Power int
 
 	// Contents is what's inside, for a container; nil for anything that
-	// isn't one. Only corpses are containers so far.
+	// isn't one. Corpses and chests are.
 	Contents *List
+
+	// Lock is a chest's lid: nil for a container that's always open (a
+	// corpse) and for anything that isn't a container.
+	Lock *lock.Lock
 
 	// Coins is what a container holds besides its Contents: coins are a
 	// count, not things, so they don't go in the list. Only a corpse has
@@ -49,9 +55,20 @@ func (i *Instance) Matches(target string) bool {
 // NewInstance of a definition, brand new: full durability. Anything restoring
 // one that has already been used -- a save file -- sets Durability afterwards.
 func NewInstance(id uuid.UUID, d *Definition) *Instance {
-	return &Instance{
+	inst := &Instance{
 		Id:         id,
 		Definition: d,
 		Durability: d.MaxDurability,
 	}
+	if d.Container != nil {
+		inst.Contents = NewList()
+		inst.Lock = lock.New(d.Container.Initial, d.Container.Key)
+	}
+	return inst
+}
+
+// Closed is whether this is a container whose lid is shut: nothing in it can
+// be seen or taken.
+func (i *Instance) Closed() bool {
+	return i.Lock != nil && i.Lock.Closed
 }

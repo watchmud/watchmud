@@ -29,6 +29,10 @@ func (w *World) findContainer(msg *gameserver.HandlerParameter, name string) (*o
 		msg.Fail(event.NotAContainer)
 		return nil, false
 	}
+	if found[0].Closed() {
+		msg.Fail(event.ContainerClosed)
+		return nil, false
+	}
 	return found[0], true
 }
 
