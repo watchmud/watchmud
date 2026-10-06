@@ -442,14 +442,37 @@ func renderAbilities(m event.Abilities) string {
 	if len(m.Granted) == 0 {
 		return "Nothing you're wearing grants any abilities.\n"
 	}
-	var b strings.Builder
-	for _, a := range m.Granted {
-		ready := "ready"
-		if a.ReadyIn > 0 {
-			ready = fmt.Sprintf("ready in %ds", int((a.ReadyIn+time.Second-1)/time.Second))
+	// every column is as wide as its widest entry, measured before color,
+	// so the table lines up with color on or off
+	type row struct{ name, mana, cooldown, from string }
+	rows := make([]row, len(m.Granted))
+	width := func(s string, n int) int { return max(len(s), n) }
+	nameW, manaW, coolW, fromW := 0, 0, 0, 0
+	for i, a := range m.Granted {
+		r := row{
+			name:     a.Name,
+			mana:     fmt.Sprintf("%d mana", a.Mana),
+			cooldown: a.Cooldown.String() + " cooldown",
+			from:     fmt.Sprintf("%s (power %d)", a.Item, a.Power),
 		}
-		fmt.Fprintf(&b, "%-12s %2d mana  %s cooldown  %s (power %d)  %s\n",
-			a.Name, a.Mana, a.Cooldown, a.Item, a.Power, ready)
+		rows[i] = r
+		nameW, manaW = width(r.name, nameW), width(r.mana, manaW)
+		coolW, fromW = width(r.cooldown, coolW), width(r.from, fromW)
+	}
+
+	var b strings.Builder
+	b.WriteString(paint(colorHeading, "Abilities") + "\n")
+	for i, a := range m.Granted {
+		r := rows[i]
+		ready := paint(colorReady, "ready")
+		if a.ReadyIn > 0 {
+			ready = paint(colorWaiting, fmt.Sprintf("ready in %ds", int((a.ReadyIn+time.Second-1)/time.Second)))
+		}
+		b.WriteString("  " + pad(paint(colorAbility, r.name), len(r.name), nameW))
+		b.WriteString("  " + strings.Repeat(" ", manaW-len(r.mana)) + r.mana) // numbers right-aligned
+		b.WriteString("  " + pad(r.cooldown, len(r.cooldown), coolW))
+		b.WriteString("  " + pad(r.from, len(r.from), fromW))
+		b.WriteString("  " + ready + "\n")
 	}
 	return b.String()
 }

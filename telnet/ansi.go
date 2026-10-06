@@ -34,6 +34,9 @@ const (
 	colorRole     = magenta
 	colorPlace    = cyan // where someone is, in who
 	colorHeading  = bold
+	colorAbility  = boldCyan // an ability's name, in the abilities list
+	colorReady    = green    // an ability that can be cast now
+	colorWaiting  = yellow   // one still cooling down
 
 	colorSay   = bold
 	colorTell  = magenta

@@ -2,6 +2,7 @@ package telnet
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/watchmud/watchmud/event"
@@ -42,6 +43,19 @@ func TestRenderWho_colored(t *testing.T) {
 		"\n"+bold+"Bots"+reset+"\n"+
 		"  "+dim+"Wren"+reset+"  Human       "+cyan+"The Millpond, Hollowfields"+reset+"\n"+
 		"\n1 player and 1 bot online.\n", got)
+}
+
+// abilities: the name colored, ready in green and waiting in yellow, and the
+// columns padded by what shows, not by the color codes
+func TestRenderAbilities_colored(t *testing.T) {
+	got := render(event.Abilities{Granted: []event.GrantedAbility{
+		{Name: "heal", Mana: 20, Cooldown: 10 * time.Second, Item: "a censer", Power: 1},
+		{Name: "smite", Mana: 5, Cooldown: 20 * time.Second, Item: "a knotted cudgel", Power: 3, ReadyIn: 11500 * time.Millisecond},
+	}}, "testdood")
+
+	assert.Equal(t, bold+"Abilities"+reset+"\n"+
+		"  "+boldCyan+"heal"+reset+"   20 mana  10s cooldown  a censer (power 1)          "+green+"ready"+reset+"\n"+
+		"  "+boldCyan+"smite"+reset+"   5 mana  20s cooldown  a knotted cudgel (power 3)  "+yellow+"ready in 12s"+reset+"\n", got)
 }
 
 // The connection is plain until the world says this player wants color, so

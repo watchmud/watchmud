@@ -486,7 +486,7 @@ var commandCases = []commandCase{
 		name:  "abilities lists what the gear grants",
 		setup: func(_ *world.World, p *player.Player, _ *player.Player) { holdTestCenser(p) },
 		input: "abilities",
-		want:  "heal         20 mana  10s cooldown  a censer (power 1)  ready\n",
+		want:  "Abilities\n  heal  20 mana  10s cooldown  a censer (power 1)  ready\n",
 	},
 }
 
