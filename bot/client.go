@@ -7,6 +7,7 @@ package bot
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -14,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -58,6 +60,10 @@ func DialFrom(ctx context.Context, addr, local string) (*Client, error) {
 		nc, err := d.DialContext(ctx, "tcp", addr)
 		if err == nil {
 			return newClient(nc), nil
+		}
+		if errors.Is(err, syscall.EADDRNOTAVAIL) {
+			// not a server still starting: this machine hasn't got local
+			return nil, fmt.Errorf("connecting to %s from %s: %w", addr, local, err)
 		}
 		select {
 		case <-ctx.Done():

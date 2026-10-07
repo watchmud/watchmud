@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"testing"
 	"time"
 
@@ -25,7 +26,14 @@ func TestNameFor(t *testing.T) {
 // the pieces against a real game, briefly: create from a spread address,
 // log in, look and time it
 func TestCreateAndProbe(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
+	// Linux answers on all of 127/8; macOS has only 127.0.0.1 until told
+	if ln, err := net.Listen("tcp", "127.0.0.9:0"); err != nil {
+		t.Skip("no 127.0.0.9 here; sudo ifconfig lo0 alias 127.0.0.9 up")
+	} else {
+		_ = ln.Close()
+	}
+	// a stuck conversation fails the test rather than hanging make test
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	addr, err := startGame(ctx, "../../content", 10*time.Millisecond)
 	require.NoError(t, err)

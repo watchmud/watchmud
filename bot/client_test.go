@@ -171,6 +171,23 @@ func TestDial_givesUpWhenTheContextDoes(t *testing.T) {
 	assert.True(t, strings.Contains(err.Error(), addr))
 }
 
+// A local address this machine doesn't have will never turn up, however long
+// it's waited for: macOS has only 127.0.0.1 of loopback unless told otherwise.
+// 192.0.2.1 is TEST-NET-1, on no machine.
+func TestDialFrom_givesUpOnAnAddressItCantUse(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = ln.Close() })
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	start := time.Now()
+	_, err = DialFrom(ctx, ln.Addr().String(), "192.0.2.1")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "192.0.2.1")
+	assert.Less(t, time.Since(start), time.Second)
+}
+
 // A chunk is everything up to a prompt, and the prompt is where the health is.
 func TestReadChunk_splitsOnPrompts(t *testing.T) {
 	c, nc := connect(t)
