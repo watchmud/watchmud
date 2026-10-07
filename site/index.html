@@ -348,15 +348,20 @@ You hit angry goose for 3 damage.
       <tbody>
         <tr class="group"><td colspan="2">Getting around</td></tr>
         <tr><td><code>n s e w u d</code></td><td>Walk north, south, east, west, up or down</td></tr>
-        <tr><td><code>look</code></td><td>Describe the room again (<code>l</code> for short), or <code>look goose</code> for one thing in it</td></tr>
+        <tr><td><code>look</code></td><td>Describe the room again (<code>l</code> for short), or <code>look goose</code> for one thing in it: a creature, a player, or an item's power, condition and what it lets you cast. <code>examine</code> works too</td></tr>
         <tr><td><code>exits</code></td><td>Where you can go from here</td></tr>
         <tr><td><code>recall</code></td><td>Straight back to Temple Square, once a minute. It's the temple token you wear that lets you: lose it and the General Store sells another</td></tr>
         <tr class="group"><td colspan="2">Things</td></tr>
         <tr><td><code>get knife</code></td><td>Pick something up. <code>get all</code> takes everything; <code>get 2.knife</code> takes the second knife</td></tr>
         <tr><td><code>get all from corpse</code></td><td>Loot what a mob dropped</td></tr>
+        <tr><td><code>put pelt in satchel</code></td><td>Put something away in a bag you carry, or in an open chest. <code>get pelt from satchel</code> takes it back out; <code>look in satchel</code> shows what's inside</td></tr>
+        <tr><td><code>give pelt to Ana</code></td><td>Hand something to a player in the same room. <code>give 20 coins to Ana</code> for coins</td></tr>
         <tr><td><code>drop knife</code></td><td>Put something down. Dropped things crumble after half an hour</td></tr>
+        <tr><td><code>donate knife</code>, <code>junk knife</code></td><td>Done with something? Donate sends it, from anywhere, to the donation room for someone who needs it. Junk destroys it: nothing back, just the space</td></tr>
         <tr><td><code>wear</code>, <code>wield</code></td><td>Put on armor, take up a weapon</td></tr>
         <tr><td><code>remove</code></td><td>Take something off</td></tr>
+        <tr><td><code>open grate</code>, <code>close grate</code></td><td>A door, by its name or its direction (<code>open west</code>), or a chest. A closed door shows as "(closed)" among the exits</td></tr>
+        <tr><td><code>unlock grate</code>, <code>lock grate</code></td><td>With its key, if you're carrying it (a key in a bag counts)</td></tr>
         <tr><td><code>inventory</code>, <code>equipment</code></td><td>What you're carrying (<code>i</code>), what you have on (<code>eq</code>)</td></tr>
         <tr><td><code>repair all</code></td><td>Mend worn-out gear, for coins, at the smithy west of Market Square</td></tr>
         <tr class="group"><td colspan="2">Trading, at the General Store east of Market Square</td></tr>
@@ -374,16 +379,30 @@ You hit angry goose for 3 damage.
         <tr><td><code>cast stun goose</code></td><td>The mob skips its next two swings, if your weapon grants it</td></tr>
         <tr><td><code>cast ward Ana</code></td><td>A shield that takes the next hits before Ana's health does, for half a minute, if something you're wearing grants it. Just <code>cast ward</code> for yourself</td></tr>
         <tr><td><code>cast assess goose</code></td><td>A mob's exact health, armor and damage, and who it's fighting, if something you're wearing grants it. It starts no fight</td></tr>
+        <tr><td><code>quaff draught</code></td><td>Drink a healing draught (the General Store sells them). Works mid-fight; one every ten seconds</td></tr>
+        <tr><td><code>wimpy 20</code></td><td>Run on your own when a fight takes you below 20 health. <code>wimpy 0</code> to stand your ground</td></tr>
+        <tr><td><code>track bandit</code></td><td>Which way the nearest one went. Take that step and track again: it's how you catch a bandit that ran</td></tr>
         <tr class="group"><td colspan="2">You</td></tr>
         <tr><td><code>stat</code></td><td>Your health, power and coins</td></tr>
         <tr><td><code>role</code></td><td>Whether your gear makes you a Tank, Healer or Striker, and why</td></tr>
         <tr><td><code>abilities</code></td><td>What your gear lets you cast, and when you can cast it again</td></tr>
         <tr><td><code>color off</code></td><td>Turn the game's colors off, or back <code>on</code></td></tr>
+        <tr><td><code>rest</code>, <code>sleep</code>, <code>stand</code></td><td>Heal faster sitting, faster resting, fastest asleep. Stand (or <code>wake</code>) to get moving again</td></tr>
+        <tr><td><code>toggle</code></td><td>What you're hearing -- tells, shouts, ooc, color -- and <code>toggle tells</code> to switch one</td></tr>
+        <tr><td><code>where</code>, <code>time</code></td><td>Who's playing in this part of the world; the hour in Wrathrock (Seattle's), and the moon</td></tr>
+        <tr><td><code>bug</code>, <code>idea</code>, <code>typo</code></td><td>Tell whoever runs the game: something broken, something you'd like, a spelling slip. It notes where you were standing</td></tr>
         <tr class="group"><td colspan="2">Other people</td></tr>
         <tr><td><code>who</code></td><td>Who's playing, and where</td></tr>
         <tr><td><code>say hello</code></td><td>Speak to everyone in the room. <code>'hello</code> works too</td></tr>
         <tr><td><code>tell Ana hello</code></td><td>Speak to one player, wherever they are</td></tr>
+        <tr><td><code>reply thanks</code></td><td>Answer whoever last sent you a tell (<code>r</code> for short)</td></tr>
+        <tr><td><code>whisper Ana hi</code>, <code>ask keeper prices</code></td><td>To one person (or creature) in the room; the rest see only that something was said</td></tr>
+        <tr><td><code>emote waves</code>, <code>smile</code>, <code>bow Ana</code></td><td>Act something out (<code>:</code> for short). <code>socials</code> lists the ready-made ones</td></tr>
         <tr><td><code>shout hello</code></td><td>Speak to everyone in the game</td></tr>
+        <tr><td><code>ooc hello</code></td><td>Chat with everyone playing who's on the channel: questions, plans, anything out of the game. <code>ooc off</code> leaves it. The Temple Square bot answers questions there too</td></tr>
+        <tr><td><code>follow Ana</code></td><td>Walk wherever Ana walks, in Ana's group. <code>follow</code> on its own stops</td></tr>
+        <tr><td><code>group</code>, <code>gt hello</code></td><td>How your group is doing and where; <code>gt</code> talks to just them</td></tr>
+        <tr><td><code>split 30</code></td><td>Share coins out among your group in the room</td></tr>
         <tr><td><code>quit</code></td><td>Save and leave</td></tr>
       </tbody>
     </table>
@@ -412,6 +431,18 @@ You hit angry goose for 3 damage.
     <div>
       <dt>Sitting idle logs you out.</dt>
       <dd>After 30 minutes with nothing typed, the game saves you and disconnects. Connect again and you're right where you were.</dd>
+    </div>
+    <div>
+      <dt>My coins won't go in my bag</dt>
+      <dd>Coins stay in your purse. Bags hold things, ten of them for the leather satchel, and nothing that holds things goes inside another.</dd>
+    </div>
+    <div>
+      <dt>Something I dropped vanished</dt>
+      <dd>The town janitor sweeps up what's been left lying in Wrathrock for five minutes or more. Give it to someone instead, or leave it in the donation room, east of Temple Square, which he never touches. Out in the Hollowfields it may have been a crow: catch it, and whatever it took is in its corpse.</dd>
+    </div>
+    <div>
+      <dt>"Full moon tonight. Be careful."</dt>
+      <dd>WatchMUD's moon is the real one over Seattle. On a full-moon night (6 pm to 6 am there) the wild dogs in the Hollowfields turn on anyone they meet -- and loot is a little luckier. <code>time</code> shows the phase.</dd>
     </div>
   </dl>
 </section>

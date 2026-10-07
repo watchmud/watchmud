@@ -34,71 +34,23 @@ and LEVELS.md are the plan of record; this is the rest.
 - **A `site/` change describing unreleased features waits** to be pushed with its
   release; pushing `site/` to master publishes it immediately.
 
-## Where things stand (2026-10-06)
+## Where things stand (2026-10-07)
 
-Released and deployed: **v0.10.0** -- provoke, stun, ward and assess; the Barrow-King's
-summons; recall as a trinket; `wear`/`wield` of `2.thing`; wizard `gold`; `/healthz`
-and the compose healthcheck; `who` as a table with bots apart; the wanderer and
-socialite bots and "entered the game for the first time"; GMCP `Char.Vitals` and
-`Room.Info`. Earlier: nohassle, slay, smite (v0.9.0), heal and mana (v0.8.0), the
-economy (v0.7.0), bots on foot and NAWS (v0.6.0), color and repair (v0.5.0), the
-inhabitant bots (v0.4.0).
+Released: **v0.11.0** -- the Drowned Mill and its miller; doors, locks, keys and
+chests; bags, `put` and `give`; `look <thing>` at last; potions; groups, follow and
+assist; positions; the ooc channel, socials, emote, reply, whisper and ask; `track`,
+`wimpy`, `split`, `where`, `time` and the moon over Seattle; `junk` and `donate`; the
+janitor, the crows, the shopkeeper and fleeing bandits; player reports; the wizard
+toolkit and moderation; lists as aligned tables; the explorer bot, the load test and
+the fight simulator; the Mudlet add-on. Earlier: provoke, stun, ward, assess, GMCP
+(v0.10.0), nohassle, slay, smite (v0.9.0), heal and mana (v0.8.0), the economy
+(v0.7.0), bots on foot and NAWS (v0.6.0), color and repair (v0.5.0), the inhabitant
+bots (v0.4.0).
+
+The Mudlet add-on still hasn't been run in a real Mudlet: try it before telling players.
 
 **On master, not yet released** -- each needs its line in the site guide when it ships:
-
-- `abilities`, `equipment`, `inventory`, `stat`, `role` and `list` are aligned tables
-  in color; `equipment` no longer prints instance ids; `inventory` shows power and
-  condition and folds duplicates; `stat` adds mana, armor class and the room by name
-- The Mudlet add-on (`mudlet/`): bars and a map from GMCP. Its site section is in this
-  branch already -- it needs only v0.10.0's GMCP, so it goes live with the merge, not a
-  release. Nobody has run it in a real Mudlet yet: try it before telling players
-- The Drowned Mill (power 4-7), west of the Millpond, with the Drowned Miller (power 8);
-  six new items; the socialite knows where to send players who've outgrown the farms
-- Doors, locks and keys: `open`/`close`/`lock`/`unlock`; "(closed)" in the exits line.
-  The first is the mill's iron grate, locked, in front of the miller; the rusted key
-  drops from drowned millhands (25%)
-- Chests: `"container"` objects with their own lid and lock -- the mill's grain bin (the
-  strongbox key inside) and the miller's strongbox. Zone resets now top objects up to
-  `instance_max` instead of adding one more each time: the Sample Zone's fountains have
-  been piling up in production since it launched
-- `put <item> in <chest>` (and coins): get-from backwards
-- Bags: a leather satchel (holds 10) at the General Store; `put`/`get from`/`look in`
-  work on one you carry, and what's in it is saved with you. Bags don't nest, coins stay
-  in the purse, and `inventory` shows how full each one is
-- `give <item|coins> to <player>`, in the same room
-- `look <thing>` (and `examine`) works at last: an item's stats, how hurt a mob looks,
-  what another player has on
-- A fight simulator, `cmd/watchmud-sim`, and what it says in LEVELS.md
-- A load test, `cmd/watchmud-load`; it found the send-queue log spam fixed beside it
-- An explorer bot (`WATCHMUD_EXPLORERS`) that maps everywhere it safely may
-- The town janitor: wanders Wrathrock, can't be fought, sweeps up what's been
-  dropped and left 5 minutes (never in the donation room)
-- Crows in the Hollowfields snatch what's left lying; it's in their corpses
-- The General Store has a shopkeeper who answers questions about her trade
-- Mobs can flee (`me:flee()`): a losing bandit may run, once, on a coin flip
-- An ooc channel (`ooc`, `newbie`, `nb`; `ooc off`), which the socialite answers on
-- Potions: `quaff`/`drink`; the General Store sells a healing draught. Bots rest
-  sitting down now, and stand to go
-- The moon over Seattle: on a full-moon night wild dogs turn on you and loot runs lucky;
-  `time` shows the phase
-- `track <mob>`: the first step towards the nearest one in the zone
-- `wimpy`, `split`, `where`, `time` (Seattle's), `commands`, and `hit`/`hold`/`score`
-- Positions: `sit`, `rest`, `sleep`, `stand`, `wake` -- faster regen off your feet
-- `bug`, `idea`, `typo`: player reports, logged and kept in mongo; wizards read `reports`
-- Wizard tools: `goto`, `transfer`, `purge`, `zreset`, `echo`/`gecho` (announce a
-  restart before a deploy), `users`, and moderation that sticks: `mute`, `freeze`
-- Socials (53 of them, `socials`), `emote`/`:`, `reply`, `whisper`/`ask` (mobs can be
-  asked), `toggle` (`notell`, `noshout`); failure texts for bags, groups and ooc that
-  were filed wrong now show
-- `junk` (destroyed, nothing back) and `donate` (to the donation room, from anywhere)
-- The General Store no longer leads east into itself
-- Groups: `follow`, `group`, `gt`, `ungroup`, `assist` -- followers walk after their
-  leader, and the group joins a fight any of them is in
-- An outside uptime check (`.github/workflows/uptime.yaml`), live once on master
-- Scripts hear: `on_hear(me, speaker, said)`; ask the hedge-witch about healing
-
-The site guide's rows for all of this are drafted in `docs/site-next-release.md`, to go
-in with the release (the live `look goose` row only becomes true with it).
+nothing yet.
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots
