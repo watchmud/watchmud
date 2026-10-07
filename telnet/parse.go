@@ -24,6 +24,10 @@ func parseCommand(tokens []string) (command.Command, error) {
 	if len(tokens) == 0 {
 		return nil, nil
 	}
+	// 'hello and :waves, with no space: the MUD habit for say and emote
+	if t := tokens[0]; len(t) > 1 && (t[0] == '\'' || t[0] == ':') {
+		tokens = append([]string{t[:1], t[1:]}, tokens[1:]...)
+	}
 	verb := strings.ToLower(tokens[0])
 	rest := strings.Join(tokens[1:], " ")
 
@@ -35,6 +39,8 @@ func parseCommand(tokens []string) (command.Command, error) {
 		if rest == "in" || strings.HasPrefix(rest, "in ") {
 			return command.Look{Target: strings.TrimSpace(rest[len("in"):]), In: true}, nil
 		}
+		return command.Look{Target: rest}, nil
+	case "examine", "exa":
 		return command.Look{Target: rest}, nil
 
 	case "n", "north", "s", "south", "e", "east", "w", "west", "u", "up", "d", "down":
@@ -64,8 +70,71 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "drop":
 		return command.Drop{Target: rest}, nil
 
+	case "put":
+		// "put knife in chest", or "into"; a missing container is the
+		// handler's to answer, like a missing target
+		for _, sep := range []string{" into ", " in "} {
+			if target, into, ok := strings.Cut(rest, sep); ok {
+				return command.Put{Target: strings.TrimSpace(target), Into: strings.TrimSpace(into)}, nil
+			}
+		}
+		return command.Put{Target: rest}, nil
+
+	case "follow", "fol":
+		return command.Follow{Target: rest}, nil
+	case "ungroup":
+		return command.Ungroup{Target: rest}, nil
+	case "emote", "em", ":":
+		return command.Emote{Text: rest}, nil
+	case "socials":
+		return command.Socials{}, nil
+	case "reply", "r":
+		return command.Reply{Value: rest}, nil
+	case "whisper", "ask":
+		if len(tokens) < 2 {
+			return command.Whisper{Ask: verb == "ask"}, nil
+		}
+		return command.Whisper{To: tokens[1], Value: strings.Join(tokens[2:], " "), Ask: verb == "ask"}, nil
+	case "toggle":
+		return command.Toggle{Name: rest}, nil
+	case "notell":
+		return command.Toggle{Name: "tell"}, nil
+	case "noshout":
+		return command.Toggle{Name: "shout"}, nil
+	case "ooc", "newbie", "nb":
+		return command.OOC{Value: rest}, nil
+	case "assist":
+		return command.Assist{Setting: strings.ToLower(rest)}, nil
+	case "group":
+		return command.Group{}, nil
+	case "gtell", "gt":
+		return command.GroupTell{Value: rest}, nil
+
+	case "junk":
+		return command.Junk{Target: rest}, nil
+	case "quaff", "drink":
+		return command.Quaff{Target: rest}, nil
+	case "donate":
+		return command.Donate{Target: rest}, nil
+
+	case "give":
+		// "give knife to bob"; a missing recipient is the handler's to answer
+		if target, to, ok := strings.Cut(rest, " to "); ok {
+			return command.Give{Target: strings.TrimSpace(target), To: strings.TrimSpace(to)}, nil
+		}
+		return command.Give{Target: rest}, nil
+
 	case "repair":
 		return command.Repair{Target: rest}, nil
+
+	case "open":
+		return command.Open{Target: rest}, nil
+	case "close":
+		return command.Close{Target: rest}, nil
+	case "lock":
+		return command.Lock{Target: rest}, nil
+	case "unlock":
+		return command.Unlock{Target: rest}, nil
 
 	case "list":
 		return command.List{}, nil
@@ -82,7 +151,7 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "remove", "rem", "unwear", "unwield":
 		return command.Remove{Target: rest}, nil
 
-	case "wear":
+	case "wear", "hold", "grab":
 		return command.Wear{Target: rest}, nil
 
 	case "wield":
@@ -115,7 +184,7 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "color", "colour":
 		return command.Color{Setting: strings.ToLower(rest)}, nil
 
-	case "stat", "stats":
+	case "stat", "stats", "score":
 		return command.Stat{}, nil
 
 	case "role", "roles":
@@ -134,11 +203,13 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "consider", "con":
 		return command.Consider{Target: rest}, nil
 
-	case "kill", "attack":
+	case "kill", "attack", "hit":
 		if len(tokens) < 2 {
 			return nil, errors.New("What do you want to attack?")
 		}
-		return command.Kill{Target: tokens[1]}, nil
+		// the whole of it: "kill wild dog" isn't "kill wild", which is
+		// whichever wild thing is listed first -- the boar, as often as not
+		return command.Kill{Target: rest}, nil
 
 	case "flee":
 		return command.Flee{}, nil
@@ -147,10 +218,49 @@ func parseCommand(tokens []string) (command.Command, error) {
 		if len(tokens) < 2 {
 			return nil, errors.New("Restore whom?")
 		}
-		return command.Restore{Target: tokens[1]}, nil
+		return command.Restore{Target: rest}, nil
 
 	case "nohassle":
 		return command.NoHassle{Setting: strings.ToLower(rest)}, nil
+
+	case "track":
+		return command.Track{Target: rest}, nil
+	case "split":
+		return command.Split{Amount: rest}, nil
+	case "where":
+		return command.Where{}, nil
+	case "commands":
+		return command.Commands{}, nil
+	case "time":
+		return command.Time{}, nil
+	case "wimpy":
+		return command.Wimpy{Amount: rest}, nil
+	case "sit", "rest", "sleep", "stand":
+		return command.Position{To: verb}, nil
+	case "wake":
+		return command.Position{Wake: true}, nil
+	case "bug", "idea", "typo":
+		return command.Report{Kind: verb, Text: rest}, nil
+	case "reports":
+		return command.Reports{}, nil
+	case "goto":
+		return command.Goto{Target: rest}, nil
+	case "transfer", "trans":
+		return command.Transfer{Target: rest}, nil
+	case "purge":
+		return command.Purge{Target: rest}, nil
+	case "zreset":
+		return command.ZReset{Zone: rest}, nil
+	case "echo":
+		return command.Echo{Text: rest}, nil
+	case "gecho":
+		return command.Echo{Text: rest, Global: true}, nil
+	case "users":
+		return command.Users{}, nil
+	case "mute":
+		return command.Moderate{Target: rest}, nil
+	case "freeze":
+		return command.Moderate{Target: rest, Freeze: true}, nil
 
 	case "slay":
 		return command.Slay{Target: rest}, nil
@@ -171,5 +281,7 @@ func parseCommand(tokens []string) (command.Command, error) {
 			return nil, errors.New("try: `load (mob|obj) [zone] id`")
 		}
 	}
-	return nil, errors.New("Unknown request: " + tokens[0])
+	// anything else may be a social; the world knows which, and answers an
+	// unknown request for the rest
+	return command.Social{Name: verb, Target: rest}, nil
 }

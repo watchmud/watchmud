@@ -1,6 +1,7 @@
 package script
 
 import (
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -26,6 +27,10 @@ type harness struct {
 	said     []line
 	summoned []summonCall
 	live     map[*mobile.Instance]int  // what me.summons and the live cap read
+	junk     int                       // what me:junk() answers, and sweep takes from
+	swept    []int                     // each sweep's n, as the world was asked
+	fled     int                       // how many times the world was asked to flee
+	lying    []string                  // what me:take() finds, in order
 	out      map[*mobile.Instance]bool // mobs whose fight is over, as Tick's inFight sees it
 }
 
@@ -47,6 +52,22 @@ func newHarness(t *testing.T, scripts map[string]string) *harness {
 			return count
 		},
 		Summons: func(mob *mobile.Instance) int { return h.live[mob] },
+		Junk:    func(mob *mobile.Instance) int { return h.junk },
+		Flee:    func(mob *mobile.Instance) bool { h.fled++; return true },
+		Take: func(mob *mobile.Instance) string {
+			if len(h.lying) == 0 {
+				return ""
+			}
+			got := h.lying[0]
+			h.lying = h.lying[1:]
+			return got
+		},
+		Sweep: func(mob *mobile.Instance, n int) int {
+			h.swept = append(h.swept, n)
+			got := min(n, h.junk)
+			h.junk -= got
+			return got
+		},
 	})
 	require.NoError(t, err)
 	h.rt = rt
@@ -357,6 +378,10 @@ func TestProgramsCantPoisonEachOther(t *testing.T) {
 				pcall(function() string.format = function() return "pwned" end end)
 				pcall(function() _G.pick = nil end)
 				pcall(function() getmetatable("").__index = {} end)
+				-- the way round getmetatable: the library's own __index, which
+				-- was strings' metatable itself
+				pcall(function() string.__index.upper = function() return "pwned" end end)
+				pcall(function() string.__index.__metatable = nil end)
 				me:say("done")
 			end`,
 		"z/b": `function on_fight_start(me, foe)
@@ -759,4 +784,215 @@ func TestSummoningAScriptedMob(t *testing.T) {
 
 	assert.Equal(t, []string{"after", "imp opener"}, h.texts())
 	assert.Empty(t, *logged)
+}
+
+// on_hear gets who spoke, what they said, and its words to look up
+func TestHear(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/witch": `
+		function on_hear(me, speaker, said)
+			if said.words.heal then
+				me:say(speaker.name .. " wants healing: " .. said.text)
+			end
+		end`})
+	witch := mob("Witch", "z/witch")
+
+	h.rt.Hear(witch, bob, "Can you HEAL me, please?")
+	h.rt.Hear(witch, bob, "nice weather")
+	h.rt.Hear(witch, bob, "healer?")
+
+	assert.Equal(t, []string{"Bob wants healing: Can you HEAL me, please?"}, h.texts(), "a word, not part of one")
+}
+
+func TestHear_wordsKeepApostrophesInside(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/witch": `
+		function on_hear(me, speaker, said)
+			if said.words["don't"] and said.words["go"] then me:say("ok") end
+		end`})
+	h.rt.Hear(mob("Witch", "z/witch"), bob, "'Don't' go!")
+	assert.Equal(t, []string{"ok"}, h.texts())
+}
+
+// a wait in on_hear isn't about a fight, so no fight doesn't end it
+func TestHear_waitNeedsNoFight(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/witch": `
+		function on_hear(me, speaker, said)
+			wait(1)
+			me:say("Hm?")
+		end`})
+	witch := mob("Witch", "z/witch")
+	h.out[witch] = true // not fighting
+
+	h.rt.Hear(witch, bob, "hello")
+	assert.Empty(t, h.said)
+	h.tick()
+	assert.Equal(t, []string{"Hm?"}, h.texts())
+}
+
+func TestHear_isAHook(t *testing.T) {
+	_, err := Compile("z/witch", `function on_hear(me, speaker, said) end`)
+	assert.NoError(t, err)
+}
+
+// the real hedge-witch: asked about healing, a beat, then her two lines
+func TestHedgeWitch(t *testing.T) {
+	src, err := os.ReadFile("../content/world/hollowfield/scripts/hedge_witch.lua")
+	require.NoError(t, err)
+	h := newHarness(t, map[string]string{"hollowfield/hedge_witch": string(src)})
+	witch := mob("hedge-witch", "hollowfield/hedge_witch")
+	h.out[witch] = true
+
+	h.rt.Hear(witch, bob, "lovely herbs")
+	h.rt.Hear(witch, bob, "I'm hurt, can you help?")
+	assert.Empty(t, h.said)
+	h.tick()
+	require.Len(t, h.said, 2)
+	assert.Contains(t, h.said[1].text, "Bob")
+}
+
+// on_arrive gets me alone; junk and sweep reach the world, sweep cut to the cap
+func TestArrive_junkAndSweep(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/janitor": `
+		function on_arrive(me)
+			local n = me:junk()
+			local a = me:sweep(4)
+			local b = me:sweep(4)
+			me:say(n .. " " .. a .. " " .. b)
+		end`})
+	h.junk = 9
+
+	h.rt.Arrive(mob("Janitor", "z/janitor"))
+
+	assert.Equal(t, []string{"9 4 1"}, h.texts(), "five a call, across both sweeps")
+	assert.Equal(t, []int{4, 1}, h.swept)
+}
+
+func TestArrive_sweepCountMustBePositive(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/janitor": `
+		function on_arrive(me) me:sweep(0) end`})
+	logged := h.failures()
+	h.rt.Arrive(mob("Janitor", "z/janitor"))
+	require.Len(t, *logged, 1)
+	assert.Contains(t, (*logged)[0], "a count of 0")
+}
+
+// a wait in on_arrive isn't about a fight either
+func TestArrive_waitNeedsNoFight(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/janitor": `
+		function on_arrive(me) wait(2); me:say("there") end`})
+	j := mob("Janitor", "z/janitor")
+	h.out[j] = true
+	h.rt.Arrive(j)
+	h.tick()
+	assert.Empty(t, h.said)
+	h.tick()
+	assert.Equal(t, []string{"there"}, h.texts())
+}
+
+// the real janitor: junk, a beat, a sweep of three
+func TestJanitor(t *testing.T) {
+	src, err := os.ReadFile("../content/world/wrathrock/scripts/janitor.lua")
+	require.NoError(t, err)
+	h := newHarness(t, map[string]string{"wrathrock/janitor": string(src)})
+	j := mob("janitor", "wrathrock/janitor")
+	h.out[j] = true
+
+	h.rt.Arrive(j) // nothing to sweep
+	h.tick()
+	h.tick()
+	assert.Empty(t, h.swept)
+
+	h.junk = 7
+	h.rt.Arrive(j)
+	assert.Empty(t, h.swept, "a beat first")
+	h.tick()
+	h.tick()
+	assert.Equal(t, []int{3}, h.swept)
+	assert.Equal(t, 4, h.junk)
+}
+
+// me:flee() reaches the world once a call, however often it's asked
+func TestFlee_onceACall(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/coward": `
+		function on_fight_pulse(me, foe)
+			local a, b = me:flee(), me:flee()
+			me:say(tostring(a) .. " " .. tostring(b))
+		end`})
+	h.rt.FightPulse(mob("Coward", "z/coward"), bob)
+	assert.Equal(t, 1, h.fled)
+	assert.Equal(t, []string{"true false"}, h.texts())
+}
+
+// the real bandit: only when losing, only once, and only on the coin flip
+func TestBandit(t *testing.T) {
+	src, err := os.ReadFile("../content/world/hollowfield/scripts/bandit.lua")
+	require.NoError(t, err)
+	h := newHarness(t, map[string]string{"hollowfield/bandit": string(src)})
+	b := mob("bandit", "hollowfield/bandit")
+
+	h.rt.FightPulse(b, bob)
+	assert.Zero(t, h.fled, "healthy: it fights on")
+
+	b.CurHealth = b.Definition.MaxHealth / 5
+	h.dice.Load([]int{0, 0}) // chance(50) comes up; pick the first plea
+	h.rt.FightPulse(b, bob)
+	assert.Equal(t, 1, h.fled)
+	assert.Len(t, h.said, 1)
+
+	h.rt.FightPulse(b, bob)
+	assert.Equal(t, 1, h.fled, "once a life")
+}
+
+// the real shopkeeper: a topic she knows, a hello, and quiet otherwise
+func TestShopkeeper(t *testing.T) {
+	src, err := os.ReadFile("../content/world/wrathrock/scripts/shopkeeper.lua")
+	require.NoError(t, err)
+	h := newHarness(t, map[string]string{"wrathrock/shopkeeper": string(src)})
+	keeper := mob("shopkeeper", "wrathrock/shopkeeper")
+
+	h.rt.Hear(keeper, bob, "what would you pay for this pelt?")
+	h.rt.Hear(keeper, bob, "Hello!")
+	h.rt.Hear(keeper, bob, "nice weather")
+	require.Len(t, h.said, 2)
+	assert.Contains(t, h.said[0].text, "'value'")
+	assert.Contains(t, h.said[1].text, "Welcome in, Bob")
+}
+
+// me:take() answers what it took, or nil, and takes once a call
+func TestTake_oneACall(t *testing.T) {
+	h := newHarness(t, map[string]string{"z/crow": `
+		function on_arrive(me)
+			local a, b = me:take(), me:take()
+			me:say(tostring(a) .. " " .. tostring(b))
+		end`})
+	h.lying = []string{"a feather", "a pelt"}
+	h.rt.Arrive(mob("crow", "z/crow"))
+	assert.Equal(t, []string{"a feather nil"}, h.texts())
+
+	h.lying = nil
+	h.said = nil
+	h.rt.Arrive(mob("crow", "z/crow"))
+	assert.Equal(t, []string{"nil nil"}, h.texts())
+}
+
+// gopher-lua can't yield from inside an iterator or a metamethod: a wait
+// there was swallowed and the hook ran straight on. Now whatever it does
+// next, or its ending, is refused with an error that says why.
+func TestWaitSwallowedIsAnError(t *testing.T) {
+	for name, body := range map[string]string{
+		"iterator": `local function it(_, i) if i == nil then wait(1) return 1 end end
+			for x in it do me:say("x") end
+			me:say("done")`,
+		"index": `local t = setmetatable({}, {__index = function() wait(1) return "v" end})
+			local v = t.anything
+			me:say(v)`,
+		"ending": `local t = setmetatable({}, {__index = function() wait(1) return "v" end})
+			local v = t.anything`,
+	} {
+		h := newHarness(t, map[string]string{"z/w": "function on_fight_start(me, foe) " + body + " end"})
+		logged := h.failures()
+		h.rt.FightStart(mob("M", "z/w"), bob)
+		assert.Empty(t, h.said, name)
+		require.Len(t, *logged, 1, name)
+		assert.Contains(t, (*logged)[0], "iterator or a metamethod", name)
+	}
 }

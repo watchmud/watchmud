@@ -99,3 +99,12 @@ func TestDirectionToString(t *testing.T) {
 	doit(DirectionUp, "Up")
 	doit(DirectionDown, "Down")
 }
+
+func TestDirection_opposite(t *testing.T) {
+	for _, d := range AllUsableDirections {
+		assert.Equal(t, d, d.Opposite().Opposite(), "%s and back", d)
+		assert.NotEqual(t, d, d.Opposite())
+	}
+	assert.Equal(t, DirectionSouth, DirectionNorth.Opposite())
+	assert.Equal(t, DirectionNone, DirectionNone.Opposite())
+}

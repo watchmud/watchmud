@@ -76,6 +76,8 @@ type AdventurerConfig struct {
 	DonateAfter int
 	Style       Style
 	Log         func(format string, args ...any) // nil is silent
+	// LocalAddr is the address to connect from, "" for any; see DialFrom.
+	LocalAddr string
 }
 
 // Style is what a bot does with its time. Everything else -- reading the
@@ -92,11 +94,16 @@ const (
 	// Socialite stays in Temple Square, greets new characters and answers
 	// questions (socialite.go).
 	Socialite
+	// Explorer maps the world, taking every exit it may, then wanders; safe
+	// the way a wanderer is (explorer.go).
+	Explorer
 )
 
 // Stats is what an adventurer has done since it started.
 type Stats struct {
 	Kills, Looted, Donations, TellsAnswered, Avoided, Deaths, Steps int
+	// Mapped is how many rooms an explorer has on its atlas.
+	Mapped int
 }
 
 // Adventurer is a bot that plays like a player: out to a hunting ground, fights
@@ -110,6 +117,7 @@ type Adventurer struct {
 
 	health, maxHealth int
 	attacked, died    bool
+	someoneCame       bool   // someone entered since the room was last looked at
 	carrying          int    // looted since the last donation
 	here              string // the room it's in, as far as it knows
 	ground            *ground
@@ -118,6 +126,7 @@ type Adventurer struct {
 	pendingTells      []tell
 	saidAt            time.Time
 	greeted           map[string]bool // new characters a socialite has welcomed
+	atlas             *atlas          // what an explorer has mapped
 
 	mu    sync.Mutex
 	stats Stats
@@ -128,6 +137,7 @@ func NewAdventurer(cfg AdventurerConfig) *Adventurer {
 		cfg:      cfg,
 		rng:      rand.New(rand.NewPCG(cfg.Seed, cfg.Seed^0x9e3779b97f4a7c15)),
 		now:      time.Now,
+		atlas:    newAtlas(),
 		avoiding: map[string]time.Time{},
 		toldAt:   map[string]time.Time{},
 	}
@@ -161,15 +171,24 @@ var (
 )
 
 var (
-	okRe             = regexp.MustCompile(`(?m)^Ok\.$`)
-	tellAnswerRe     = regexp.MustCompile(`(?m)^Ok\.$|No one by that name is playing\.`)
-	anyRe            = regexp.MustCompile(``)
-	busyText         = "You're too busy fighting!"
-	killRe           = regexp.MustCompile(`(?m)^Ok\.$|You don't see that here\.|You're already fighting!`)
-	considerOrGoneRe = regexp.MustCompile(`\(power (\d+); you are (\d+)\)|You don't see that here\.`)
-	lootRe           = regexp.MustCompile(`You get |There's nothing in there\.|You don't see that here\.`)
-	dropRe           = regexp.MustCompile(`Dropped\.|You aren't carrying that\.`)
-	saidRe           = regexp.MustCompile(`You say, "`)
+	okRe         = regexp.MustCompile(`(?m)^Ok\.$`)
+	tellAnswerRe = regexp.MustCompile(`(?m)^(?:Ok|No one by that name is playing|They aren't taking tells)\.$`)
+	anyRe        = regexp.MustCompile(``)
+	restRe       = regexp.MustCompile(`(?m)^(?:You sit back and rest\.|You're already resting\.|Not in the middle of a fight!|You're already doing that\.)$`)
+	standRe      = regexp.MustCompile(`(?m)^(?:You stand up\.|You're already on your feet\.|You wake and get to your feet\.)$`)
+	busyText     = "You're too busy fighting!"
+	killRe       = regexp.MustCompile(`(?m)^(?:Ok\.|You don't see that here\.|You're already fighting!)$`)
+	lootRe       = regexp.MustCompile(`(?m)^(?:You get |There's nothing in there\.$|You don't see that here\.$)`)
+	dropRe       = regexp.MustCompile(`(?m)^(?:Dropped\.|You aren't carrying that\.)$`)
+	saidRe       = regexp.MustCompile(`(?m)^You say, "`)
+	// What the game says about the bot itself starts a line with "You", and
+	// nothing a player says or emotes can: theirs starts with their name, and
+	// "you" can't be one. So every line the bot acts on is anchored -- a
+	// player saying "You are dead!" or emoting a recall refusal mustn't send
+	// it home or knock it off the server.
+	youDiedRe = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(youDied) + `$`)
+	youFledRe = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(youFled) + `$`)
+	busyRe    = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(busyText) + `$`)
 )
 
 // roomRe matches a room description by its name, at the start of a line.
@@ -184,7 +203,7 @@ type stateFn func(ctx context.Context) (stateFn, error)
 // whoever runs it to log it and try again later.
 func (a *Adventurer) Run(ctx context.Context, addr string) error {
 	dctx, cancel := context.WithTimeout(ctx, time.Minute)
-	c, err := Dial(dctx, addr)
+	c, err := DialFrom(dctx, addr, a.cfg.LocalAddr)
 	cancel()
 	if err != nil {
 		return err
@@ -238,7 +257,7 @@ func (a *Adventurer) goHome(ctx context.Context) (stateFn, error) {
 	if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
 		return nil, err
 	}
-	if err := a.recall(); err != nil {
+	if err := a.recall(ctx); err != nil {
 		return nil, err
 	}
 	a.say(momentTown)
@@ -247,6 +266,8 @@ func (a *Adventurer) goHome(ctx context.Context) (stateFn, error) {
 		return a.wander, nil
 	case Socialite:
 		return a.socialize, nil
+	case Explorer:
+		return a.explore, nil
 	}
 	return a.town, nil
 }
@@ -308,11 +329,9 @@ func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
 			if err != nil {
 				return nil, err
 			}
+			a.someoneCame = false
 			if who := playersHere(room, a.cfg.Name, a.cfg.Siblings); len(who) > 0 {
-				a.avoiding[g.name] = a.now().Add(avoidFor)
-				a.count(func(st *Stats) { st.Avoided++ })
-				a.log("%s is in %s; leaving %s to them", who[0], s.room, g.name)
-				return a.leave(g.homeward(i)), nil
+				return a.yieldGround(g, i, who[0], s.room), nil
 			}
 			for _, p := range g.preyIn(room) {
 				if err := a.engage(ctx, p); err != nil {
@@ -320,6 +339,18 @@ func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
 				}
 				if a.died {
 					return a.dead, nil
+				}
+				// a player walking in mid-hunt gets the ground as surely as
+				// one who was here first
+				if a.someoneCame {
+					a.someoneCame = false
+					text, _, err := a.ask("look", roomRe(s.room))
+					if err != nil {
+						return nil, err
+					}
+					if who := playersHere(text, a.cfg.Name, a.cfg.Siblings); len(who) > 0 {
+						return a.yieldGround(g, i, who[0], s.room), nil
+					}
 				}
 			}
 			if a.attacked {
@@ -346,12 +377,20 @@ func (a *Adventurer) hunt(ctx context.Context) (stateFn, error) {
 	return a.goHome, nil
 }
 
+// yieldGround leaves g to a player who's in its patrol room i, walking off.
+func (a *Adventurer) yieldGround(g *ground, i int, who, room string) stateFn {
+	a.avoiding[g.name] = a.now().Add(avoidFor)
+	a.count(func(st *Stats) { st.Avoided++ })
+	a.log("%s is in %s; leaving %s to them", who, room, g.name)
+	return a.leave(g.homeward(i))
+}
+
 // donate takes what it found to the donation room, east of Temple Square.
 func (a *Adventurer) donate(ctx context.Context) (stateFn, error) {
 	if a.attacked {
 		return a.fightThen(a.donate), nil
 	}
-	if err := a.recall(); err != nil {
+	if err := a.recall(ctx); err != nil {
 		return nil, err
 	}
 	if _, err := a.walk(ctx, step{"east", "Donation Room"}); err != nil {
@@ -464,16 +503,22 @@ func (a *Adventurer) walk(ctx context.Context, s step) (string, error) {
 
 // recall goes home, the one way back that works from anywhere -- once its
 // cooldown allows: a bot that died twice in a minute waits it out.
-func (a *Adventurer) recall() error {
+func (a *Adventurer) recall(ctx context.Context) error {
 	for range recallTries {
-		text, _, err := a.ask("recall", adventurerRecallRe)
+		_, m, err := a.ask("recall", adventurerRecallRe)
 		switch {
 		case err != nil:
 			return err
-		case strings.Contains(text, noRecallText):
+		case strings.HasPrefix(m[0], noRecallText):
 			return errors.New(noRecallError)
-		case strings.Contains(text, notReadyText):
-			time.Sleep(recallRetry)
+		case m[0] == notReadyText:
+			// waiting out the cooldown -- unless told to stop: a shutdown
+			// mustn't wait past compose's grace for the bot to quit
+			select {
+			case <-time.After(recallRetry):
+			case <-ctx.Done():
+				return ctx.Err()
+			}
 			continue
 		}
 		a.here = home
@@ -482,9 +527,17 @@ func (a *Adventurer) recall() error {
 	return fmt.Errorf("recall still not ready after %d tries", recallTries)
 }
 
-// adventurerRecallRe is home, or one of recall's refusals.
-var adventurerRecallRe = regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(home) + `$|` +
-	regexp.QuoteMeta(notReadyText) + `|` + regexp.QuoteMeta(noRecallText))
+// adventurerRecallRe is home, or one of recall's refusals, each a whole line.
+var adventurerRecallRe = regexp.MustCompile(`(?m)^(?:` + regexp.QuoteMeta(home) + `$|` +
+	regexp.QuoteMeta(notReadyText) + `$|` + regexp.QuoteMeta(noRecallText) + `)`)
+
+// considerRe is consider's answer about one prey -- its line starts with the
+// mob's name, or "You could kill" it, and a player's name can't be a mob's --
+// or the prey being gone.
+func considerRe(p prey) *regexp.Regexp {
+	name := regexp.QuoteMeta(p.name)
+	return regexp.MustCompile(`(?mi)^(?:(?:` + name + ` |You could kill ` + name + ` )[^\n]*\(power (\d+); you are (\d+)\)|You don't see that here\.)$`)
+}
 
 // engage considers one kind of prey and fights it if it's a fair fight or
 // easier: "a real challenge" is for a group, and a bot hasn't got one.
@@ -492,7 +545,7 @@ func (a *Adventurer) engage(ctx context.Context, p prey) error {
 	if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
 		return err
 	}
-	_, m, err := a.ask("consider "+p.keyword, considerOrGoneRe)
+	_, m, err := a.ask("consider "+p.keyword, considerRe(p))
 	if err != nil {
 		return err
 	}
@@ -539,7 +592,7 @@ func (a *Adventurer) fight(ctx context.Context) error {
 				killed++
 			}
 		}
-		if strings.Contains(ch.Text, youFled) {
+		if youFledRe.MatchString(ch.Text) {
 			a.attacked = false
 			return fmt.Errorf("%w: fled", errLost)
 		}
@@ -560,6 +613,11 @@ func (a *Adventurer) fight(ctx context.Context) error {
 		return err
 	}
 	n := looted(text)
+	if n == 0 {
+		// what it found instead; a hunter that kills and never loots is a
+		// question the log should be able to answer
+		a.log("nothing looted after %d kills: %q", killed, firstLine(text))
+	}
 	a.carrying += n
 	a.count(func(st *Stats) { st.Looted += n })
 	return nil
@@ -570,6 +628,11 @@ func (a *Adventurer) fight(ctx context.Context) error {
 func (a *Adventurer) rest(ctx context.Context) error {
 	a.log("resting at %d/%d", a.health, a.maxHealth)
 	a.say(momentRest)
+	// off its feet it heals faster, as anyone does; a fight stands it up, and
+	// it sits back down after
+	if err := a.sitDown(); err != nil {
+		return err
+	}
 	for a.maxHealth > 0 && a.health*100 < restUntil*a.maxHealth {
 		if err := a.pause(ctx, [2]time.Duration{a.cfg.Pace.Poll, a.cfg.Pace.Poll}); err != nil {
 			return err
@@ -587,9 +650,20 @@ func (a *Adventurer) rest(ctx context.Context) error {
 			if a.died {
 				return nil
 			}
+			if err := a.sitDown(); err != nil {
+				return err
+			}
 		}
 	}
-	return nil
+	_, _, err := a.ask("stand", standRe)
+	return err
+}
+
+// sitDown is "rest", whatever it's told back: already resting, or still in a
+// fight that rest will come back round to.
+func (a *Adventurer) sitDown() error {
+	_, _, err := a.ask("rest", restRe)
+	return err
 }
 
 // say makes a remark now and then: on one moment in talkOneIn, never twice in
@@ -661,7 +735,7 @@ func (a *Adventurer) exchange(line string, re *regexp.Regexp) (string, []string,
 		if a.died {
 			return ch.Text, nil, errDied
 		}
-		if strings.Contains(ch.Text, busyText) {
+		if busyRe.MatchString(ch.Text) {
 			return ch.Text, nil, errBusy
 		}
 	}
@@ -678,7 +752,14 @@ func (a *Adventurer) notice(ch Chunk) {
 	if attacked(ch.Text) {
 		a.attacked = true
 	}
-	if strings.Contains(ch.Text, youDied) {
+	// someone walking in -- maybe a player, maybe a mob with a one-word
+	// name; hunt looks to see which before it fights again
+	for _, m := range enteredRe.FindAllStringSubmatch(ch.Text, -1) {
+		if !strings.EqualFold(m[1], a.cfg.Name) && !isSibling(m[1], a.cfg.Siblings) {
+			a.someoneCame = true
+		}
+	}
+	if youDiedRe.MatchString(ch.Text) {
 		a.died = true
 	}
 }
@@ -756,4 +837,12 @@ func (a *Adventurer) pause(ctx context.Context, span [2]time.Duration) error {
 	case <-time.After(d):
 		return nil
 	}
+}
+
+// firstLine is a chunk's first line, for a log.
+func firstLine(text string) string {
+	if i := strings.IndexByte(text, '\n'); i >= 0 {
+		return text[:i]
+	}
+	return text
 }

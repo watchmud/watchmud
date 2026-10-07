@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"github.com/watchmud/watchmud/player"
 
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/command"
@@ -24,6 +25,30 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		}
 		msg.Fail(event.UnknownCommand)
 		return nil
+	}
+	// Every verb the parser doesn't know arrives as a social: one that isn't
+	// is a typo, and gets the typo's answer before muted, frozen or asleep
+	// has a say.
+	if s, ok := msg.Command.(command.Social); ok && w.content.Catalog.Socials[s.Name] == nil {
+		msg.Fail(event.UnknownCommand)
+		return nil
+	}
+	if p := msg.Player; p != nil {
+		// a frozen player can look around and leave, nothing else
+		if _, ok := msg.Command.(command.Look); !ok && p.Frozen() {
+			if _, quitting := msg.Command.(command.Logout); !quitting {
+				msg.Fail(event.Frozen)
+				return nil
+			}
+		}
+		if _, talk := msg.Command.(command.Talk); talk && p.Muted() {
+			msg.Fail(event.Muted)
+			return nil
+		}
+		if p.Position() == player.Sleeping && !awake(msg.Command) {
+			msg.Fail(event.Asleep)
+			return nil
+		}
 	}
 	switch cmd := msg.Command.(type) {
 	case command.Abilities:
@@ -62,6 +87,80 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleRecall(msg, cmd)
 	case command.Repair:
 		w.handleRepair(msg, cmd)
+	case command.Put:
+		w.handlePut(msg, cmd)
+	case command.Give:
+		w.handleGive(msg, cmd)
+	case command.Junk:
+		w.handleJunk(msg, cmd)
+	case command.Quaff:
+		w.handleQuaff(msg, cmd)
+	case command.Donate:
+		w.handleDonate(msg, cmd)
+	case command.Follow:
+		w.handleFollow(msg, cmd)
+	case command.Ungroup:
+		w.handleUngroup(msg, cmd)
+	case command.Group:
+		w.handleGroup(msg, cmd)
+	case command.Assist:
+		w.handleAssist(msg, cmd)
+	case command.OOC:
+		w.handleOOC(msg, cmd)
+	case command.Social:
+		w.handleSocial(msg, cmd)
+	case command.Socials:
+		w.handleSocials(msg, cmd)
+	case command.Emote:
+		w.handleEmote(msg, cmd)
+	case command.Reply:
+		w.handleReply(msg, cmd)
+	case command.Whisper:
+		w.handleWhisper(msg, cmd)
+	case command.Toggle:
+		w.handleToggle(msg, cmd)
+	case command.Goto:
+		w.handleGoto(msg, cmd)
+	case command.Transfer:
+		w.handleTransfer(msg, cmd)
+	case command.Purge:
+		w.handlePurge(msg, cmd)
+	case command.ZReset:
+		w.handleZReset(msg, cmd)
+	case command.Echo:
+		w.handleEcho(msg, cmd)
+	case command.Users:
+		w.handleUsers(msg, cmd)
+	case command.Moderate:
+		w.handleModerate(msg, cmd)
+	case command.Report:
+		w.handleReport(msg, cmd)
+	case command.Position:
+		w.handlePosition(msg, cmd)
+	case command.Split:
+		w.handleSplit(msg, cmd)
+	case command.Where:
+		w.handleWhere(msg, cmd)
+	case command.Commands:
+		w.handleCommands(msg, cmd)
+	case command.Time:
+		w.handleTime(msg, cmd)
+	case command.Wimpy:
+		w.handleWimpy(msg, cmd)
+	case command.Track:
+		w.handleTrack(msg, cmd)
+	case command.Reports:
+		w.handleReports(msg, cmd)
+	case command.GroupTell:
+		w.handleGroupTell(msg, cmd)
+	case command.Open:
+		w.handleDoor(msg, cmd.Target, event.DoorOpened)
+	case command.Close:
+		w.handleDoor(msg, cmd.Target, event.DoorClosed)
+	case command.Lock:
+		w.handleDoor(msg, cmd.Target, event.DoorLocked)
+	case command.Unlock:
+		w.handleDoor(msg, cmd.Target, event.DoorUnlocked)
 	case command.List:
 		w.handleList(msg, cmd)
 	case command.Buy:
@@ -102,6 +201,10 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		log.Warn().Msgf("world.HandleIncomingMessage: UNHANDLED command %T", msg.Command)
 		msg.Fail(event.UnknownCommand)
 		return fmt.Errorf("unhandled command %T", msg.Command)
+	}
+	switch msg.Command.(type) {
+	case command.Drop, command.Give, command.Put, command.Donate, command.Split:
+		w.saveHandedOver(msg.Player)
 	}
 	return nil
 }

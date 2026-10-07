@@ -1,7 +1,9 @@
 package combat
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"uuid"
 )
 
@@ -101,10 +103,13 @@ func (f *FightLedger) GetFight(fighter Combatant) *Fight {
 	return f.fightMap[fighter.Id()]
 }
 
+// GetFights is every fight, in the order they started: who swings first in
+// a round was a map's whim, different every round and every run.
 func (f *FightLedger) GetFights() (result []*Fight) {
 	for _, v := range f.fightMap {
 		result = append(result, v)
 	}
+	slices.SortFunc(result, func(a, b *Fight) int { return cmp.Compare(a.seq, b.seq) })
 	return result
 }
 
@@ -123,6 +128,17 @@ func (f *FightLedger) EndAllFightsWith(id uuid.UUID) {
 	}
 	delete(f.stuns, id)
 	f.retarget()
+	// and a stun on anyone that leaves out of every fight: its stunner fled
+	// or fell, and the rounds mustn't wait for whoever engages it next
+	involved := map[uuid.UUID]bool{}
+	for _, v := range f.fightMap {
+		involved[v.Fighter.Id()], involved[v.Fightee.Id()] = true, true
+	}
+	for stunned := range f.stuns {
+		if !involved[stunned] {
+			delete(f.stuns, stunned)
+		}
+	}
 }
 
 // retarget gives anyone who is being fought, but has stopped fighting, a fight

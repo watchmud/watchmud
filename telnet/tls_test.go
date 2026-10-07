@@ -164,7 +164,8 @@ func TestTLS_noHandshakeIsDropped(t *testing.T) {
 func TestTLS_sharesTheCapWithTelnet(t *testing.T) {
 	limit := newLimit(1)
 	addr := tlsListener(t, limit, 2*time.Second)
-	require.True(t, limit.acquire("127.0.0.1"), "a telnet connection holds the only slot")
+	ok, _ := limit.acquire("127.0.0.1")
+	require.True(t, ok, "a telnet connection holds the only slot")
 
 	tc, err := dialTLS(addr)
 	if err == nil {

@@ -16,6 +16,13 @@ func (w *World) handleTellAll(msg *gameserver.HandlerParameter, cmd command.Tell
 		Speaker: msg.Player.Name(),
 		Value:   cmd.Value,
 	}
-	w.SendToAllPlayersExcept(msg.Player, shouted)
-	msg.Player.Send(shouted)
+	if !msg.Player.Shouts() {
+		msg.Fail(event.ShoutsOff)
+		return
+	}
+	for p := range w.playerList.All() {
+		if p.Shouts() {
+			p.Send(shouted)
+		}
+	}
 }

@@ -3,7 +3,10 @@ package combat
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"github.com/watchmud/watchmud/dice"
 	"github.com/watchmud/watchmud/testdice"
 )
 
@@ -127,4 +130,21 @@ func (s *MeleeSuite) TestPowerBelowHalvesYourDamage() {
 	s.Require().NoError(err)
 	s.Assert().True(result.WasHit)
 	s.Assert().Equal(2, result.Damage)
+}
+
+// sharp hits for 1d2-3: always below zero, before the clamp
+type sharp struct{ *TestCombatant }
+
+func (sharp) WeaponDamageRoll() string { return "1d2-3" }
+
+// a blow never heals, whatever the dice say
+func TestCalculateDamage_neverNegative(t *testing.T) {
+	roller := dice.New([32]byte{})
+	fighter := sharp{NewTestCombatant("fighter", 10, []DamageType{}, []DamageType{})}
+	victim := NewTestCombatant("victim", 10, []DamageType{}, []DamageType{})
+	for range 20 {
+		damage, err := calculateDamage(roller, fighter, victim)
+		require.NoError(t, err)
+		assert.Zero(t, damage)
+	}
 }

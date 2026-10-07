@@ -15,6 +15,8 @@ import (
 var hooks = map[string]bool{
 	"on_fight_start": true,
 	"on_fight_pulse": true,
+	"on_hear":        true,
+	"on_arrive":      true,
 }
 
 // Program is one compiled script, named by its canonical "zone/name". It

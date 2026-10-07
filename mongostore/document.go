@@ -26,6 +26,12 @@ type playerDoc struct {
 	Wizard       bool   `bson:"wizard,omitempty"`
 	Bot          bool   `bson:"bot,omitempty"`
 	NoColor      bool   `bson:"no_color,omitempty"`
+	NoOOC        bool   `bson:"no_ooc,omitempty"`
+	NoTell       bool   `bson:"no_tell,omitempty"`
+	NoShout      bool   `bson:"no_shout,omitempty"`
+	Muted        bool   `bson:"muted,omitempty"`
+	Frozen       bool   `bson:"frozen,omitempty"`
+	Wimpy        int    `bson:"wimpy,omitempty"`
 	Coins        int    `bson:"coins,omitempty"`
 	CurHealth    int    `bson:"cur_health"`
 	MaxHealth    int    `bson:"max_health"`
@@ -63,6 +69,48 @@ type inventoryDoc struct {
 	// Power is omitted at zero, and missing from every document written
 	// before power existed. Both come back as power 0.
 	Power *int `bson:"power,omitempty"`
+
+	// Contents is a bag's, omitted for everything else.
+	Contents []inventoryDoc `bson:"contents,omitempty"`
+}
+
+func inventoryDocs(items []player.InventoryRecord) []inventoryDoc {
+	var docs []inventoryDoc
+	for _, i := range items {
+		docs = append(docs, inventoryDoc{
+			InstanceId:   i.InstanceId.String(),
+			ZoneId:       i.ZoneId,
+			DefinitionId: i.DefinitionId,
+			Durability:   i.Durability,
+			Power:        i.Power,
+			Contents:     inventoryDocs(i.Contents),
+		})
+	}
+	return docs
+}
+
+func inventoryRecords(name string, docs []inventoryDoc) ([]player.InventoryRecord, error) {
+	var records []player.InventoryRecord
+	for _, i := range docs {
+		instanceId, err := uuid.Parse(i.InstanceId)
+		if err != nil {
+			return nil, fmt.Errorf("player %s: item %s/%s: bad instance id %q: %w",
+				name, i.ZoneId, i.DefinitionId, i.InstanceId, err)
+		}
+		contents, err := inventoryRecords(name, i.Contents)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, player.InventoryRecord{
+			InstanceId:   instanceId,
+			ZoneId:       i.ZoneId,
+			DefinitionId: i.DefinitionId,
+			Durability:   i.Durability,
+			Power:        i.Power,
+			Contents:     contents,
+		})
+	}
+	return records, nil
 }
 
 // newPlayerDoc converts a record on its way to the database.
@@ -74,6 +122,12 @@ func newPlayerDoc(r *player.Record, now time.Time) playerDoc {
 		Wizard:       r.Wizard,
 		Bot:          r.Bot,
 		NoColor:      r.NoColor,
+		NoOOC:        r.NoOOC,
+		NoTell:       r.NoTell,
+		NoShout:      r.NoShout,
+		Muted:        r.Muted,
+		Frozen:       r.Frozen,
+		Wimpy:        r.Wimpy,
 		Coins:        r.Coins,
 		CurHealth:    r.CurHealth,
 		MaxHealth:    r.MaxHealth,
@@ -90,15 +144,7 @@ func newPlayerDoc(r *player.Record, now time.Time) playerDoc {
 			InstanceId: e.InstanceId.String(),
 		})
 	}
-	for _, i := range r.Inventory {
-		doc.Inventory = append(doc.Inventory, inventoryDoc{
-			InstanceId:   i.InstanceId.String(),
-			ZoneId:       i.ZoneId,
-			DefinitionId: i.DefinitionId,
-			Durability:   i.Durability,
-			Power:        i.Power,
-		})
-	}
+	doc.Inventory = inventoryDocs(r.Inventory)
 	return doc
 }
 
@@ -120,6 +166,12 @@ func (d playerDoc) record() (*player.Record, error) {
 		Wizard:       d.Wizard,
 		Bot:          d.Bot,
 		NoColor:      d.NoColor,
+		NoOOC:        d.NoOOC,
+		NoTell:       d.NoTell,
+		NoShout:      d.NoShout,
+		Muted:        d.Muted,
+		Frozen:       d.Frozen,
+		Wimpy:        d.Wimpy,
 		Coins:        d.Coins,
 		CurHealth:    d.CurHealth,
 		MaxHealth:    d.MaxHealth,
@@ -139,19 +191,10 @@ func (d playerDoc) record() (*player.Record, error) {
 			InstanceId: instanceId,
 		})
 	}
-	for _, i := range d.Inventory {
-		instanceId, err := uuid.Parse(i.InstanceId)
-		if err != nil {
-			return nil, fmt.Errorf("player %s: item %s/%s: bad instance id %q: %w",
-				d.Name, i.ZoneId, i.DefinitionId, i.InstanceId, err)
-		}
-		r.Inventory = append(r.Inventory, player.InventoryRecord{
-			InstanceId:   instanceId,
-			ZoneId:       i.ZoneId,
-			DefinitionId: i.DefinitionId,
-			Durability:   i.Durability,
-			Power:        i.Power,
-		})
+	inventory, err := inventoryRecords(d.Name, d.Inventory)
+	if err != nil {
+		return nil, err
 	}
+	r.Inventory = inventory
 	return r, nil
 }

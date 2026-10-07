@@ -20,10 +20,13 @@ func (w *World) handleStat(msg *gameserver.HandlerParameter, cmd command.Stat) {
 		Lineage:       p.LineageName(),
 		Role:          w.roleName(p.RoleWeights()),
 		Power:         p.Power(),
+		ArmorClass:    p.ArmorClass(),
 		CurrentHealth: p.CurrentHealth(),
 		MaxHealth:     p.MaxHealth(),
+		CurrentMana:   p.CurrentMana(),
+		MaxMana:       p.MaxMana(),
 		Coins:         p.Coins(),
-		ZoneId:        room.Zone.Id,
-		RoomId:        room.Id,
+		RoomName:      room.Name,
+		ZoneName:      room.Zone.Name,
 	})
 }

@@ -3,6 +3,7 @@ package world
 import (
 	"errors"
 	"fmt"
+	"github.com/watchmud/watchmud/report"
 	"iter"
 	"maps"
 	"slices"
@@ -43,6 +44,21 @@ type World struct {
 	pace float64
 
 	reservedNames map[string]bool // by player.NameKey; see IsReservedName
+
+	groups *groups // who follows whom; see world/group.go
+
+	// lastTeller is who last told each player something, by name, for
+	// reply. In memory; RemovePlayer forgets it.
+	lastTeller map[*player.Player]string
+
+	// moonNow is the clock the moon reads; nil is now. See world/moon.go.
+	moonNow func() time.Time
+
+	// reports is the latest of what players filed with bug, idea and typo,
+	// for a wizard's "reports"; fileReport, if set, keeps each one somewhere
+	// that outlives a restart. See world/h_report.go.
+	reports    []report.Report
+	fileReport func(report.Report)
 }
 
 // New creates a brand-new World based on this content
@@ -52,6 +68,8 @@ func New(c *loader.Content, s player.Store, roller rules.Roller) (w *World, err 
 		playerList:  player.NewList(),
 		occupancy:   spaces.NewOccupancy(),
 		fightLedger: combat.NewFightLedger(),
+		groups:      newGroups(),
+		lastTeller:  map[*player.Player]string{},
 		now:         time.Now,
 		pace:        1,
 		roller:      roller,
@@ -61,6 +79,10 @@ func New(c *loader.Content, s player.Store, roller rules.Roller) (w *World, err 
 		Say:     w.mobSays,
 		Summon:  w.summon,
 		Summons: w.liveSummons,
+		Junk:    w.junkHere,
+		Sweep:   w.sweep,
+		Flee:    w.mobFlees,
+		Take:    w.mobTakes,
 	}); err != nil {
 		return nil, fmt.Errorf("building world: %w", err)
 	}
@@ -143,6 +165,9 @@ func (w *World) arrive(p *player.Player, first bool) {
 	p.Send(event.Color{On: p.Color()}) // ahead of the first thing worth coloring
 	p.Send(r.DescriptionExcept(p))
 	w.backfill(p)
+	if w.fullMoonTonight() {
+		p.Send(event.MoonWarning{})
+	}
 }
 
 // Welcome tells a brand-new character where to go first. After Arrive, so it
@@ -163,6 +188,8 @@ func (w *World) PlacePlayer(p *player.Player, r *spaces.Room) {
 func (w *World) RemovePlayer(p *player.Player) {
 	p.Log().Debug().Msg("Removing player")
 	w.fightLedger.EndAllFightsWith(p.Id())
+	w.leaveGroups(p)
+	delete(w.lastTeller, p)
 	w.occupancy.RemovePlayer(p)
 	w.playerList.Remove(p)
 }

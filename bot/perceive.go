@@ -13,11 +13,12 @@ var (
 	attackedRe = regexp.MustCompile(`(?m)^.+ (?:hits you for \d+ damage|misses you)\.$`)
 	blowRe     = regexp.MustCompile(`(?m)^(?:.+ (?:hits you for \d+ damage|misses you)|You (?:hit|miss) .+)\.$`)
 	deathRe    = regexp.MustCompile(`(?m)^(.+) is dead!$`)
-	hereRe     = regexp.MustCompile(`(?m)^([A-Z][a-z]+) is here\.$`)
-	gotRe      = regexp.MustCompile(`(?m)^You get .+ from .+\.$`)
-	coinsRe    = regexp.MustCompile(`^You get \d+ coins? from `)
-	powerRe    = regexp.MustCompile(`You are using \(power (\d+)\)`)
-	considerRe = regexp.MustCompile(`\(power (\d+); you are (\d+)\)`)
+	// someone walking in, or logging in where they quit
+	enteredRe = regexp.MustCompile(`(?m)^([A-Z][a-z]+) (?:enters|has entered the game(?: for the first time)?)\.$`)
+	hereRe    = regexp.MustCompile(`(?m)^([A-Z][a-z]+) is (?:sitting |resting |sleeping )?here\.$`)
+	gotRe     = regexp.MustCompile(`(?m)^You get .+ from .+\.$`)
+	coinsRe   = regexp.MustCompile(`^You get \d+ coins? from `)
+	powerRe   = regexp.MustCompile(`(?m)^Equipment \(power (\d+)\)`)
 )
 
 const (

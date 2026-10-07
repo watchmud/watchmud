@@ -1,0 +1,103 @@
+From e1fb67f7a04ab360ccfdf94e66ff1ad15dfa6e29 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 6 Oct 2026 11:33:39 +0000
+Subject: [PATCH 1/7] Typed lines are text: no control bytes, no stray IAC out
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_0165cfX3CZMtTWVCk9QNEtcV
+---
+ telnet/clean_test.go | 29 +++++++++++++++++++++++++++++
+ telnet/conn.go       | 27 ++++++++++++++++++++++++++-
+ 2 files changed, 55 insertions(+), 1 deletion(-)
+ create mode 100644 telnet/clean_test.go
+
+diff --git a/telnet/clean_test.go b/telnet/clean_test.go
+new file mode 100644
+index 0000000..97be862
+--- /dev/null
++++ b/telnet/clean_test.go
+@@ -0,0 +1,29 @@
++package telnet
++
++import (
++	"testing"
++
++	"github.com/stretchr/testify/assert"
++)
++
++// what a player types is text by the time anyone else sees it
++func TestClean(t *testing.T) {
++	for in, want := range map[string]string{
++		"say hello":                    "say hello",
++		"emote \xff\xfb\x01waves":      "emote waves", // a doubled IAC arrives as one 0xFF
++		"say \x1b[2Jgone":              "say [2Jgone", // no escape, no clear-screen
++		"say a\tb":                     "say a b",
++		"say café, naïve, 日本":          "say café, naïve, 日本",
++		"say � is a real char":         "say � is a real char",
++		"say bell\x07 and \x00nul\x7f": "say bell and nul",
++	} {
++		assert.Equal(t, want, clean(in), "%q", in)
++	}
++}
++
++// and a stray 0xFF that got into text anyway goes out as a byte, not a command
++func TestWrite_doublesIAC(t *testing.T) {
++	c := loggedInConn()
++	got := writes(t, c, "a\xffb\n")
++	assert.Equal(t, "a\xff\xffb\r\n", got)
++}
+diff --git a/telnet/conn.go b/telnet/conn.go
+index 99e5e8c..4ffa115 100644
+--- a/telnet/conn.go
++++ b/telnet/conn.go
+@@ -13,6 +13,7 @@ import (
+ 	"strings"
+ 	"sync"
+ 	"time"
++	"unicode"
+ 	"unicode/utf8"
+ 
+ 	"github.com/rs/zerolog/log"
+@@ -632,7 +633,28 @@ func (c *conn) readLine() (string, bool) {
+ 	if !c.scanner.Scan() {
+ 		return "", false
+ 	}
+-	return strings.TrimSpace(c.scanner.Text()), true
++	return strings.TrimSpace(clean(c.scanner.Text())), true
++}
++
++// clean is what a typed line may carry on to the world: printable text.
++// Control characters go -- an escape sequence emoted at a room would clear
++// its screens -- as do bytes that aren't UTF-8, among them the 0xFF a
++// doubled IAC leaves in a line, which echoed back out would be a telnet
++// command. A tab is a space.
++func clean(line string) string {
++	var b strings.Builder
++	for i, r := range line {
++		switch {
++		case r == utf8.RuneError && !strings.HasPrefix(line[i:], string(utf8.RuneError)):
++			// an invalid byte, not a real U+FFFD
++		case r == '\t':
++			b.WriteByte(' ')
++		case unicode.IsControl(r):
++		default:
++			b.WriteRune(r)
++		}
++	}
++	return b.String()
+ }
+ 
+ func (c *conn) Close() {
+@@ -711,6 +733,9 @@ func (c *conn) write(msg any) error {
+ 	}
+ 	text = strings.ReplaceAll(text, "\r\n", "\n") // normalize
+ 	text = strings.ReplaceAll(text, "\n", "\r\n") // replace with \r\n
++	// a literal 0xFF is IAC to the client; never valid UTF-8, so it can only
++	// have come from somewhere unclean, and doubled it's just a byte
++	text = strings.ReplaceAll(text, "\xff", "\xff\xff")
+ 	switch msg.(type) {
+ 	case event.Prompt, reprompt, question:
+ 		text += c.promptEnd()
+-- 
+2.43.0
+

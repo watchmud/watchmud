@@ -32,38 +32,49 @@ var helpSections = []helpSection{
 	}},
 	{"Looking", []helpEntry{
 		{"look, look <thing>", "the room, or something in it (l)", []string{"look", "l"}},
-		{"look in <corpse>", "what it's holding", []string{"look"}},
+		{"look in <corpse>, track", "what it's holding; which way a mob went",
+			[]string{"look", "track"}},
 		{"consider <mob>", "how a fight with it would go (con)", []string{"consider", "con"}},
 	}},
 	{"Things", []helpEntry{
 		{"get <item>", "pick it up; get all, get 2.knife", []string{"get"}},
-		{"get <item> from <corpse>", "loot", []string{"get"}},
-		{"drop <item>", "put it down", []string{"drop"}},
-		{"wear <item>, wield <item>", "put it on, take up a weapon", []string{"wear", "wield"}},
-		{"remove <item>", "take it off", []string{"remove"}},
+		{"get <item> from <corpse>", "loot, or take from a bag or chest", []string{"get"}},
+		{"put <item> in <bag|chest>", "put it away; put all.pelt in satchel", []string{"put"}},
+		{"give <item> to <player>", "hand it over; give 20 coins to bob", []string{"give"}},
+		{"drop, junk, donate <item>", "put down; destroy; send to the donation room",
+			[]string{"drop", "junk", "donate"}},
+		{"wear, wield, remove <item>", "put it on; take up a weapon; take it off",
+			[]string{"wear", "wield", "remove"}},
+		{"open, close, unlock, lock", "doors and chests, by name or way; keys as needed",
+			[]string{"open", "close", "unlock", "lock"}},
 		{"repair <item>", "mend worn gear, at the smithy; repair all", []string{"repair"}},
-		{"list, buy <item>", "the General Store's stock, and buying it", []string{"list", "buy"}},
-		{"sell <item>, value <item>", "sell it there (sell all.pelt), or ask first", []string{"sell", "value"}},
-		{"inventory", "what you're carrying (i)", []string{"inventory", "i"}},
-		{"equipment", "what you're wearing (eq)", []string{"equipment", "eq"}},
+		{"list, buy, sell, value", "at the General Store: its stock; trade; prices",
+			[]string{"list", "buy", "sell", "value"}},
+		{"inventory, equipment", "what you carry (i), and wear (eq)", []string{"inventory", "i", "equipment", "eq"}},
 	}},
 	{"Fighting", []helpEntry{
-		{"kill <mob>", "start a fight", []string{"kill"}},
-		{"flee", "get out of one", []string{"flee"}},
+		{"kill <mob>, flee, wimpy", "fight; run; run on your own below some health",
+			[]string{"kill", "flee", "wimpy"}},
 		{"cast <ability> [target]", "gear's spells: cast heal bob, cast smite goose (c)", []string{"cast", "c"}},
+		{"quaff <potion>", "drink it: a healing draught heals you", []string{"quaff"}},
 	}},
 	{"You", []helpEntry{
-		{"stat", "health and power", []string{"stat"}},
-		{"role", "what your gear makes you, and why", []string{"role"}},
-		{"abilities", "what your gear lets you cast", []string{"abilities"}},
+		{"sit, rest, sleep, stand", "heal faster off your feet; 'wake' to get up",
+			[]string{"sit", "rest", "sleep", "stand", "wake"}},
+		{"stat, role, abilities", "you; what your gear makes you; what it casts", []string{"stat", "role", "abilities"}},
 		{"color [on|off]", "ANSI color, on or off; just color switches it", []string{"color"}},
 	}},
 	{"Talking", []helpEntry{
-		{"say <words>", "to the room (')", []string{"say", "'"}},
-		{"tell <who> <words>", "to one player, anywhere", []string{"tell"}},
-		{"shout <words>", "to everyone playing", []string{"shout"}},
-		{"who", "who's playing", []string{"who"}},
-		{"quit", "save and leave", []string{"quit"}},
+		{"say <words>, emote <act>", "to the room ('), or act it out (:)", []string{"say", "'", "emote", ":"}},
+		{"tell <who> <words>, reply", "to one player, anywhere; reply to the last", []string{"tell", "reply"}},
+		{"whisper, ask <who> <words>", "to one in the room, player or mob", []string{"whisper", "ask"}},
+		{"shout, ooc <words>", "to everyone; ooc is chat, for questions (ooc off)", []string{"shout", "ooc"}},
+		{"follow <who>, group, gt", "walk and fight as one; gt talks (assist, split)",
+			[]string{"follow", "group", "gt", "gtell", "ungroup", "assist", "split"}},
+		{"socials, toggle", "smile, bow, wave and more; what you hear", []string{"socials", "toggle"}},
+		{"bug, idea, typo <words>", "tell whoever runs the game", []string{"bug", "idea", "typo"}},
+		{"who, where, time", "who's playing; who's near you; the hour", []string{"who", "where", "time"}},
+		{"commands, quit", "every command there is; save and leave", []string{"commands", "quit"}},
 	}},
 }
 
@@ -104,15 +115,15 @@ var helpText = func() string {
 	return b.String()
 }()
 
-// helpFor answers every way of asking: help, ? or commands for the command
-// list, with a word after it for a topic.
+// helpFor answers every way of asking: help or ? for the command list, with a
+// word after it for a topic. ("commands" is the world's: a bare list of verbs.)
 func helpFor(line string) (string, bool) {
 	words := strings.Fields(strings.ToLower(line))
 	if len(words) == 0 {
 		return "", false
 	}
 	switch words[0] {
-	case "help", "?", "commands":
+	case "help", "?":
 	default:
 		return "", false
 	}

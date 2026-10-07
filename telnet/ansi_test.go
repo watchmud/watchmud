@@ -2,9 +2,11 @@ package telnet
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/watchmud/watchmud/event"
+	"github.com/watchmud/watchmud/rules"
 )
 
 func TestPrompt_healthIsColored(t *testing.T) {
@@ -44,6 +46,19 @@ func TestRenderWho_colored(t *testing.T) {
 		"\n1 player and 1 bot online.\n", got)
 }
 
+// abilities: the name colored, ready in green and waiting in yellow, and the
+// columns padded by what shows, not by the color codes
+func TestRenderAbilities_colored(t *testing.T) {
+	got := render(event.Abilities{Granted: []event.GrantedAbility{
+		{Name: "heal", Mana: 20, Cooldown: 10 * time.Second, Item: "a censer", Power: 1},
+		{Name: "smite", Mana: 5, Cooldown: time.Minute, Item: "a knotted cudgel", Power: 3, ReadyIn: 11500 * time.Millisecond},
+	}}, "testdood")
+
+	assert.Equal(t, bold+"Abilities"+reset+"\n"+
+		"  "+boldCyan+"heal"+reset+"   20 mana  10s cooldown  a censer (power 1)          "+green+"ready"+reset+"\n"+
+		"  "+boldCyan+"smite"+reset+"   5 mana  60s cooldown  a knotted cudgel (power 3)  "+yellow+"ready in 12s"+reset+"\n", got)
+}
+
 // The connection is plain until the world says this player wants color, so
 // the login conversation never has any.
 func TestFrame_colorOnlyOnceTheWorldSaysSo(t *testing.T) {
@@ -75,4 +90,17 @@ func TestPrompt_mana(t *testing.T) {
 		plain(render(event.Prompt{CurrentHealth: 100, MaxHealth: 100, CurrentMana: 0, MaxMana: 100}, "testdood")))
 	assert.Equal(t, "<100/100hp> ",
 		plain(render(event.Prompt{CurrentHealth: 100, MaxHealth: 100}, "testdood")))
+}
+
+// Equipment: the item in its object color, wear in yellow once it's down to a
+// third, broken in red.
+func TestRenderEquipment_colored(t *testing.T) {
+	got := render(event.Equipment{Power: 2, Items: []event.EquippedItem{
+		{Slot: rules.SlotWield, ShortDescription: "a knife", Power: 2, Durability: 8, MaxDurability: 25},
+		{Slot: rules.SlotBody, ShortDescription: "a shirt", Power: 2, Broken: true, MaxDurability: 20},
+	}}, "testdood")
+
+	assert.Equal(t, bold+"Equipment"+reset+" (power 2)\n"+
+		"  wielded  "+green+"a knife"+reset+"  power 2  "+yellow+"8/25"+reset+"\n"+
+		"  body     "+green+"a shirt"+reset+"  power 2  "+red+"broken"+reset+"\n", got)
 }

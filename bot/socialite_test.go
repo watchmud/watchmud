@@ -37,13 +37,25 @@ func socialite(t *testing.T) (*Adventurer, *pipeGame) {
 	return a, g
 }
 
+// says is what react says in the room.
+func says(a *Adventurer, text string) []string {
+	out, _ := a.react(text)
+	return out
+}
+
+// oocs is what react answers on the ooc channel.
+func oocs(a *Adventurer, text string) []string {
+	_, out := a.react(text)
+	return out
+}
+
 // A first-timer is welcomed once; a returning player isn't welcomed at all.
 func TestReact_welcomesNewCharactersOnce(t *testing.T) {
 	a, _ := socialite(t)
 
-	lines := a.react("Bob has entered the game for the first time.\nAnn has entered the game.\n")
+	lines := says(a, "Bob has entered the game for the first time.\nAnn has entered the game.\n")
 	assert.Equal(t, []string{welcomeFor("Bob")}, lines)
-	assert.Empty(t, a.react("Bob has entered the game for the first time.\n"), "once")
+	assert.Empty(t, says(a, "Bob has entered the game for the first time.\n"), "once")
 }
 
 // What it answers, said in the room: a question it has an answer to, anything
@@ -55,14 +67,29 @@ func TestReact_answersWhatsPutToIt(t *testing.T) {
 	a.now = func() time.Time { return now }
 	recall := topicFor("recall").answer
 
-	assert.Equal(t, []string{recall}, a.react(`Bob says, "how do I recall?".`+"\n"))
-	assert.Empty(t, a.react(`Ann says, "how was your day?".`+"\n"), "somebody else's conversation")
-	assert.Equal(t, []string{menu}, a.react(`Ann says, "Testbot, what's good?".`+"\n"), "by name")
-	assert.Empty(t, a.react(`Pim says, "Back in town. Anything exciting happen?".`+"\n"), "a sibling")
-	assert.Empty(t, a.react(`Bob says, "and repairs?".`+"\n"), "not again so soon")
+	assert.Equal(t, []string{recall}, says(a, `Bob says, "how do I recall?".`+"\n"))
+	assert.Empty(t, says(a, `Ann says, "how was your day?".`+"\n"), "somebody else's conversation")
+	assert.Equal(t, []string{menu}, says(a, `Ann says, "Testbot, what's good?".`+"\n"), "by name")
+	assert.Empty(t, says(a, `Pim says, "Back in town. Anything exciting happen?".`+"\n"), "a sibling")
+	assert.Empty(t, says(a, `Bob says, "and repairs?".`+"\n"), "not again so soon")
 
 	now = now.Add(answerEvery)
-	assert.Len(t, a.react(`Bob says, "and repairs?".`+"\n"), 1)
+	assert.Len(t, says(a, `Bob says, "and repairs?".`+"\n"), 1)
+}
+
+// On ooc it answers a question it has a topic for, or its name, addressed to
+// the asker -- never a menu to a question that isn't for it, never itself.
+func TestReact_answersOnOOC(t *testing.T) {
+	a, _ := socialite(t)
+	now := time.Date(2026, 10, 6, 12, 0, 0, 0, time.UTC)
+	a.now = func() time.Time { return now }
+
+	assert.Equal(t, []string{"Bob: " + topicFor("recall").answer}, oocs(a, "[ooc] Bob: how do I recall?\n"))
+	assert.Empty(t, says(a, "[ooc] Ann: how do I repair?\n"), "answered on ooc, not said in the room")
+	assert.Empty(t, oocs(a, "[ooc] Dot: anyone seen Pim today?\n"), "no menu for a question that isn't for it")
+	assert.Empty(t, oocs(a, "[ooc] Testbot: Bob: ...\n"), "its own line")
+	assert.Empty(t, oocs(a, "[ooc] Bob: and repairs?\n"), "not again so soon")
+	assert.Equal(t, []string{"Cal: " + menu}, oocs(a, "[ooc] Cal: Testbot, you there?\n"), "by name")
 }
 
 // The loop: a welcome said, a tell answered by tell.

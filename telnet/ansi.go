@@ -34,10 +34,15 @@ const (
 	colorRole     = magenta
 	colorPlace    = cyan // where someone is, in who
 	colorHeading  = bold
+	colorAbility  = boldCyan // an ability's name, in the abilities list
+	colorReady    = green    // an ability that can be cast now
+	colorWaiting  = yellow   // one still cooling down
+	colorCoins    = yellow
 
 	colorSay   = bold
 	colorTell  = magenta
 	colorShout = boldYellow
+	colorOOC   = cyan // the ooc channel: not in the world, so not in its colors
 
 	colorHurt   = red     // a blow that landed on you
 	colorDeath  = boldRed // you died, or something did

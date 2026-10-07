@@ -20,11 +20,22 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 		if fight.Fighter.Dead() || fight.Fightee.Dead() {
 			continue
 		}
+		// Ended, or replaced, since the round began -- a death earlier in it
+		// ends the dead one's fights, and a player revived in the room they
+		// fell in would otherwise take the rest of the round's blows again.
+		if w.fightLedger.GetFight(fight.Fighter) != fight {
+			continue
+		}
 
 		// The fights are a snapshot: one with a side that left the world
 		// earlier this round - a summon crumbling with its summoner - is
 		// still in it, and nobody swings from nowhere or at nothing.
 		if w.roomOf(fight.Fighter) == nil || w.roomOf(fight.Fightee) == nil {
+			continue
+		}
+		// nor across rooms: a mob that fled earlier this round is somewhere
+		// else now, and nobody swings after it
+		if w.roomOf(fight.Fighter) != w.roomOf(fight.Fightee) {
 			continue
 		}
 		// each fighter should have a speed, like fast medium slow,
@@ -73,8 +84,9 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 				}
 			}
 
-			// A blow the ward took all of never reached the armor.
-			if fightResult.WasHit && !(absorbed > 0 && fightResult.Damage == 0) {
+			// A blow that did nothing -- the ward took it all, or it was
+			// resisted to nothing -- never reached the armor.
+			if fightResult.WasHit && fightResult.Damage > 0 {
 				// A landed blow costs the gear on both ends of it. After the
 				// damage, so a killing blow still wears the armor it went
 				// through, and after the room has been told about the blow,
@@ -92,6 +104,12 @@ func (w *World) DoViolence(pulse rules.PulseCount) {
 			if isDead {
 				w.combatantDied(fight.Fightee, room)
 				// TODO award points or other reward
+			} else if p, ok := fight.Fightee.(*player.Player); ok && fightResult.WasHit &&
+				p.Wimpy() > 0 && p.CurrentHealth() < p.Wimpy() && w.fightLedger.InFight(p) {
+				// still in a fight: the mob's script may have run already
+				// wimpy: under the line the player set, they run on their own
+				p.Send(event.Panicked{})
+				w.flee(p)
 			}
 		}
 	}

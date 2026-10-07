@@ -9,7 +9,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 	"github.com/watchmud/watchmud/event"
-	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -95,6 +94,161 @@ func render(msg any, self string) string {
 		}
 		return m.Actor + " drops " + m.Item + ".\n"
 
+	case event.Following:
+		return renderFollowing(m, self)
+	case event.Followed:
+		if m.Fighting {
+			return m.Leader + " leaves " + strings.ToLower(m.Direction.String()) + ", but you can't follow in the middle of a fight.\n"
+		}
+		if m.Down {
+			return m.Leader + " leaves " + strings.ToLower(m.Direction.String()) + ", but you'd have to be on your feet to follow.\n"
+		}
+		return "You follow " + m.Leader + " " + strings.ToLower(m.Direction.String()) + ".\n"
+	case event.OOCSaid:
+		return paint(colorOOC, "[ooc] "+m.Speaker+": "+m.Value) + "\n"
+	case event.OOCSet:
+		if m.On {
+			return "You're on the ooc channel.\n"
+		}
+		return "You've left the ooc channel. 'ooc on' to come back.\n"
+	case event.Assisted:
+		if m.Actor == self {
+			return "You leap to " + m.Member + "'s aid against the " + m.Target + "!\n"
+		}
+		return m.Actor + " leaps to " + m.Member + "'s aid against the " + m.Target + "!\n"
+	case event.AssistSet:
+		if m.On {
+			return "You'll join your group's fights.\n"
+		}
+		return "You'll stay out of your group's fights unless you join in.\n"
+	case event.GroupList:
+		return renderGroupList(m)
+	case event.GroupTold:
+		if m.Speaker == self {
+			return paint(colorTell, "You tell the group, '"+m.Value+"'") + "\n"
+		}
+		return paint(colorTell, m.Speaker+" tells the group, '"+m.Value+"'") + "\n"
+
+	case event.Snatched:
+		return "The " + m.Mob + " snatches up " + m.Item + ".\n"
+	case event.Swept:
+		return "The " + m.Sweeper + " sweeps up " + m.Item + " and tips it into a barrow.\n"
+
+	case event.Tracked:
+		if m.Here {
+			return "It's right here.\n"
+		}
+		return "You find a trail: the " + m.Target + " went " + strings.ToLower(m.Direction.String()) + " from here.\n"
+	case event.SplitCoins:
+		if m.Actor == self {
+			return fmt.Sprintf("You split the coins %d ways: %s each.\n", m.Among, coinWord(m.Each))
+		}
+		return fmt.Sprintf("%s splits some coins %d ways: you get %s.\n", m.Actor, m.Among, coinWord(m.Each))
+	case event.WhereList:
+		var rows [][]cell
+		for _, p := range m.Players {
+			rows = append(rows, []cell{colored(colorPlayer, p.Name), colored(colorPlace, p.Room)})
+		}
+		return paint(colorHeading, "Players in "+m.Zone) + "\n" + table(rows)
+	case event.CommandList:
+		return renderCommands()
+	case event.TimeOfDay:
+		s := fmt.Sprintf("It's %s in Wrathrock, %s: %s.\n", m.Clock, m.Day, m.Part)
+		if m.Moon != "" {
+			s += "The moon is " + m.Moon + ".\n"
+		}
+		return s
+	case event.MoonWarning:
+		return paint(colorWounded, "Full moon tonight. Be careful.") + "\n"
+	case event.WimpySet:
+		switch {
+		case m.At == 0 && m.Changed:
+			return "You'll fight to the end.\n"
+		case m.At == 0:
+			return "Wimpy is off: you'll fight to the end. 'wimpy 20' flees below 20 health.\n"
+		}
+		return fmt.Sprintf("You'll flee when your health drops below %d.\n", m.At)
+	case event.Panicked:
+		return "You panic and try to run!\n"
+	case event.PositionChanged:
+		return renderPositionChanged(m, self)
+	case event.Reported:
+		return "Thanks -- your " + m.Kind + " is noted, for whoever runs the game.\n"
+	case event.ReportList:
+		if len(m.Reports) == 0 {
+			return "No reports since the last restart.\n"
+		}
+		var b strings.Builder
+		b.WriteString(paint(colorHeading, "Reports") + "\n")
+		for _, r := range m.Reports {
+			fmt.Fprintf(&b, "  %s %s, %s at %s: %s\n", r.When, r.Kind, r.Player, r.Room, r.Text)
+		}
+		return b.String()
+	case event.Echoed:
+		return m.Text + "\n"
+	case event.UserList:
+		return renderUsers(m)
+	case event.Moderated:
+		return renderModerated(m, self)
+	case event.Purged:
+		return fmt.Sprintf("Purged %d mobs and %d things.\n", m.Mobs, m.Objects)
+	case event.ZoneWasReset:
+		return m.Zone + " is reset.\n"
+
+	case event.Socialized:
+		switch self {
+		case m.Actor:
+			return m.ToActor + "\n"
+		case m.Target:
+			return m.ToTarget + "\n"
+		}
+		return m.ToRoom + "\n"
+	case event.SocialList:
+		return paint(colorHeading, "Socials") + "\n" + wrapWords(m.Names, 76)
+	case event.Emoted:
+		return m.Actor + " " + m.Text + "\n"
+	case event.Whispered:
+		return renderWhispered(m, self)
+	case event.Toggles:
+		return renderToggles(m)
+	case event.Toggled:
+		if m.On {
+			return "You'll hear " + m.Name + " again.\n"
+		}
+		return "You won't hear " + m.Name + " now. 'toggle' shows what's on.\n"
+
+	case event.Junked:
+		if m.Actor == self {
+			return "You junk " + m.Item + ". It's gone.\n"
+		}
+		return m.Actor + " junks " + m.Item + ".\n"
+	case event.Quaffed:
+		if m.Actor == self {
+			return "You quaff " + m.Item + ".\n"
+		}
+		return m.Actor + " quaffs " + m.Item + ".\n"
+	case event.Donated:
+		if m.Actor == self {
+			return "You donate " + m.Item + ". It's waiting in the donation room.\n"
+		}
+		return m.Actor + " donates " + m.Item + ".\n"
+	case event.Appeared:
+		return capitalize(m.Item) + " appears, donated.\n"
+
+	case event.Gave:
+		switch self {
+		case m.Actor:
+			return "You give " + m.Item + " to " + m.Recipient + ".\n"
+		case m.Recipient:
+			return m.Actor + " gives you " + m.Item + ".\n"
+		}
+		return m.Actor + " gives " + m.Item + " to " + m.Recipient + ".\n"
+	case event.Put:
+		if m.Actor == self {
+			return "You put " + m.Item + " in " + m.Into + ".\n"
+		}
+		return m.Actor + " puts " + m.Item + " in " + m.Into + ".\n"
+
 	case event.Got:
 		switch {
 		case m.From != "" && m.Actor == self:
@@ -123,6 +277,9 @@ func render(msg any, self string) string {
 		return "You wear " + m.Item + ".\n"
 
 	case event.GoldGiven:
+		if m.Amount == 1 {
+			return fmt.Sprintf("A coin appears in your purse. You have %d.\n", m.Coins)
+		}
 		return fmt.Sprintf("%d coins appear in your purse. You have %d.\n", m.Amount, m.Coins)
 
 	case event.Removed:
@@ -263,6 +420,23 @@ func render(msg any, self string) string {
 	case event.Staggered:
 		return m.Name + " staggers, stunned.\n"
 
+	case event.DoorChanged:
+		return renderDoorChanged(m, self)
+
+	case event.ContainerChanged:
+		verb := doorVerb[m.Change]
+		if m.Actor == self {
+			return "You " + verb + " the " + m.Container + ".\n"
+		}
+		return m.Actor + " " + verb + "s the " + m.Container + ".\n"
+
+	case event.LookedAtObject:
+		return renderLookedAtObject(m)
+	case event.LookedAtMob:
+		return renderLookedAtMob(m)
+	case event.LookedAtPlayer:
+		return renderLookedAtPlayer(m, self)
+
 	case event.Assessed:
 		return renderAssessed(m, self)
 
@@ -322,28 +496,42 @@ func renderEquipment(power int, equipment []event.EquippedItem) string {
 	if len(equipment) == 0 {
 		return "Nothing equipped.\n"
 	}
-	var b strings.Builder
-	b.WriteString(fmt.Sprintf("You are using (power %d):\n", power))
+	var rows [][]cell
 	for _, eq := range equipment {
-		// include instance id just for testing, for now...
-		b.WriteString(fmt.Sprintf("%s\t%s\t[power %d] %s(%s)\n", eq.Slot, eq.ShortDescription, eq.Power, condition(eq), eq.Id))
+		rows = append(rows, []cell{
+			plainCell(slotLabel(eq.Slot)),
+			colored(colorObject, eq.ShortDescription),
+			plainCell(fmt.Sprintf("power %d", eq.Power)),
+			wear(eq.Durability, eq.MaxDurability, eq.Broken),
+		})
 	}
-	b.WriteString("\n")
-	return b.String()
+	return paint(colorHeading, "Equipment") + fmt.Sprintf(" (power %d)\n", power) + table(rows)
 }
 
-// condition is what shape a piece of equipment is in, for the listing. Gear
-// that never wears out says nothing at all, so a game with no durability.json
-// reads exactly as it did before there was one.
-func condition(eq event.EquippedItem) string {
-	switch {
-	case eq.Broken:
-		return "(broken) "
-	case eq.MaxDurability > 0:
-		return fmt.Sprintf("(%d/%d) ", eq.Durability, eq.MaxDurability)
-	default:
-		return ""
+// slotLabel is how a slot reads in the equipment list: where the thing is,
+// in words.
+func slotLabel(s rules.EquipmentSlot) string {
+	switch s {
+	case rules.SlotWield:
+		return "wielded"
+	case rules.SlotHold:
+		return "held"
 	}
+	return strings.ReplaceAll(string(s), "_", " ")
+}
+
+// wear is a piece's condition for a listing: broken in red, worn down to a
+// third or less in yellow, and nothing at all for gear that never wears out.
+func wear(durability, maxDurability int, broken bool) cell {
+	switch {
+	case broken:
+		return colored(colorBroken, "broken")
+	case maxDurability <= 0:
+		return plainCell("")
+	case durability*3 <= maxDurability:
+		return colored(colorWounded, fmt.Sprintf("%d/%d", durability, maxDurability))
+	}
+	return plainCell(fmt.Sprintf("%d/%d", durability, maxDurability))
 }
 
 func renderExits(exits []event.Exit) string {
@@ -354,7 +542,11 @@ func renderExits(exits []event.Exit) string {
 	} else {
 		var exitStrs []string
 		for _, exit := range exits {
-			exitStrs = append(exitStrs, strings.ToLower(exit.Direction.String()))
+			s := strings.ToLower(exit.Direction.String())
+			if exit.Closed {
+				s += " (closed)"
+			}
+			exitStrs = append(exitStrs, s)
 		}
 		b.WriteString(strings.Join(exitStrs, ", ") + "\n")
 	}
@@ -367,12 +559,74 @@ func renderInventory(items []event.InventoryItem) string {
 	if len(items) == 0 {
 		return "You aren't carrying anything.\n"
 	}
-	var b strings.Builder
-	b.WriteString("You are carrying:\n")
-	for _, item := range items {
-		b.WriteString("\t" + item.ShortDescription + "\n")
+	// the same thing in the same shape is one line with a count: a pack of
+	// goose feathers is "a long goose feather (x5)", not five lines
+	type key struct {
+		desc               string
+		power, dur, maxDur int
+		broken             bool
+		bag                bool
+		holding            int
 	}
-	return b.String()
+	var order []key
+	count := map[key]int{}
+	for _, it := range items {
+		k := key{it.ShortDescription, it.Power, it.Durability, it.MaxDurability, it.Broken, it.Bag, it.Holding}
+		if count[k] == 0 {
+			order = append(order, k)
+		}
+		count[k]++
+	}
+	var rows [][]cell
+	for _, k := range order {
+		desc := k.desc
+		if n := count[k]; n > 1 {
+			desc += fmt.Sprintf(" (x%d)", n)
+		}
+		switch {
+		case k.bag && k.holding == 0:
+			desc += " (empty)"
+		case k.bag:
+			desc += fmt.Sprintf(" (%d inside)", k.holding)
+		}
+		rows = append(rows, []cell{
+			colored(colorObject, desc),
+			plainCell(fmt.Sprintf("power %d", k.power)),
+			wear(k.dur, k.maxDur, k.broken),
+		})
+	}
+	return paint(colorHeading, "Inventory") + "\n" + table(rows)
+}
+
+// doorVerb is what a change to a lock is, as a verb.
+var doorVerb = map[event.DoorChange]string{
+	event.DoorOpened: "open", event.DoorClosed: "close",
+	event.DoorLocked: "lock", event.DoorUnlocked: "unlock",
+}
+
+// renderDoorChanged: the one who did it, the room that watched, and the far
+// side, which heard the door but saw nobody.
+func renderDoorChanged(m event.DoorChanged, self string) string {
+	verb := doorVerb[m.Change]
+	switch {
+	case m.Actor == self:
+		return "You " + verb + " the " + m.Door + ".\n"
+	case m.Actor != "":
+		return m.Actor + " " + verb + "s the " + m.Door + ".\n"
+	}
+	where := strings.ToLower(m.Direction.String())
+	if m.Direction == rules.DirectionUp || m.Direction == rules.DirectionDown {
+		where = map[rules.Direction]string{rules.DirectionUp: "above", rules.DirectionDown: "below"}[m.Direction]
+	} else {
+		where = "to the " + where
+	}
+	switch m.Change {
+	case event.DoorOpened:
+		return capitalize("the "+m.Door+" "+where+" opens.") + "\n"
+	case event.DoorClosed:
+		return capitalize("the "+m.Door+" "+where+" closes.") + "\n"
+	}
+	return "You hear a click from the " + m.Door + " " + where + ".\n"
 }
 
 // renderAssessed gives the numbers to whoever cast it; the rest of the room
@@ -442,16 +696,26 @@ func renderAbilities(m event.Abilities) string {
 	if len(m.Granted) == 0 {
 		return "Nothing you're wearing grants any abilities.\n"
 	}
-	var b strings.Builder
+	var rows [][]cell
 	for _, a := range m.Granted {
-		ready := "ready"
+		ready := colored(colorReady, "ready")
 		if a.ReadyIn > 0 {
-			ready = fmt.Sprintf("ready in %ds", int((a.ReadyIn+time.Second-1)/time.Second))
+			ready = colored(colorWaiting, fmt.Sprintf("ready in %ds", int((a.ReadyIn+time.Second-1)/time.Second)))
 		}
-		fmt.Fprintf(&b, "%-12s %2d mana  %s cooldown  %s (power %d)  %s\n",
-			a.Name, a.Mana, a.Cooldown, a.Item, a.Power, ready)
+		rows = append(rows, []cell{
+			colored(colorAbility, a.Name),
+			number(fmt.Sprintf("%d mana", a.Mana)),
+			plainCell(seconds(a.Cooldown) + " cooldown"),
+			plainCell(fmt.Sprintf("%s (power %d)", a.Item, a.Power)),
+			ready,
+		})
 	}
-	return b.String()
+	return paint(colorHeading, "Abilities") + "\n" + table(rows)
+}
+
+// seconds is a cooldown as a player reads it: "60s", not Go's "1m0s".
+func seconds(d time.Duration) string {
+	return fmt.Sprintf("%ds", int((d+time.Second-1)/time.Second))
 }
 
 // renderShopList lines the prices up: the reader is comparing them.
@@ -459,16 +723,15 @@ func renderShopList(items []event.ShopEntry) string {
 	if len(items) == 0 {
 		return "Nothing's for sale here, but the shopkeeper will buy.\n"
 	}
-	width := 0
+	var rows [][]cell
 	for _, it := range items {
-		width = max(width, len(it.Item))
+		rows = append(rows, []cell{
+			colored(colorObject, it.Item),
+			plainCell(fmt.Sprintf("power %d", it.Power)),
+			{text: coins(it.Price), color: colorCoins, right: true},
+		})
 	}
-	var b strings.Builder
-	b.WriteString("For sale here:\n")
-	for _, it := range items {
-		fmt.Fprintf(&b, "  %-*s  [power %d]  %s\n", width, it.Item, it.Power, coins(it.Price))
-	}
-	return b.String()
+	return paint(colorHeading, "For sale") + "\n" + table(rows)
 }
 
 // coins is an amount as a player reads it.
@@ -486,22 +749,25 @@ func renderPurse(n int) string {
 	if n == 0 {
 		return ""
 	}
-	return "You have " + coins(n) + ".\n"
+	return "You have " + paint(colorCoins, coins(n)) + ".\n"
 }
 
 // renderPlayerStat formats a player's stats as a string for display to a mud
 // client.
 func renderPlayerStat(s event.Stat) string {
-	var b strings.Builder
-	b.WriteString("Status:\n")
-	b.WriteString("Player:\t" + s.PlayerName + "\n")
-	b.WriteString("Lineage:\t" + s.Lineage + "\tRole: " + roleOrNone(s.Role) + "\n")
-	b.WriteString(fmt.Sprintf("Power:\t%d\n", s.Power))
-	b.WriteString(fmt.Sprintf("Health:\t%d of %d\n", s.CurrentHealth, s.MaxHealth))
-	b.WriteString(fmt.Sprintf("Coins:\t%d\n", s.Coins))
-	b.WriteString("Location:\t" + player.NewLocation(s.ZoneId, s.RoomId).String() + "\n")
-	b.WriteString("\n")
-	return b.String()
+	title := paint(colorPlayer, s.PlayerName) + ", the " + s.Lineage
+	if s.Role != "" {
+		title += " " + paint(colorRole, s.Role)
+	}
+	rows := [][]cell{
+		{plainCell("Health"), colored(healthColor(s.CurrentHealth, s.MaxHealth), fmt.Sprintf("%d/%d", s.CurrentHealth, s.MaxHealth))},
+		{plainCell("Mana"), plainCell(fmt.Sprintf("%d/%d", s.CurrentMana, s.MaxMana))},
+		{plainCell("Power"), plainCell(fmt.Sprint(s.Power))},
+		{plainCell("Armor class"), plainCell(fmt.Sprint(s.ArmorClass))},
+		{plainCell("Coins"), colored(colorCoins, fmt.Sprint(s.Coins))},
+		{plainCell("Where"), colored(colorPlace, s.RoomName+", "+s.ZoneName)},
+	}
+	return title + "\n" + table(rows)
 }
 
 // roleOrNone is what goes where a role name goes when the player's equipment
@@ -522,22 +788,24 @@ func renderRole(r event.Role) string {
 	if r.Current == "" {
 		b.WriteString("You aren't wearing anything that argues for a role.\n")
 	} else {
-		b.WriteString("You are fighting as a " + r.Current + ".\n")
+		b.WriteString("You are fighting as a " + paint(colorRole, r.Current) + ".\n")
 		if r.Description != "" {
 			b.WriteString(" " + r.Description + "\n")
 		}
 	}
-	width := 0
-	for _, s := range r.Standings {
-		width = max(width, len(s.Name))
-	}
-	for _, s := range r.Standings {
-		fmt.Fprintf(&b, "  %-*s %2d", width, s.Name, s.Total)
-		if len(s.Sources) > 0 {
-			b.WriteString("  (" + strings.Join(s.Sources, ", ") + ")")
+	var rows [][]cell
+	for _, st := range r.Standings {
+		name := plainCell(st.Name)
+		if st.Name == r.Current {
+			name = colored(colorRole, st.Name)
 		}
-		b.WriteString("\n")
+		row := []cell{name, number(fmt.Sprint(st.Total))}
+		if len(st.Sources) > 0 {
+			row = append(row, plainCell("("+strings.Join(st.Sources, ", ")+")"))
+		}
+		rows = append(rows, row)
 	}
+	b.WriteString(table(rows))
 	b.WriteString("Change what you're wearing to change your role.\n")
 	return b.String()
 }
@@ -561,8 +829,12 @@ func renderRoom(rd event.RoomDescription) string {
 	for _, m := range rd.Mobs {
 		b.WriteString(paint(colorMob, m) + "\n")
 	}
-	for _, p := range rd.Players {
-		b.WriteString(paint(colorPlayer, p) + " is here.\n")
+	for i, p := range rd.Players {
+		how := ""
+		if i < len(rd.PlayerPositions) && rd.PlayerPositions[i] != "" {
+			how = rd.PlayerPositions[i] + " "
+		}
+		b.WriteString(paint(colorPlayer, p) + " is " + how + "here.\n")
 	}
 	return b.String()
 }
@@ -631,8 +903,8 @@ func renderWho(players []event.WhoEntry) string {
 	// columns sized to the widest name and title, measured before color
 	nameWidth, titleWidth := 0, 0
 	for _, p := range players {
-		nameWidth = max(nameWidth, len(p.PlayerName))
-		titleWidth = max(titleWidth, len(whoTitle(p)))
+		nameWidth = max(nameWidth, utf8.RuneCountInString(p.PlayerName))
+		titleWidth = max(titleWidth, utf8.RuneCountInString(whoTitle(p)))
 	}
 	var b strings.Builder
 	people, bots := 0, 0
@@ -657,8 +929,8 @@ func renderWho(players []event.WhoEntry) string {
 		if p.Bot {
 			nameColor = colorBot
 		}
-		b.WriteString("  " + pad(paint(nameColor, p.PlayerName), len(p.PlayerName), nameWidth))
-		b.WriteString("  " + pad(paintTitle(p), len(whoTitle(p)), titleWidth))
+		b.WriteString("  " + pad(paint(nameColor, p.PlayerName), utf8.RuneCountInString(p.PlayerName), nameWidth))
+		b.WriteString("  " + pad(paintTitle(p), utf8.RuneCountInString(whoTitle(p)), titleWidth))
 		b.WriteString("  " + paint(colorPlace, p.RoomName+", "+p.ZoneName) + "\n")
 	}
 	b.WriteString("\n" + countOf(people, "player", "players"))
@@ -747,4 +1019,266 @@ func renderContainerContents(c event.ContainerContents) string {
 		b.WriteString(fmt.Sprintf("  %s [power %d]\n", item.ShortDescription, item.Power))
 	}
 	return b.String()
+}
+
+// renderLookedAtObject is what one thing is: where it goes, what it's made of,
+// its power and condition, and what it does.
+func renderLookedAtObject(m event.LookedAtObject) string {
+	var b strings.Builder
+	b.WriteString(paint(colorObject, capitalize(m.Item)) + "\n")
+	var kind string
+	switch {
+	case m.ArmorType != rules.ArmorTypeNone:
+		kind = capitalize(string(m.ArmorType)) + " armor, worn on the " + slotLabel(m.Slot)
+	case m.Slot == rules.SlotWield:
+		kind = "A weapon"
+	case m.Slot == rules.SlotHold:
+		kind = "Held in the hand"
+	case m.Slot != rules.SlotNone && m.Slot != "":
+		kind = "Worn on the " + slotLabel(m.Slot)
+	}
+	if kind != "" {
+		fmt.Fprintf(&b, "  %s. Power %d.\n", kind, m.Power)
+	} else {
+		fmt.Fprintf(&b, "  Power %d.\n", m.Power)
+	}
+	if c := wear(m.Durability, m.MaxDurability, m.Broken); c.text != "" {
+		text := c.text
+		if c.color != "" {
+			text = paint(c.color, text)
+		}
+		b.WriteString("  Condition " + text + ".\n")
+	}
+	if m.Damage != "" {
+		fmt.Fprintf(&b, "  Hits for %s.\n", m.Damage)
+	}
+	if m.Armor > 0 {
+		fmt.Fprintf(&b, "  Adds %d to armor class.\n", m.Armor)
+	}
+	if len(m.Abilities) > 0 {
+		b.WriteString("  Lets you cast " + strings.ToLower(strings.Join(m.Abilities, ", ")) + ".\n")
+	}
+	switch {
+	case m.Locked:
+		b.WriteString("  It's locked.\n")
+	case m.Closed:
+		b.WriteString("  It's closed.\n")
+	case m.Container && m.Capacity > 0:
+		fmt.Fprintf(&b, "  Holding %d of %d.\n", m.Holding, m.Capacity)
+	case m.Container && m.Holding == 0:
+		b.WriteString("  It's empty.\n")
+	case m.Container:
+		fmt.Fprintf(&b, "  Holding %d.\n", m.Holding)
+	}
+	if m.Worn {
+		b.WriteString("  You have it on.\n")
+	}
+	return b.String()
+}
+
+// healthWords is how hurt something looks, from a percentage of its health.
+func healthWords(pct int) string {
+	switch {
+	case pct >= 100:
+		return "in perfect health"
+	case pct >= 75:
+		return "slightly hurt"
+	case pct >= 50:
+		return "wounded"
+	case pct >= 25:
+		return "badly hurt"
+	}
+	return "near death"
+}
+
+func renderLookedAtMob(m event.LookedAtMob) string {
+	s := "The " + m.Name + " is " + healthWords(m.Health)
+	if m.Fighting != "" {
+		s += ", fighting " + m.Fighting
+	}
+	return s + ".\n"
+}
+
+func renderLookedAtPlayer(m event.LookedAtPlayer, self string) string {
+	var b strings.Builder
+	who := paint(colorPlayer, m.Name) + " is"
+	if m.Name == self {
+		who = "You are"
+	}
+	fmt.Fprintf(&b, "%s %s %s, %s", who, article(m.Lineage), m.Lineage, healthWords(m.Health))
+	if m.Fighting != "" {
+		b.WriteString(", fighting " + m.Fighting)
+	}
+	b.WriteString(".\n")
+	if m.Role != "" {
+		fmt.Fprintf(&b, "  Geared as a %s.\n", m.Role)
+	}
+	if len(m.Wearing) == 0 {
+		b.WriteString("  Wearing nothing at all.\n")
+	} else {
+		b.WriteString("  Wearing " + strings.Join(m.Wearing, ", ") + ".\n")
+	}
+	return b.String()
+}
+
+// article is "a" or "an" for a word, by its first letter.
+func article(word string) string {
+	if word != "" && strings.ContainsRune("AEIOUaeiou", rune(word[0])) {
+		return "an"
+	}
+	return "a"
+}
+
+func renderFollowing(m event.Following, self string) string {
+	switch {
+	case self == m.Follower && m.Stopped:
+		return "You stop following " + m.Leader + ".\n"
+	case self == m.Follower:
+		return "You now follow " + m.Leader + ".\n"
+	case m.Stopped:
+		return m.Follower + " stops following you.\n"
+	}
+	return m.Follower + " now follows you.\n"
+}
+
+// renderGroupList is "group": who, how they're doing, and where.
+func renderGroupList(m event.GroupList) string {
+	var rows [][]cell
+	for _, p := range m.Members {
+		name := colored(colorPlayer, p.Name)
+		if p.Leader {
+			name = colored(colorPlayer, p.Name+" (leader)")
+		}
+		rows = append(rows, []cell{
+			name,
+			number(fmt.Sprintf("%d/%dhp", p.Health, p.MaxHealth)),
+			number(fmt.Sprintf("%d/%dm", p.Mana, p.MaxMana)),
+			colored(colorPlace, p.Room),
+		})
+	}
+	return paint(colorHeading, "Group") + "\n" + table(rows)
+}
+
+// wrapWords lays words out in lines of at most width, two spaces in.
+func wrapWords(words []string, width int) string {
+	var b strings.Builder
+	line := " "
+	for _, w := range words {
+		if len(line)+1+len(w) > width {
+			b.WriteString(line + "\n")
+			line = " "
+		}
+		line += " " + w
+	}
+	if strings.TrimSpace(line) != "" {
+		b.WriteString(line + "\n")
+	}
+	return b.String()
+}
+
+func renderWhispered(m event.Whispered, self string) string {
+	verb, past := "whisper to", "whispers to"
+	if m.Ask {
+		verb, past = "ask", "asks"
+	}
+	switch self {
+	case m.From:
+		return "You " + verb + " " + m.To + ", '" + m.Value + "'\n"
+	case m.To:
+		return m.From + " " + past + " you, '" + m.Value + "'\n"
+	}
+	if m.Ask {
+		return m.From + " asks " + m.To + " something.\n"
+	}
+	return m.From + " whispers something to " + m.To + ".\n"
+}
+
+func renderToggles(m event.Toggles) string {
+	onOff := func(on bool) cell {
+		if on {
+			return colored(colorReady, "on")
+		}
+		return plainCell("off")
+	}
+	return paint(colorHeading, "Toggles") + "\n" + table([][]cell{
+		{plainCell("color"), onOff(m.Color)},
+		{plainCell("ooc"), onOff(m.OOC)},
+		{plainCell("tells"), onOff(m.Tells)},
+		{plainCell("shouts"), onOff(m.Shouts)},
+		{plainCell("assist"), onOff(m.Assist)},
+	}) + "  'toggle <name>' switches one.\n"
+}
+
+func renderUsers(m event.UserList) string {
+	var rows [][]cell
+	for _, u := range m.Users {
+		var flags []string
+		for _, f := range []struct {
+			on   bool
+			name string
+		}{{u.Wizard, "wizard"}, {u.Bot, "bot"}, {u.Muted, "muted"}, {u.Frozen, "frozen"}} {
+			if f.on {
+				flags = append(flags, f.name)
+			}
+		}
+		rows = append(rows, []cell{colored(colorPlayer, u.Name), colored(colorPlace, u.Room), plainCell(u.Zone), plainCell(strings.Join(flags, " "))})
+	}
+	return paint(colorHeading, fmt.Sprintf("Users (%d)", len(m.Users))) + "\n" + table(rows)
+}
+
+func renderModerated(m event.Moderated, self string) string {
+	what := map[[2]bool]string{
+		{false, true}: "muted", {false, false}: "unmuted",
+		{true, true}: "frozen", {true, false}: "thawed",
+	}[[2]bool{m.Freeze, m.On}]
+	if m.Target == self {
+		return "You have been " + what + ".\n"
+	}
+	return m.Target + " is " + what + ".\n"
+}
+
+func renderPositionChanged(m event.PositionChanged, self string) string {
+	you := m.Actor == self
+	pick := func(mine, theirs string) string {
+		if you {
+			return mine + "\n"
+		}
+		return m.Actor + " " + theirs + "\n"
+	}
+	switch m.To {
+	case "sitting":
+		return pick("You sit down.", "sits down.")
+	case "resting":
+		return pick("You sit back and rest.", "sits back to rest.")
+	case "sleeping":
+		return pick("You lie down and go to sleep.", "lies down and goes to sleep.")
+	}
+	if m.Woke {
+		return pick("You wake and get to your feet.", "wakes and gets up.")
+	}
+	return pick("You stand up.", "stands up.")
+}
+
+func coinWord(n int) string {
+	if n == 1 {
+		return "1 coin"
+	}
+	return fmt.Sprintf("%d coins", n)
+}
+
+// renderCommands is every verb help knows, in help's order, each once.
+func renderCommands() string {
+	var verbs []string
+	seen := map[string]bool{}
+	for _, section := range helpSections {
+		for _, e := range section.entries {
+			for _, v := range e.verbs {
+				if !seen[v] && len(v) > 1 {
+					seen[v] = true
+					verbs = append(verbs, v)
+				}
+			}
+		}
+	}
+	return paint(colorHeading, "Commands") + "\n" + wrapWords(verbs, 76) + "  'help' says what they do.\n"
 }

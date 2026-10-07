@@ -1,0 +1,119 @@
+package loader
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/watchmud/watchmud/lock"
+	"github.com/watchmud/watchmud/object"
+	"github.com/watchmud/watchmud/rules"
+	"github.com/watchmud/watchmud/spaces"
+)
+
+// doorContent is lootContent's two zones, with a cellar and a pit in the
+// caves joined both ways, and a door entry waiting to be hung between them.
+func doorContent(t *testing.T, e doorEntry) (*Content, *spaces.Room, *spaces.Room) {
+	t.Helper()
+	c := lootContent(t)
+	caves := c.Zones["caves"]
+	cellar := spaces.NewRoom(caves, "cellar", "The Cellar", "")
+	pit := spaces.NewRoom(caves, "pit", "The Pit", "")
+	caves.AddRoom(cellar)
+	caves.AddRoom(pit)
+	cellar.Connect(rules.DirectionWest, pit)
+	pit.Connect(rules.DirectionEast, cellar)
+	c.pendingDoors = []pendingDoor{{"caves", "cellar", rules.DirectionWest, e}}
+	return c, cellar, pit
+}
+
+// Declared on one side, the same door is on both; its key is "zone/id".
+func TestHangDoors_bothSides(t *testing.T) {
+	c, cellar, pit := doorContent(t, doorEntry{Name: "iron grate", Aliases: []string{"grate"},
+		Closed: true, Locked: true, Key: "bone"})
+
+	require.NoError(t, c.hangDoors())
+
+	d := cellar.DoorTo(rules.DirectionWest)
+	require.NotNil(t, d)
+	assert.Same(t, d, pit.DoorTo(rules.DirectionEast))
+	assert.Equal(t, "iron grate", d.Name)
+	assert.Equal(t, "caves/bone", d.Key)
+	assert.Equal(t, lock.State{Closed: true, Locked: true}, d.State)
+	assert.Equal(t, []*spaces.Door{d}, c.Zones["caves"].Doors, "the declaring zone resets it")
+}
+
+func TestHangDoors_aPlainDoor(t *testing.T) {
+	c, cellar, _ := doorContent(t, doorEntry{Closed: true})
+
+	require.NoError(t, c.hangDoors())
+
+	d := cellar.DoorTo(rules.DirectionWest)
+	assert.Equal(t, "door", d.Name, "unnamed is a door")
+	assert.Empty(t, d.Key)
+}
+
+func TestHangDoors_refuses(t *testing.T) {
+	for name, e := range map[string]doorEntry{
+		"locked but not closed": {Locked: true, Key: "bone"},
+		"no key to open it":     {Closed: true, Locked: true},
+		"object not defined":    {Closed: true, Key: "skull"},
+		"zone not found":        {Closed: true, Key: "atlantis/key"},
+	} {
+		c, _, _ := doorContent(t, e)
+		assert.ErrorContains(t, c.hangDoors(), name, name)
+	}
+
+	c, _, _ := doorContent(t, doorEntry{Closed: true})
+	c.pendingDoors = append(c.pendingDoors, pendingDoor{"caves", "pit", rules.DirectionEast, doorEntry{}})
+	assert.ErrorContains(t, c.hangDoors(), "one side only")
+}
+
+// A container definition gets its lid, its key resolved like a door's, and
+// can't be picked up.
+func TestFitChests(t *testing.T) {
+	c := lootContent(t)
+	chest := object.NewDefinition("chest", "chest", "caves", rules.ObjectCategoryOther, nil,
+		"a chest", "A chest is here.", rules.SlotNone, rules.ArmorTypeNone, nil)
+	c.pendingChests = []pendingChest{{"caves", chest, containerEntry{Closed: true, Locked: true, Key: "bone"}}}
+
+	require.NoError(t, c.fitChests())
+
+	require.NotNil(t, chest.Container)
+	assert.Equal(t, lock.State{Closed: true, Locked: true}, chest.Container.Initial)
+	assert.Equal(t, "caves/bone", chest.Container.Key)
+
+	for name, e := range map[string]containerEntry{
+		"locked but not closed": {Locked: true, Key: "bone"},
+		"no key to open it":     {Closed: true, Locked: true},
+		"object not defined":    {Closed: true, Key: "skull"},
+	} {
+		c.pendingChests = []pendingChest{{"caves", chest, e}}
+		assert.ErrorContains(t, c.fitChests(), name, name)
+	}
+}
+
+// A bag: carried, no lid, and room for so many things.
+func TestFitChests_portable(t *testing.T) {
+	c := lootContent(t)
+	bag := object.NewDefinition("bag", "bag", "caves", rules.ObjectCategoryOther, nil,
+		"a bag", "A bag is here.", rules.SlotNone, rules.ArmorTypeNone, nil)
+	c.pendingChests = []pendingChest{{"caves", bag, containerEntry{Portable: true, Capacity: 5}}}
+
+	require.NoError(t, c.fitChests())
+	assert.Equal(t, &object.ContainerSpec{Portable: true, Capacity: 5}, bag.Container)
+
+	for name, e := range map[string]containerEntry{
+		"no lid or lock": {Portable: true, Closed: true},
+		"capacity -1":    {Portable: true, Capacity: -1},
+	} {
+		c.pendingChests = []pendingChest{{"caves", bag, e}}
+		assert.ErrorContains(t, c.fitChests(), name, name)
+	}
+
+	stuck := object.NewDefinition("bag", "bag", "caves", rules.ObjectCategoryOther, nil,
+		"a bag", "A bag is here.", rules.SlotNone, rules.ArmorTypeNone,
+		[]rules.ObjectBehavior{rules.ObjectBehaviorNoTake})
+	c.pendingChests = []pendingChest{{"caves", stuck, containerEntry{Portable: true}}}
+	assert.ErrorContains(t, c.fitChests(), "portable, and noTake")
+}

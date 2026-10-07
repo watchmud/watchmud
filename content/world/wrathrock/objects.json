@@ -40,6 +40,15 @@
     "description_on_ground": "A waterskin lies here, most of the way full."
   },
   {
+    "id": "healing_draught",
+    "name": "healing draught",
+    "category": "POTION",
+    "aliases": [ "draught", "potion", "healing" ],
+    "short_description": "a healing draught",
+    "description_on_ground": "A stoppered vial of something red and faintly warm sits here.",
+    "quaff": "heal"
+  },
+  {
     "id": "short_sword",
     "name": "short sword",
     "category": "WEAPON",
@@ -90,5 +99,15 @@
     "equipment_slot": "neck",
     "durability": 0,
     "abilities": [ "recall" ]
+  },
+  {
+    "id": "leather_satchel",
+    "name": "leather satchel",
+    "category": "OTHER",
+    "aliases": [ "satchel", "bag" ],
+    "short_description": "a leather satchel",
+    "description_on_ground": "A leather satchel with a long strap lies here.",
+    "durability": 0,
+    "container": { "portable": true, "capacity": 10 }
   }
 ]

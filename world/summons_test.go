@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/suite"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/mobile"
+	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/testdice"
 )
@@ -156,6 +157,22 @@ func (s *summonsSuite) TestKilledSummonLeavesNothing() {
 	s.Assert().Len(s.imps(), 1, "the other stays")
 	s.Assert().Empty(s.w.StartRoom.Inventory.FindAll("corpse"), "no corpse, so no loot or coins")
 	s.Assert().Equal([]any{event.Died{Target: "imp"}, event.Crumbled{Name: "imp"}}, s.endings())
+}
+
+// a summon that picked something up drops it as it crumbles: no corpse
+// mustn't mean anyone's things leave the world
+func (s *summonsSuite) TestCrumbleDropsWhatItCarried() {
+	s.Require().NoError(s.w.startFight(s.p, s.drone))
+	s.dice.Load([]int{0, 0})
+	s.w.summon(s.drone, s.imp, 1)
+	imp := s.imps()[0]
+	knife := object.MakeTestKnife(s.T())
+	s.Require().NoError(imp.Inventory.Add(knife))
+
+	s.w.crumble(imp)
+
+	_, onFloor := s.w.StartRoom.Inventory.Get(knife.Id)
+	s.Assert().True(onFloor)
 }
 
 // Review focus 3: the fight ends some other way -- here, everyone leaves it --

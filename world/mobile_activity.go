@@ -27,8 +27,13 @@ func (w *World) DoMobileActivity() {
 		} else {
 			// actions where the mob is NOT in a fight.
 
-			if mob.Definition.HasFlag(rules.MobileFlagAggressive) {
-				w.doMobAggro(mob)
+			moonstruck := mob.Definition.HasFlag(rules.MobileFlagMoonstruck) && w.fullMoonNight()
+			if mob.Definition.HasFlag(rules.MobileFlagAggressive) || moonstruck {
+				// a moonstruck mob still roams, hunting: frozen in one room
+				// all night it would be the safest thing out there
+				if !w.doMobAggro(mob) && moonstruck && mob.CanWander() {
+					w.doMobWander(mob)
+				}
 			} else if mob.CanWander() {
 				w.doMobWander(mob)
 			}
@@ -39,16 +44,22 @@ func (w *World) DoMobileActivity() {
 // doMobAggro attacks the first player in the room it can see. A wizard with
 // nohassle on isn't one of them, and doesn't shield whoever is standing next
 // to them: the mob goes for the next player instead.
-func (w *World) doMobAggro(mob *mobile.Instance) {
-	for _, p := range w.mobileRoom(mob).Players() {
+// It answers whether there was anyone to go for.
+func (w *World) doMobAggro(mob *mobile.Instance) bool {
+	room := w.mobileRoom(mob)
+	if room.Flag(rules.RoomFlagNoFight) {
+		return false // nobody fights here, whoever starts it
+	}
+	for _, p := range room.Players() {
 		if p.IsWizard() && p.NoHassle() {
 			continue
 		}
 		if err := w.startFight(mob, p); err != nil {
 			log.Warn().Msgf("World.doMobAggro: %s error starting fight: %s", mob.Definition.Id, err)
 		}
-		return
+		return true
 	}
+	return false
 }
 
 func (w *World) doMobWander(mob *mobile.Instance) {
@@ -79,6 +90,7 @@ func (w *World) doMobRandomWander(mob *mobile.Instance) error {
 			return errors.New(fmt.Sprintf("Mobile ID '%s' is in a room without exit and can't wander out of it.", mob.Definition.Id))
 		}
 		w.moveMobile(mob, dir, mobRoom.DestinationRoom(dir))
+		w.scripts.Arrive(mob)
 	}
 	return nil
 }
@@ -95,10 +107,14 @@ func (w *World) doMobFollowPathWander(mob *mobile.Instance) error {
 			return errors.New(fmt.Sprintf("doMobFollowPathWander: mobile ID '%s' can't figure out next place to go to (current '%s', path '%s')",
 				mob.Definition.Id, mobRoom.Id, mob.Definition.Wandering.Path))
 		}
+		if !mobRoom.Passable(dir) {
+			return nil // a closed door on its path: it waits
+		}
 		if changeDirection {
 			mob.WanderingForward = !mob.WanderingForward
 		}
 		w.moveMobile(mob, dir, mobRoom.DestinationRoom(dir))
+		w.scripts.Arrive(mob)
 	}
 	return nil
 }
@@ -114,6 +130,10 @@ func getNextDirectionOnPath(mob *mobile.Instance, mobRoom *spaces.Room) (dir rul
 	}
 	nextIndex := -1
 
+	if len(mob.Definition.Wandering.Path) < 2 {
+		// the loader refuses one; this keeps a bad one from indexing -1
+		return rules.DirectionNone, false, errors.New("a path needs two rooms")
+	}
 	if currentIndex < 0 {
 		// note: this might be OK (if the mob was pulled off the path for some reason?)
 		// TODO should it change to a random walk? or just wait here, or?

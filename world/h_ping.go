@@ -8,9 +8,7 @@ import (
 )
 
 func (w *World) handlePing(msg *gameserver.HandlerParameter, cmd command.Ping) {
-	// TODO remove this constant, use logging parameters instead
-	if VERBOSE_LOGGING {
-		log.Trace().Msgf("Player %s Ping", msg.Player.Name())
-	}
+	// trace is off unless the log level asks for it
+	log.Trace().Str("player", msg.Player.Name()).Msg("ping")
 	msg.Player.Send(event.Pong{Target: cmd.Target})
 }

@@ -17,11 +17,13 @@ type door struct{ from, dir string }
 
 // keepOut is the doors a wanderer never takes: what's past them would kill a
 // power-1 bot that only fights back. South of the Edge of the Old Wood is the
-// wolves, and behind them the Overturned Oak and the whole Barrow.
+// wolves, and behind them the Overturned Oak and the whole Barrow; west of the
+// Millpond is the Drowned Mill.
 // TestKeepOut_safe walks the real content without these and fails if anything
 // aggressive above power 2 is still in reach.
 var keepOut = []door{
 	{"The Edge of the Old Wood", "south"},
+	{"The Millpond", "west"},
 }
 
 // roomBlockRe is any room description: the name, an optional indented
@@ -122,11 +124,15 @@ func kept(room, dir string) bool {
 	return false
 }
 
-// parseExits reads "North, East, Up" into what's typed to take them.
+// parseExits reads "North, East (closed), Up" into what's typed to take the
+// ones open: a wanderer doesn't open doors.
 func parseExits(s string) []string {
 	var out []string
 	for _, e := range strings.Split(s, ",") {
 		e = strings.ToLower(strings.TrimSpace(e))
+		if strings.HasSuffix(e, "(closed)") {
+			continue
+		}
 		if e != "" && e != "none" {
 			out = append(out, e)
 		}

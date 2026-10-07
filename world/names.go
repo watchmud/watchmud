@@ -12,6 +12,9 @@ import (
 var grammarWords = []string{
 	"all", "self", "me", "myself", "you", "corpse",
 	"someone", "somebody", "something", "nobody",
+	// a line the game starts with a word a name could be: "Nothing you're
+	// wearing lets you recall" -- an emote by a Nothing would be it
+	"nothing",
 }
 
 // IsReservedName says whether a character may not be called this, because the

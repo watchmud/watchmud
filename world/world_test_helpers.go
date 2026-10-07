@@ -3,6 +3,7 @@ package world
 import (
 	"os"
 	"testing"
+	"time"
 	"uuid"
 
 	"github.com/stretchr/testify/require"
@@ -58,5 +59,9 @@ func NewTestWorld() (*World, error) {
 	store := memstore.New()
 	roller := testdice.New()
 
-	return New(content, store, roller)
+	w, err := New(content, store, roller)
+	if err == nil {
+		w.SetMoonClock(func() time.Time { return NewMoon })
+	}
+	return w, err
 }

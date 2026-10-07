@@ -31,6 +31,11 @@ func (w *World) handleSell(msg *gameserver.HandlerParameter, cmd command.Sell) {
 			refused = event.TargetInUse
 			continue
 		}
+		// what's in a bag would go with it, and the shop doesn't pay for that
+		if inst.Contents != nil && inst.Contents.Len() > 0 {
+			refused = event.NotEmpty
+			continue
+		}
 		pay := w.sellPrice(inst)
 		if pay == 0 {
 			refused = event.Worthless

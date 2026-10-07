@@ -14,6 +14,7 @@ import (
 	"github.com/watchmud/watchmud/server"
 	"github.com/watchmud/watchmud/telnet"
 	"github.com/watchmud/watchmud/world"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // startGame runs the real content -- not testcontent: a content change that
@@ -27,8 +28,10 @@ func startGame(t *testing.T, tick time.Duration) string {
 	store := memstore.New()
 	w, err := world.New(content, store, dice.New([32]byte{}))
 	require.NoError(t, err)
+	w.SetMoonClock(func() time.Time { return world.NewMoon }) // no full moons in a test
 	gs := server.New(w, content.Catalog, store)
 	gs.SetTickInterval(tick)
+	gs.SetPasswordCost(bcrypt.MinCost) // throwaway characters
 
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	require.NoError(t, err)

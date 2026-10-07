@@ -53,6 +53,66 @@ const (
 	NotEnoughMana  ResultCode = "NOT_ENOUGH_MANA"
 	NoFoe          ResultCode = "NO_FOE"
 
+	// doors
+	NoDoor        ResultCode = "NO_DOOR"
+	DoorShut      ResultCode = "DOOR_CLOSED"
+	AlreadyOpen   ResultCode = "ALREADY_OPEN"
+	AlreadyClosed ResultCode = "ALREADY_CLOSED"
+	AlreadyLocked ResultCode = "ALREADY_LOCKED"
+	NotLocked     ResultCode = "NOT_LOCKED"
+	Locked        ResultCode = "LOCKED"
+	NotClosed     ResultCode = "NOT_CLOSED"
+	NoKey         ResultCode = "NO_KEY"
+	NoKeyhole     ResultCode = "NO_KEYHOLE"
+	// a container whose lid is shut: nothing in it can be seen or taken
+	ContainerClosed ResultCode = "CONTAINER_CLOSED"
+	// put: where to, and not into itself
+	NoContainer    ResultCode = "NO_CONTAINER"
+	NotEnoughCoins ResultCode = "NOT_ENOUGH_COINS"
+	// bags: full, nothing inside a container, coins stay in the purse, and a
+	// shop won't buy one with things in it
+	ContainerFull ResultCode = "CONTAINER_FULL"
+	CantNest      ResultCode = "CANT_NEST"
+	CoinsInPurse  ResultCode = "COINS_IN_PURSE"
+	NotEmpty      ResultCode = "NOT_EMPTY"
+	// ooc: off the channel, so not heard on it either
+	OffChannel ResultCode = "OFF_CHANNEL"
+	// donate: content names no donation room that exists
+	NoDonationRoom ResultCode = "NO_DONATION_ROOM"
+	// quaff: not a potion
+	NotDrinkable ResultCode = "NOT_DRINKABLE"
+	// talking: a social with no target form, nobody to reply to, tells and
+	// shouts switched off, an unknown toggle
+	SocialAlone   ResultCode = "SOCIAL_ALONE"
+	NoOneToReply  ResultCode = "NO_ONE_TO_REPLY"
+	TellsOff      ResultCode = "TELLS_OFF"
+	YourTellsOff  ResultCode = "YOUR_TELLS_OFF"
+	ShoutsOff     ResultCode = "SHOUTS_OFF"
+	UnknownToggle ResultCode = "UNKNOWN_TOGGLE"
+	// a report longer than report.MaxLength
+	TooLong ResultCode = "TOO_LONG"
+	// positions: not on your feet, asleep, already so
+	NotStanding     ResultCode = "NOT_STANDING"
+	Asleep          ResultCode = "ASLEEP"
+	AlreadyPosition ResultCode = "ALREADY_POSITION"
+	// track: no trail to follow
+	NoTrail ResultCode = "NO_TRAIL"
+	// split: nobody to split with
+	NoOneToSplit ResultCode = "NO_ONE_TO_SPLIT"
+	// moderation: what a muted or frozen player is told
+	Muted  ResultCode = "MUTED"
+	Frozen ResultCode = "FROZEN"
+	// groups
+	NotInGroup       ResultCode = "NOT_IN_GROUP"
+	NotFollowing     ResultCode = "NOT_FOLLOWING"
+	NotFollowingYou  ResultCode = "NOT_FOLLOWING_YOU"
+	AlreadyFollowing ResultCode = "ALREADY_FOLLOWING"
+	NoFollowers      ResultCode = "NO_FOLLOWERS"
+	FollowsYou       ResultCode = "FOLLOWS_YOU"
+	// give: to whom, and not to yourself
+	NoRecipient ResultCode = "NO_RECIPIENT"
+	GiveSelf    ResultCode = "GIVE_SELF"
+
 	// movement and combat
 	CantGoThatWay   ResultCode = "CANT_GO_THAT_WAY"
 	NoFightRoom     ResultCode = "NO_FIGHT_ROOM"

@@ -9,10 +9,12 @@ import (
 	"io"
 	"net"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/rs/zerolog/log"
@@ -63,9 +65,16 @@ type conn struct {
 	// from one to the other.
 	loginIdle, playIdle time.Duration
 	readTimeout         time.Duration
+	// loginBy is when the login conversation must be over, however lively:
+	// answering "help" every minute isn't playing, it's holding a slot.
+	loginBy time.Time
 
 	// onClose runs once the socket is closed, to give back its slot.
 	onClose func()
+	// mayCreate and created are the address's allowance of new characters
+	// (addressLimit); nil, as in tests, is no limit.
+	mayCreate func() bool
+	created   func()
 }
 
 const (
@@ -211,6 +220,14 @@ func plainBanner(tlsPort int) string {
 // proxy in front of this needs PROXY protocol, or this needs to go up.
 const maxConnsPerAddress = 5
 
+// loginWithin is how long a connection has to log in, start to finish.
+const loginWithin = 5 * time.Minute
+
+// maxConns is every connection together, logged in or not: each one is two
+// goroutines and a socket, and an attacker with many addresses -- an IPv6
+// /64 is a lot of them -- shouldn't be able to take them all.
+const maxConns = 200
+
 // listener is one port: plain telnet when tls is nil.
 type listener struct {
 	ln               net.Listener
@@ -236,10 +253,14 @@ func serve(ctx context.Context, l listener, gs gameserver.Instance, cat *rules.C
 			return fmt.Errorf("telnet accept: %w", err)
 		}
 		host := remoteHost(nc)
-		if !limit.acquire(host) {
-			log.Warn().Msgf("telnet %s: too many connections from %s, refused", nc.RemoteAddr(), host)
+		if ok, full := limit.acquire(host); !ok {
+			log.Warn().Msgf("telnet %s: too many connections from %s (full: %t), refused", nc.RemoteAddr(), host, full)
+			why := "Too many connections from your address. Try again later.\r\n"
+			if full {
+				why = "The game is full right now. Try again later.\r\n"
+			}
 			if l.tls == nil {
-				refuse(nc, "Too many connections from your address. Try again later.\r\n")
+				refuse(nc, why)
 			} else {
 				_ = nc.Close() // nothing it could read yet: that takes a handshake
 			}
@@ -272,6 +293,8 @@ func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, banner, host
 	log.Info().Msgf("telnet connection from %s", nc.RemoteAddr())
 	c := newConn(nc, gs, cat)
 	c.onClose = func() { limit.release(host) }
+	c.mayCreate = func() bool { return limit.mayCreate(host, time.Now()) }
+	c.created = func() { limit.created(host, time.Now()) }
 	go c.writePump()
 	go c.readPump()
 	c.Send(banner)
@@ -317,6 +340,13 @@ func (c *conn) send(msg any) error {
 		return nil
 	}
 	select {
+	case <-c.quit:
+		// already hung up: the room's chatter has nowhere to go, and saying
+		// so once was enough
+		return errors.New("connection closed")
+	default:
+	}
+	select {
 	case c.sendQueue <- msg:
 		return nil
 	default:
@@ -335,6 +365,24 @@ func (c *conn) signalAuth(why event.ResultCode) {
 
 // awaitAuth waits for the server's answer to a login or a creation: whether
 // it worked, and if not, why. A closed connection is a failure with no reason.
+// The pauses login makes: before asking a name again, and after a wrong
+// password. Each is on this connection's own goroutine; nobody else waits.
+// Variables only so the package's tests can run at their own pace.
+var (
+	nameAgain     = time.Second
+	wrongPassword = 2 * time.Second
+)
+
+// pause waits d, or answers false if the connection is closed meanwhile.
+func (c *conn) pause(d time.Duration) bool {
+	select {
+	case <-time.After(d):
+		return true
+	case <-c.quit:
+		return false
+	}
+}
+
 func (c *conn) awaitAuth() (ok bool, why event.ResultCode) {
 	select {
 	case why := <-c.authResult:
@@ -357,7 +405,12 @@ const (
 // PasswordRequired and an unknown one as NoSuchPlayer, which is what decides
 // which question comes next.
 func (c *conn) login() bool {
-	for {
+	for tries := 0; ; tries++ {
+		// Every name is a lookup in the store, on the world's one goroutine:
+		// a client pipelining names would have it doing nothing else.
+		if tries > 0 && !c.pause(nameAgain) {
+			return false
+		}
 		name, ok := c.prompt("By what name do you wish to be known? ")
 		if !ok {
 			return false // disconnected
@@ -386,6 +439,9 @@ func (c *conn) login() bool {
 			if done, ok := c.create(name); done || !ok {
 				return done
 			}
+		case why == event.Unknown:
+			c.Send("Something went wrong at our end. Try again in a moment.\r\n")
+			return false
 		default:
 			return false // the connection closed while we waited
 		}
@@ -407,6 +463,10 @@ func (c *conn) enterPassword(name string) (done, ok bool) {
 		case loggedIn:
 			return true, true
 		case why == event.BadPassword:
+			// a guesser waits, as a person who mistyped hardly notices
+			if !c.pause(wrongPassword) {
+				return false, false
+			}
 			c.Send("Wrong password.\r\n")
 		case why == event.AlreadyPlaying:
 			// someone got in as them while bcrypt was working
@@ -428,6 +488,11 @@ func (c *conn) create(name string) (done, ok bool) {
 	if canonical, err := player.CanonicalName(name); err == nil {
 		name = canonical
 	}
+	if c.mayCreate != nil && !c.mayCreate() {
+		c.Send(fmt.Sprintf("No one by the name of %s, and your address has made all the "+
+			"new characters it can for today.\r\n", name))
+		return false, true
+	}
 	yn, ok := c.prompt(fmt.Sprintf("No one by the name of %s. Create them? (yn) ", name))
 	if !ok {
 		return false, false
@@ -447,6 +512,9 @@ func (c *conn) create(name string) (done, ok bool) {
 	created, why := c.awaitAuth()
 	switch {
 	case created:
+		if c.created != nil {
+			c.created()
+		}
 		return true, true
 	case why == event.NameTaken:
 		c.Send(fmt.Sprintf("Someone else has just taken the name %s.\r\n", name))
@@ -626,13 +694,40 @@ func (c *conn) prompt(text string) (string, bool) {
 // Each call gets readTimeout to finish, counted from when it starts, so a
 // client can't hold the connection open by trickling bytes with no newline.
 func (c *conn) readLine() (string, bool) {
-	if err := c.netConn.SetReadDeadline(time.Now().Add(c.readTimeout)); err != nil {
+	deadline := time.Now().Add(c.readTimeout)
+	if !c.loginBy.IsZero() && c.loginBy.Before(deadline) {
+		deadline = c.loginBy
+	}
+	if err := c.netConn.SetReadDeadline(deadline); err != nil {
 		return "", false
 	}
 	if !c.scanner.Scan() {
 		return "", false
 	}
-	return strings.TrimSpace(c.scanner.Text()), true
+	return strings.TrimSpace(clean(c.scanner.Text())), true
+}
+
+// clean is what a typed line may carry on to the world: printable text.
+// Control characters go -- an escape sequence emoted at a room would clear
+// its screens -- as do bytes that aren't UTF-8, among them the 0xFF a
+// doubled IAC leaves in a line, which echoed back out would be a telnet
+// command. A tab is a space.
+func clean(line string) string {
+	var b strings.Builder
+	for i, r := range line {
+		switch {
+		case r == utf8.RuneError && !strings.HasPrefix(line[i:], string(utf8.RuneError)):
+			// an invalid byte, not a real U+FFFD
+		case r == '\t':
+			b.WriteByte(' ')
+		case unicode.IsControl(r), unicode.Is(unicode.Cf, r):
+			// Cf too: a right-to-left override in a say reverses the rest of
+			// the line on everyone's screen
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }
 
 func (c *conn) Close() {
@@ -711,6 +806,9 @@ func (c *conn) write(msg any) error {
 	}
 	text = strings.ReplaceAll(text, "\r\n", "\n") // normalize
 	text = strings.ReplaceAll(text, "\n", "\r\n") // replace with \r\n
+	// a literal 0xFF is IAC to the client; never valid UTF-8, so it can only
+	// have come from somewhere unclean, and doubled it's just a byte
+	text = strings.ReplaceAll(text, "\xff", "\xff\xff")
 	switch msg.(type) {
 	case event.Prompt, reprompt, question:
 		text += c.promptEnd()
@@ -811,7 +909,9 @@ func (c *conn) readPump() {
 		subnegotiated: c.subnegotiated,
 	})
 	c.readTimeout = c.loginIdle
+	c.loginBy = time.Now().Add(loginWithin)
 	if c.login() {
+		c.loginBy = time.Time{}
 		c.readTimeout = c.playIdle
 		if c.commandLoop() {
 			return // logout already emitted
@@ -890,24 +990,71 @@ func (c *conn) commandLoop() (quit bool) {
 // addressLimit counts open connections per remote host. The accept loop
 // acquires and each connection's writePump releases, so it needs its lock.
 type addressLimit struct {
-	mu   sync.Mutex
-	max  int
-	open map[string]int
+	mu    sync.Mutex
+	max   int
+	open  map[string]int
+	total int // every connection; refused past maxConns
+	// made is when each address last created characters, within the last
+	// createWindow: names are forever, and each is a document in the store.
+	made map[string][]time.Time
 }
 
-func (l *addressLimit) acquire(host string) bool {
+// An address may make createsPerWindow characters in any createWindow --
+// a household's worth, not a script's.
+const (
+	createsPerWindow = 10
+	createWindow     = 24 * time.Hour
+)
+
+// mayCreate is whether host may make another character now.
+func (l *addressLimit) mayCreate(host string, now time.Time) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	return len(l.recent(host, now)) < createsPerWindow
+}
+
+// created counts a character host made.
+func (l *addressLimit) created(host string, now time.Time) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.made == nil {
+		l.made = map[string][]time.Time{}
+	}
+	l.made[host] = append(l.recent(host, now), now)
+}
+
+// recent is host's creations still inside the window, and forgets the rest
+// -- and the address, once it has none. Called with mu held.
+func (l *addressLimit) recent(host string, now time.Time) []time.Time {
+	kept := slices.DeleteFunc(l.made[host], func(t time.Time) bool { return now.Sub(t) >= createWindow })
+	if len(kept) == 0 {
+		delete(l.made, host)
+	} else {
+		l.made[host] = kept
+	}
+	return kept
+}
+
+// acquire takes a slot for host, or answers why not: full is everyone
+// together, otherwise it's this host.
+func (l *addressLimit) acquire(host string) (ok, full bool) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	if l.total >= maxConns {
+		return false, true
+	}
 	if l.open[host] >= l.max {
-		return false
+		return false, false
 	}
 	l.open[host]++
-	return true
+	l.total++
+	return true, false
 }
 
 func (l *addressLimit) release(host string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.total--
 	if l.open[host]--; l.open[host] <= 0 {
 		delete(l.open, host) // or the map grows by every address that ever connected
 	}
@@ -920,7 +1067,18 @@ func remoteHost(nc net.Conn) string {
 	if err != nil {
 		return nc.RemoteAddr().String()
 	}
-	return host
+	return hostKey(host)
+}
+
+// hostKey is what one address counts as: an IPv4 address itself, and an
+// IPv6 one by its /64, the block a single customer is handed -- counted one
+// by one, they would be 2^64 different addresses.
+func hostKey(host string) string {
+	ip := net.ParseIP(host)
+	if ip == nil || ip.To4() != nil {
+		return host
+	}
+	return ip.Mask(net.CIDRMask(64, 128)).String() + "/64"
 }
 
 // refuse says why and hangs up, before a conn or its goroutines exist.

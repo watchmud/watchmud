@@ -35,6 +35,8 @@ make generate         # regenerate *_string.go after editing a stringer enum
 make db-up            # start the local mongo (docker compose, host port 27018)
 make test-db          # the mongostore tests that need a real mongo
 go test ./bot         # the smoke bot, including the real world in-process
+go run ./cmd/watchmud-load -players 100 -duration 1m   # load test, in-process only
+go run ./cmd/watchmud-sim                               # fight simulator: win rates by power
 make docker-build     # build the deploy image (deploy/README.md for the rest)
 go test ./world -run TestLook_successful          # single test
 go test ./player -run TestPlayerTestSuite/TestX   # testify suite: Suite/Method
@@ -111,7 +113,9 @@ the heartbeat calls `World.QueuePlayerRecords`, which hands a record of everyone
 world to the store; `Run` does the same once more on shutdown. Handlers mutate the player
 and never save -- whatever changed a player, a command or a fight or somebody else's
 command, is in the next one. Logout saves immediately, as does death; a crash loses at
-most one interval.
+most one interval. So do `drop`, `give`, `put`, `donate` and `split`, for everyone in the
+room (`saveHandedOver`): otherwise a crash brings a giver back still holding what the
+taker, saved when they quit, has too.
 
 **Save through `w.record(p)`, never `p.Record()` directly.** The player doesn't know where it
 is standing -- location lives in `spaces.Occupancy` -- so `w.record` is what fills in
@@ -136,16 +140,32 @@ is set, so `make check` still passes with no docker.
 In the server, either one is wrapped in **`writebehind.Store`**, so `Save` only queues and
 returns: one background goroutine writes, keeping the newest unwritten record per player,
 skipping records identical to the last one written, and using `SaveAll` (one mongo
-`BulkWrite`) when the inner store has it. `Load` answers from that queue first, which is
+`BulkWrite`) when the inner store has it. What fails to write is tried again on its own,
+from 1s doubling to 30s -- the last player out quitting during a database blip has
+nobody after them to wake the writer -- and `Close` gives it five more tries. A failed
+write also forgets what was last written for that player: it may have landed, so the
+next record is written even if it matches the old one, or a change undone in between
+(remove a sword, wield it again) would be skipped and the store left with the change. `Load` answers from that queue first, which is
 what makes quit-and-log-straight-back-in safe. Two consequences:
 
 - **Nothing on the world goroutine hears a save fail.** In particular mongo's unique name
-  index can no longer refuse a duplicate at creation, so `handleCreatePlayer` checks
-  `store.Load` itself (`event.NameTaken`). Creation spans two dispatches -- bcrypt runs on
-  a goroutine in between -- so `handleCreateHashed` checks again when the hash comes back;
-  each check alone is race-free because dispatch is one command at a time. `handleLogin`
-  likewise refuses a character already in the world (`event.AlreadyPlaying`), and checks
-  again in `handleLoginChecked` -- two sessions of one character save over each other.
+  index can no longer refuse a duplicate at creation, so creation checks `store.Load`
+  itself (`event.NameTaken`).
+- **The world goroutine never calls `store.Load`.** It's a database -- mongo gives up
+  after five seconds -- and a login is a lookup for every name typed. So `handleLogin`
+  hands the name to `lookUp`, a goroutine, whose answer comes back through the queue as
+  `loginLooked`; a password is then checked by bcrypt on another, as `loginChecked`,
+  carrying the record. Creation looks the name up and hashes on one goroutine, back as
+  `createHashed`. What a check on the world goroutine used to cover is held there
+  instead: `GameServer.creating` refuses a second creation of a name still being made,
+  and `GameServer.logouts` counts each name's logouts, so a record loaded before a
+  logout of that character -- another session quitting meanwhile -- is loaded again
+  before it's played. A connection that hangs up while its lookup or hash is away
+(`GameServer.inFlight`, `gone`) has whatever comes back dropped -- or the character
+would be in the world with nobody to play them and no Logout ever to come, keeping the
+real one out until a restart. `handleLogin` refuses a character already in the world
+  (`event.AlreadyPlaying`), and `handleLoginChecked` checks again -- two sessions of one
+  character save over each other.
 
 **A name has one stored form.** `player.CanonicalName` turns whatever was typed into it
 ("bOB" is "Bob") or refuses it, at the top of `handleLogin` and `handleCreatePlayer`;
@@ -183,10 +203,29 @@ goroutines:
 Two rules that look inconsistent and are not:
 
 - **`Send` must never block.** It runs on the world goroutine, so a slow client would freeze
-  the entire MUD. It does a non-blocking send and hangs up on overflow.
+  the entire MUD. It does a non-blocking send and hangs up on overflow -- once: a send
+  to a connection already hung up is dropped without a word. It used to log the overflow
+  again for every line the room said, on the world goroutine, and under load that
+  logging alone backed up everyone else's queue into more hang-ups.
 - **`emit` is allowed to block.** It runs on the connection's own goroutine, and blocking on
   a full `incomingBuffer` is correct backpressure -- the flooding client waits, no command
   is dropped.
+
+**A typed line is text** by the time it leaves `readLine`: `clean` drops control
+characters and bytes that aren't UTF-8 -- among them the 0xFF a doubled `IAC` leaves
+behind, which said to a room would reach everyone as a telnet command -- and `write`
+doubles any 0xFF in text anyway. Content is UTF-8, which never has one.
+
+**Login is paced and bounded, against floods rather than people**: a name asked again
+waits `nameAgain` (1s) and a wrong password `wrongPassword` (2s), both on the
+connection's own goroutine -- every name is a store lookup on the world's; a whole
+login must finish within `loginWithin` (5 minutes) whatever it answers; bcrypt runs at
+most one per CPU (`GameServer.bcryptSlots`); and `addressLimit` caps everyone together
+at `maxConns` as well as five per address, an IPv6 one counted by its /64 (`hostKey`)
+-- which also caps `cmd/watchmud-load` at about 200 bots -- and lets an address
+create `createsPerWindow` (10) characters a day.
+A pre-login handler that returns an error still answers (`LoginFailed{Unknown}`, from
+`recovering`): the conversation waits on an answer, holding its address's slot.
 
 **`tls.go`** is the second port: the same `conn` over `tls.Server`, handshaken on its
 own goroutine before the pumps start. `certificate` re-reads the PEM files when their
@@ -222,9 +261,27 @@ from: `Char.Vitals` from `event.Prompt` -- only when the numbers changed, since 
 goes out every second -- and `Room.Info` from every `event.RoomDescription`, in IRE's
 shape so existing mapper scripts read it. The world sends nothing new for it: the room
 description carries `Id` ("zone/room"), `Area` and `ExitTo` for this and nothing renders
-them. A room's `num` is an FNV hash of its "zone/room", stable with nothing stored;
+them -- and `X`/`Y`/`Z`, the room's place on its zone's grid (`spaces.Zone.LayGrid`,
+walking exits out from the first room by id when content loads), sent as `"grid"` so
+a mapper never guesses where a room it recalled, logged or died into goes;
+`TestGrid_theContentFits` fails on an exit that doesn't fit it or two rooms on one
+spot. A room's `num` is an FNV hash of its "zone/room", stable with nothing stored;
 `TestRoomNum_uniqueInTheWorld` fails on a collision in the real content. What a client
 sends back (`Core.Hello`, `Core.Supports.Set`) is ignored.
+
+**`mudlet/` is the other end of it**: `watchmud.lua`, a Mudlet script drawing health and
+mana bars from `Char.Vitals` and a map from `Room.Info` (rooms keyed on `num`, placed
+at their `grid` -- a step from a neighbour only for a server too old to send one --
+linked both ways as they turn up; `sysUninstall` takes the bars, map and handlers away).
+It was checked against Mudlet's source (wiki.mudlet.org was out of reach): Mudlet
+asks for Char and Room itself, a dotted handler name works, and a running
+`generic_mapper` or Mudlet's own map window can get in its way -- the site says so. `mudlet.Build`
+wraps it as a `.mpackage`; `cmd/watchmud-mudlet` writes one, and the pages workflow builds
+it into the site rather than anyone checking it in. There's no Mudlet in CI, so
+`mudlet/script_test.go` runs the script in gopher-lua against a stand-in for the slice of
+Mudlet's API it calls -- a script that calls something new needs that stand-in to grow,
+and a check against Mudlet's documentation, since the stand-in is only as true as it was
+written. Change the GMCP and this script in the same commit.
 
 **Color is the renderer's, and the connection's to take away.** `render` always paints
 (`telnet/ansi.go`: the palette is named by what a thing *is* -- `colorRoomName`,
@@ -269,6 +326,13 @@ separate notification type for drop, get, say, tell or shout.
 is keyed on the code, not on any type. It takes a verb as well, because `TARGET_NOT_FOUND`
 means "you don't see that here" to `get` and "you aren't carrying that" to `drop`.
 
+**Lists are tables** (`telnet/table.go`): `table` pads every column to its widest cell,
+measured before color, so a list lines up with color on or off; a cell can be
+right-aligned for numbers. `abilities`, `equipment`, `inventory`, `stat`, `role` and the
+shop's `list` use it, each under a bold heading; `who` pads its own, across two
+sections. Inventory folds identical things -- same description, power and condition --
+into one line with a count.
+
 Renderers emit plain `\n`; `conn.write` does the single CRLF translation. Keep it that way --
 expected strings in tests stay readable, and it is impossible to forget.
 
@@ -278,7 +342,11 @@ expected strings in tests stay readable, and it is impossible to forget.
 `Expect` a regexp against what arrived since the last match. It imports nothing of the
 server -- no `event/`, no `telnet/` -- so it reads the text a player reads, and a
 rendering change that breaks it is one a player would have noticed too. Fix the bot's
-pattern, never the renderer to suit the bot.
+pattern, never the renderer to suit the bot. **Every line it acts on is anchored to
+the start of a line** (`(?m)^`): what the game says about the bot starts "You", and a
+player's say or emote starts with their name -- never "You", a reserved word, nor
+"Nothing", reserved so nobody can emote recall's refusal. Unanchored, a player saying
+"You are dead!" sent a bot home and a fake recall refusal knocked it off the server.
 
 `bot.Smoke` is the one scenario: recall, the walk to the millpond, the geese, `get all
 from corpse`, `drop all.feather` (never `drop all` -- the character keeps its starting
@@ -314,11 +382,32 @@ never straight back unless it's a dead end, lingers in one room in four
 ground's prey, and a wanderer has no ground. Everything else is the hunter's code:
 tells, fleeing, resting, recall, dying. It is power 1 too, so **`keepOut`** lists the
 doors it never takes (today: south from the Edge of the Old Wood, which shuts off the
-wolves and the whole Barrow). `TestKeepOut_safe` walks the real content from the start
+wolves and the whole Barrow, and west from the Millpond, the Drowned Mill). `TestKeepOut_safe` walks the real content from the start
 room without those doors and fails if anything aggressive above power 2 is in reach --
 new dangerous content needs a door in `keepOut`, not a looser test.
 `WATCHMUD_WANDERERS` names them, beside `WATCHMUD_BOTS`; the five-bot cap is for both
 together, and every bot is every other's sibling.
+
+**An explorer** (`Style: Explorer`, `bot/explorer.go`, `WATCHMUD_EXPLORERS`) maps the
+world instead of following a hand-written table: an `atlas` (`bot/atlas.go`) of rooms by
+name -- unique, `TestRoomNames_uniqueInTheWorld` -- and the open exits it has seen,
+each to the room it led to once walked. It takes an untaken exit from where it stands,
+or walks the shortest known way (`atlas.route`, BFS) to the nearest room with one, and
+when there are none left it wanders. Safe as a wanderer: the same `keepOut`, no closed
+doors, fights only back, loots nothing. `TestExplorer_mapsTheWorld` runs one against
+the real content until it has mapped exactly what's reachable. The atlas survives a
+death and a recall, not a reconnect. It is the groundwork for bots that navigate by
+map rather than by `bot/grounds.go`; nothing reads the atlas but the explorer yet.
+
+**`cmd/watchmud-load`** is the load test: the real content in-process on loopback, N
+bots of mixed styles (`-fast` for test pace, a stress rather than a crowd), and a few
+probe characters in Temple Square timing `look` once a second -- it prints p50/p95/p99
+and how many bots the server hung up on. It makes its own characters, so it has **no
+address flag, on purpose**; character creation stays out of the `bot` package's
+exported API for the same reason. Connections are spread over 127.0.0.x
+(`bot.DialFrom`, `AdventurerConfig.LocalAddr`), since the server allows five per
+address. On 2026-10-06: 100 bots at a person's pace, p99 about 25ms, none dropped; at
+test pace, everyone walking through Temple Square, one dropped for a full queue.
 
 **A socialite** (`Style: Socialite`, `bot/socialite.go`, `WATCHMUD_SOCIALITES`) stands in
 Temple Square, welcomes each new character once and answers questions from `faq`
@@ -327,7 +416,10 @@ knows a newcomer because the server says so -- `event.EnteredGame.First`, set by
 `World.ArriveNew` from creation, renders "X has entered the game for the first time."
 Said in the room, it answers what names it, starts with "help", or is a question it
 has a topic for; a question it can't place, not put to it by name, is someone else's
-conversation. Told, it always answers (a topic or the menu). One answer per person per
+conversation. Told, it always answers (a topic or the menu). On the ooc channel it
+answers only a question it has a topic for, or one naming it, addressed to the asker
+("Bob: ...") -- the channel is everyone's, and a menu in reply to every question there
+would be noise. One answer per person per
 `answerEvery` (20s) either way, never to a sibling. Every command an answer quotes is
 sent to the real game by `TestFAQ_commandsTheGameKnows`, so an answer can't point at a
 verb that's gone. Keep the answers true: they are the game's documentation for the
@@ -374,7 +466,14 @@ be made stable, because a room's contents and a player's inventory were shufflin
 
 `instructions.json` entries become `spaces.ZoneCommand`s (`CreateObject`, `CreateMobile`)
 that `Zone.Reset` replays -- at startup and again on every zone reset -- which is how mobs
-and loot repopulate.
+and loot repopulate. `instance_max` is required (the loader refuses one under 1).
+`CreateObject` **tops up** to it, one a reset, counting that definition -- not its id, so
+another zone's "key" isn't this one's -- on the room's floor,
+or inside the first container of a definition in the room with `"container"` -- and
+makes things at the bottom of the zone's power band unless it says `"power"`. A
+container already there gets its lock reset instead. Put a container's instruction
+before the ones that fill it. (Before 2026-10-06 `instance_max` was ignored for objects,
+and every reset added another of everything.)
 
 ### command/ and event/
 
@@ -544,7 +643,8 @@ rounds, and the mob skips that many swings. The count is on the ledger
 doesn't shake it off; a second stun refreshes to the longer, never stacks, and
 `EndAllFightsWith` clears it. `DoViolence` spends one per round (`SpendStun`): the
 round is used -- `LastPulse` moves -- with an `event.Staggered` and no swing, wear or
-script pulse. Rounds rather than seconds because the world only knows the pulse
+script pulse. A stun ends, too, once its mob is in no fight at all -- its stunner fled
+or fell -- so its rounds don't wait for whoever engages it next. Rounds rather than seconds because the world only knows the pulse
 inside `DoViolence`, while cooldowns run on `w.now`.
 Smite, provoke and stun all draw the mob in through `World.openFight`.
 **Ward** (`friend`, granted by the ring of mending) is the first defensive ability: a
@@ -562,6 +662,14 @@ mob's exact health, AC, power and damage dice, who it's swinging at and the stun
 left (`event.Assessed`) -- the numbers `consider` only hints at and a fight never shows.
 The room sees the caster look; only the caster gets the numbers. It touches nothing,
 and works mid-fight, in a no-fight room, and on a mob that can't be fought.
+**Potions** are the one way to use an ability without wearing it: `"quaff": "heal"` on
+an object (`object.Definition.Quaff`; the loader refuses an unknown id or one not aimed
+at `self`/`friend`). `quaff <potion>` (`drink`, `world/h_quaff.go`) runs that ability's
+effect on the drinker at the potion's power, for no mana, without touching the
+ability's own cooldown, and the potion is gone. Every potion shares one cooldown,
+`rules.QuaffCooldown`, kept under a key no ability id can be (`:quaff`). Fine in a
+fight. `event.Quaffed`, then the ability's own event. The General Store sells a
+healing draught.
 Nothing about abilities reads a role; the Healer label and the censer's heal are two
 separate consequences of the same item, as are Striker and the cudgel's smite.
 
@@ -624,7 +732,7 @@ against its chance, and a drop is made at **the mob's power**, plus `rules.LootP
 from a second d100. Never the killer's power: out-levelling a boss makes his drops not
 worth having, on purpose.
 
-The drops go into the corpse, which is the only container so far. A container is an
+The drops go into the corpse, the first container (chests and bags came later). A container is an
 `object.Instance` with non-nil `Contents` (an `object.List`, like the floor and inventory);
 nil means "not a container", so check that rather than the category. Corpses are
 `NoTake`, answer to `corpse`, and have a `DecaysAt`: `World.DecayFloors` runs on the
@@ -632,7 +740,7 @@ mobile pulse and removes them, contents and all, after `rules.CorpseDecay`. The 
 `DecaysAt` means never. Anything a character drops gets a `DecaysAt` too
 (`rules.DroppedDecay`, 30 minutes), and `get` clears it -- so the donation room the
 bots fill turns over. Zone resets and wizard `load`s never go through `drop`. `get <item> from <container>` and `look in <container>` live in
-`world/containers.go`, and only search the room's floor.
+`world/containers.go`, and search what the player carries, then the room's floor.
 
 ### Economy
 
@@ -647,11 +755,12 @@ at most 40% and a full repair costs 50%, so no loop of buy, repair and sell make
 `TestSell_noProfitInBuyingAndSellingBack` pins one; keep it that way when tuning.
 
 Coins are a number, not objects: `Player.coins` (on the record), and `Instance.Coins` on a
-container, which only a corpse is. `get all from corpse` takes them, `get [n] coins from
+corpse or a chest (never a bag: coins stay in the purse). `get all from corpse` takes them, `get [n] coins from
 corpse` just them; they go with the corpse when it crumbles, and a player keeps theirs on
 death. A shop is a zone's `shops.json` (room, and objects at a power, named the way loot
 names them) loaded into `spaces.Zone.Shops`; it sells new instances of its stock without
-end, buys anything worth a coin, and never resells what it bought.
+end, buys anything worth a coin -- not a `"noSell"` thing, such as the mill's keys,
+which a reset puts back every few minutes -- and never resells what it bought.
 
 ### Player death
 
@@ -686,7 +795,8 @@ change. An object naming a role the catalog doesn't define is a hard load failur
 ### Scripts (Lua)
 
 **Go is the engine; a script decides *when*.** A script composes actions the engine
-already has -- today, two: `me:say` and `me:summon` -- and never does the math. An action a script needs
+already has -- today `me:say`, `me:summon`, `me:junk`, `me:sweep`, `me:flee` and
+`me:take` -- and never does the math. An action a script needs
 that the engine lacks is a Go feature first.
 
 A mob names a script in mobs.json, `"script": "barrow_king"` (bare is its zone,
@@ -696,9 +806,20 @@ file, a syntax error, a top level that errors or runs too long, or an unknown `o
 fails startup. `world.New` loads them into one `script.Runtime`: one gopher-lua state, on
 the world goroutine, no locks.
 
-Hooks, both optional: `on_fight_start(me, foe)` (fired by `World.startFight` -- which
-`kill` and aggro both use -- for each mob that wasn't already fighting) and
-`on_fight_pulse(me, foe)` (from `DoViolence`, after the blow, never over a body). `me` is
+Hooks, all optional: `on_fight_start(me, foe)` (fired by `World.startFight` -- which
+`kill` and aggro both use -- for each mob that wasn't already fighting),
+`on_fight_pulse(me, foe)` (from `DoViolence`, after the blow, never over a body), and
+`on_arrive(me)` (after the mobile pulse wanders the mob into a room), and
+`on_hear(me, speaker, said)` (from `handleSay`, for each scripted mob in the room, after
+the room has heard it). `said.text` is what was said and `said.words` the set of its
+words, lowercased -- a script has no pattern functions, so it looks a word up
+(`said.words.heal`) rather than searching. Only a player's `say` fires it: a mob's
+`me:say` doesn't, so two scripts can't talk each other round in circles. The
+hedge-witch (`hollowfield/hedge_witch`) and the General Store's shopkeeper
+(`wrathrock/shopkeeper`, `nofight`: buying, selling, repairs, the satchel, a hello) use
+it. The witch was the first: ask about healing and she
+answers -- and never in a way that invites a fight: she isn't prey, for players as
+for bots. `me` is
 copies (`name`, `health`, `max_health`), `me.memory` (a table per mob instance, dropped
 with the mob in `World.RemoveMobile`), `me.summons` (how many of its summons are alive),
 and `me:say` and `me:summon`, bound to that one call. `foe` is
@@ -723,19 +844,26 @@ Rules that hold across a wait:
 - **Each resume gets a fresh `CallTimeout`, set on the thread** -- `SetContext` is what
   switches a state onto the loop that checks the deadline, and a coroutine runs its own.
 - **What ends a wait early, silently** (none is a failure): the mob leaving the world
-  (`Forget`), its fight being over when the wait comes due, its program being switched off.
+  (`Forget`), its fight being over when the wait comes due (fight hooks only --
+  `hookRun.fight`; `on_hear` is about no fight), its program being switched off.
   "In a fight" is checked at resume, not tracked, so a fight that ends and another that
   starts inside one wait carries on into the new one.
 - **Not inside `pcall` or `xpcall`.** gopher-lua's `pcall` takes a yield for a return, so
   the hook would carry on at once; the sandbox wraps both to count protected calls in
   progress, and `wait` refuses inside one -- the script gets `false` and the error.
+  **Nor inside an iterator or a metamethod** (`for x in it`, `__index`, `__concat`):
+  gopher-lua swallows a yield from a Lua function called through Go, and the hook ran
+  straight on. A wait sets `hookCall.yielding` until `resume` sees the hook pause;
+  anything the hook does meanwhile, or its ending, fails with an error saying so.
 - **A hook fired during another waits its turn.** `me:summon` of a scripted mob fires the
   summon's `on_fight_start` from inside the summoner's coroutine, which would come back to
   find its call gone. `fire` queues it on `Runtime.pending` while a hook is running
   (`sb.current` set), and `run` drains the queue once that hook ends or pauses.
 
-**A bad script mustn't hurt the server.** Every call runs under `script.CallTimeout`
-(10ms), a capped call stack and registry, gopher-lua's protected call and a `recover`.
+**A bad script mustn't hurt the server.** Every hook call runs under `script.CallTimeout`
+(10ms) -- a program's top level, once at load, under the roomier `script.LoadTimeout`
+(500ms), since a busy machine once took the shopkeeper's table-building past 10ms and
+the world refused to build -- a capped call stack and registry, gopher-lua's protected call and a `recover`.
 A failure is logged and the mob carries on; after `script.MaxFailures` (3) the program is
 switched off until restart. Only base, string, table and math are open, minus anything
 that loads code or prints. Three limits exist because of what the deadline can't see:
@@ -751,8 +879,11 @@ that loads code or prints. Three limits exist because of what the deadline can't
   connection whose queue fills is hung up on, so a say in a loop would disconnect the
   room inside the deadline.
 - **Each program has its own globals**: a copy of the base functions and of the
-  `string`/`table`/`math` tables, with `_G` pointing at itself, and strings' shared
-  metatable is locked. A script can break itself, not another script.
+  `string`/`table`/`math` tables, with `_G` pointing at itself; strings' metatable
+  is a table of its own (its `__index` a copy of the library no program holds),
+  locked against `getmetatable`, and the library carries no `__index` of its own --
+  it used to point every program's copy back at the one table all their
+  `("x"):upper()` calls go through. A script can break itself, not another script.
 
 **Summoning.** `me:summon(id, count)` calls up mobs into the summoner's room and answers
 how many came. What a mob may summon is content: `"summons": ["barrow_skeleton"]` in
@@ -775,8 +906,34 @@ whose summoner is gone or not `InFight` -- one check for flee, wipe and anything
 room. And because `DoViolence` ranges over a snapshot, a fighter `roomOf` can't place is
 skipped: a summon crumbled earlier in the round must not swing from nowhere.
 
-The world reaches a script through `script.Actions` (`Say`, `Summon`, `Summons`), filled
-in by `world.New`; a test fills it with recorders.
+The world reaches a script through `script.Actions` (`Say`, `Summon`, `Summons`, `Junk`,
+`Sweep`, `Flee`, `Take`), filled in by `world.New`; a test fills it with recorders.
+
+**Mobs carry things.** `mobile.Instance.Inventory` (an `object.List`) is what a mob has
+picked up with `me:take()` (`world/scavenge.go`): one thing a call, the longest-lying on
+its floor that's been left `TakeAfter` (1 minute) -- `World.leftLying`, the janitor's
+rule with a shorter wait, never a bag -- and at most `MaxCarried` (10). It stops
+decaying once carried. `becomeMobileCorpse` moves it all into the corpse. First user:
+the Hollowfields' crows (`hollowfield/crow`, power 1, wandering), who take on arrival.
+
+**`me:flee()`** (`world/mob_flee.go`) breaks off every fight the mob is in and runs it
+through an open exit that keeps it in its zone, picked through `w.roller`, the room
+told with the `event.Fled` a player's flee uses; it answers whether it got away, once
+a call. `DoViolence` skips a fight whose sides aren't in the same room, since a mob that
+fled earlier in a round still has fights in that round's snapshot. First user: the
+bandit (`hollowfield/bandit`), below a quarter health, once a life, on a coin flip --
+taking its loot with it. **Fleeing is per mob, by its script, on purpose**: a bandit runs
+and must be chased; a goose or a rat fights to the end. Give a mob a flee only where
+running is in character.
+
+**The janitor** (`wrathrock/janitor`, `nofight`, wandering Wrathrock) is `on_arrive`'s
+first user: `me:junk()` counts the junk on his floor and `me:sweep(n)` takes up to `n`
+of it out of the world, longest-lying first (`event.Swept`), capped at
+`script.MaxSweepsPerCall` (5) a call -- clamped, like summons. What's junk is the
+engine's (`world/janitor.go`), not the script's: something a player dropped and left
+`JunkAfter` (5 minutes) or longer -- time to drop a thing for a friend -- never a
+`NoTake` thing such as a corpse, never a bag with anything in it, never what a reset put down (no `DecaysAt`), and
+nothing in the donation room.
 
 Adding a hook: a `Runtime` method that calls `fire` with its name, the name in `hooks`
 (script/program.go), the Go call site, and a test in `world/scripts_test.go`. Adding an
@@ -841,6 +998,137 @@ instead of leaving a ghost. `World.movePlayer` / `moveMobile` / `RemovePlayer` a
 in -- a map range made that different every pulse. Objects are not in it: where an object is forms a tree (floor,
 inventory, equipment, container) and nothing asks the reverse question yet.
 
+**Doors** (`spaces/door.go`) stand in exits, one shared by both sides: the loader
+(`loader/doors.go`) reads a `"door"` on one exit in rooms.json and hangs the same
+`*spaces.Door` on the exit back, refusing a door declared twice, a locked one that isn't
+closed or has no key, and a key that isn't an object. Its state and rules are a
+`lock.Lock` (`lock/`, a leaf: open, close, lock, unlock, each answering why not), which
+is what a chest will carry too. `Room.Passable` is the question movement asks --
+`handleMove` (`DOOR_CLOSED`), flee, both kinds of mob wandering -- while `HasExit` and
+`DestinationRoom` still answer whether a way exists at all. A closed door shows as
+"West (closed)" in the exits line and `exits`, and the wanderer bot won't take one.
+`open`/`close`/`lock`/`unlock` are one handler (`world/h_door.go`): `Room.FindDoor` by
+direction, name, alias or plain "door"; the key is anything in the inventory whose
+`ObjectId.Ref()` ("zone/id") is the lock's; `event.DoorChanged` goes to both rooms, the
+far side without an actor. `Zone.Reset` resets the doors its content declared --
+except one with a player in a room on either side (`Door.Sides`): re-locked behind
+them, the mill's grate was the only way out of a pit whose miller the same reset had
+just put back, and a player without the key could only die. A zone with
+`"noPlayers"` reset mode waits until nobody is in it (`Zone.HasPlayers`). Door
+state isn't saved: a restart puts every door back how content says.
+
+**Chests** are the lock's second user: an object with `"container"` in objects.json
+(`object.ContainerSpec`, fitted by `loader/chests.go` with the same key checks as a
+door, `lockKey`) gives every instance its own `Contents` and its own `Instance.Lock`. A
+container definition is made `noTake` -- furniture, which also keeps lids and contents
+out of the player record, since floors aren't saved. When no door matches, `handleDoor`
+looks for a lidded container on the floor (`findLidded`) and answers with
+`event.ContainerChanged`; `findContainer` refuses a closed one (`CONTAINER_CLOSED`), so
+`get from` and `look in` need it open. A corpse is a container with no lid: always open.
+`put <item> in <container>` (`world/h_put.go`) is get-from run backwards: get's target
+grammar, coins included, into an open container; worn things stay on the way `drop`
+leaves them, and nothing put away decays.
+`give <item> to <player>` (`world/h_give.go`) is the same again towards another player
+in the room (`Room.FindPlayer`, any case): coins too, always with a number (`give coins
+to bob` is refused, unlike `put` -- every coin is too easy a mistake), worn things
+stay on, and a bag goes
+with what's in it. One `event.Gave` renders three ways -- giver, recipient, room.
+**Groups** (`world/group.go`, spec in `docs/superpowers/specs/`): `follow <player>` in
+the room, `group`, `gtell`/`gt`, `ungroup [player]` for the leader. One level -- a
+leader and a flat list of followers in join order; following a follower follows their
+leader, so there are no chains or cycles -- held in `World.groups`, in memory, and only
+`follow`/`unfollow`/`disband` write it. `handleMove` calls `followersCome` after the
+leader's step: each follower still in the room left and not fighting walks after them
+(`event.Followed`, then the room), a fighting one stays behind and is told. Only
+walking pulls: recall, flee, death and wizard moves move one player. `RemovePlayer`
+takes a player out of any group from either end.
+**Assist**: `startFight` is `joinFight` (the ledger and the openers) and then
+`assist` for each side -- the rest of a player's group in the room, not fighting and
+without `assist off` (`groups.noAssist`, in memory), and on their feet, join against the mob through
+`joinFight`, which assists no one, so there's no chain. Kill, aggro, smite and summons
+all start fights through `startFight`, so a group fights together however one began.
+
+**Positions** (`player/position.go`, `world/h_position.go`): `sit`, `rest`, `sleep`,
+`stand`, `wake`. In memory -- everyone logs in standing. Off your feet health and mana
+come back faster (`Position.RegenPercent`: 150/200/300%, placeholders) and you can't
+walk (`NOT_STANDING`); asleep you can do little but wake, stand, look over yourself and
+your group, and quit (`awake`, checked in `HandleIncomingMessage`). Nobody sits down in a
+fight, and `joinFight` stands up any player drawn into one. A follower off their feet
+stays behind (`Followed.Down`). The room description says how each player is
+(`RoomDescription.PlayerPositions`), so "Ann is resting here." -- and the bots' `hereRe`
+reads that as a player too.
+
+**The small ones** (`world/h_misc.go`): `split <n>` shares coins among the group in the
+room (the odd coin stays put); `where` lists players in your zone; `commands` lists
+every verb help knows; `time` is **Wrathrock's clock, which is Seattle's**
+(`America/Los_Angeles`, with `time/tzdata` embedded because the image is distroless);
+`wimpy <health>` (on the record) makes `DoViolence` run a player who's hit below it
+through `World.flee` -- the same code the `flee` command uses. `hit`, `hold`/`grab` and
+`score` are aliases of `kill`, `wear` and `stat`. `track <mob>` (`world/h_track.go`) is a
+breadth-first search out from the player's room, through open exits within the zone,
+answering the first step towards the nearest mob of that name -- a trail, not a map:
+step, then track again. It's how you chase a bandit that ran.
+
+**The moon** (`moon/`, `world/moon.go`): its phase from the date (a mean synodic month
+from a known new moon, checked against the almanac), and night from Seattle's clock --
+the moon over Wrathrock is the one over the Pacific Northwest. A full-moon night
+(6 pm to 6 am) turns `moonstruck` mobs aggressive (the Hollowfields' wild dogs, which
+still roam when nobody's there to go for) and doubles the chance of a loot power bump;
+anyone arriving that day or night is told "Full moon tonight. Be careful." Whether a
+night is full is the phase at its middle, midnight (`tonight`), so the warning, the dogs
+and the loot agree from 6 pm to 6 am. `time` names the phase. The moon reads its own clock,
+`World.SetMoonClock`: `NewTestWorld` and the bot tests pin it to `world.NewMoon`, so a
+full moon never changes what a test sees, and a moon test sets `world.FullMoonNight`.
+
+**Socials** are content, `content/rules/socials.json` (`rules.Social`, checked by
+`Catalog.SetSocials`): lines for doing it alone (self, room) and, optionally, at a player
+or mob in the room (self, victim, room), with `$n` the doer and `$N` the target -- our own
+wording, not CircleMUD's, whose licence is DikuMUD's. **Any verb `parse.go` doesn't
+know becomes `command.Social`**, whose `Verb()` is what was typed: the world answers a
+name that isn't a social with `UNKNOWN_COMMAND`, so "Unknown request: florb" now comes
+from `handleSocial` rather than the parser. `TestSocials_noneShadowed` fails if a new
+command's verb hides a social. `emote` (`em`, `:`), `reply` (`r`, to `World.lastTeller`,
+in memory), `whisper` and `ask` (one in the room; to a scripted mob it's heard like a
+say, by that mob alone) and `toggle` (color, ooc, tells, shouts, assist; `notell` and
+`noshout` its shorthands, the switches kept on the record as `NoTell`/`NoShout`)
+round out the talking.
+
+`telnet/resultcode.go`: a bare code goes in `failureByCode`, a `verb/CODE` override in
+`failureByVerb` -- a bare code filed under the verb map is never found, which is how the
+bag messages went unseen for a day. `TestFailureText_everyCodeHasWords` reads
+`event/result.go` and fails on any code with no words.
+
+**The ooc channel** (`world/h_ooc.go`; `ooc`, `newbie`, `nb`): out-of-character chat
+to everyone playing who's on it, wherever they are. `ooc off`/`ooc on` leave and rejoin,
+kept on the record as `NoOOC` (inverted like `NoColor`, so everyone starts on it); off
+the channel you can't speak on it either.
+
+`junk <item>` and `donate <item>` (`world/h_junk.go`, one `getRidOf` between them) are
+the other two ways to be rid of something: junk destroys it and gives nothing back --
+the space is the point -- and refuses a bag with anything in it; donate sends it, from
+anywhere, to the donation room's floor on the dropped-item clock, a bag with what's in
+it. Both take get's grammar, leave worn things on, and refuse coins.
+
+`look <thing>` (and `examine`/`exa`; `world/look_at.go`) looks at one thing, only the
+looker told: a player in the room (`event.LookedAtPlayer`: lineage, role, how hurt, what
+they wear), a mob (`LookedAtMob`: how hurt it looks and who it's fighting -- words from a
+percentage, never assess's numbers), then something carried or worn, then the floor
+(`LookedAtObject`: slot, armor type and the AC it adds, power, condition, damage,
+abilities by name, a container's state). Until 2026-10-06 help offered it and the
+handler ignored the target.
+
+**Bags** are containers with `"portable": true` (and an optional `"capacity"`): not
+`noTake`, and no lid or lock -- the loader refuses either, since a lid's state would have
+to be saved with the carrier. `findContainer` searches what the player carries before the
+floor, so `put`/`get from`/`look in` reach a bag in the pack. **Containers don't nest**:
+`put` refuses a container into anything (`CANT_NEST`; `put all` skips them), which is what
+keeps a bag's contents one level deep in `player.InventoryRecord.Contents` and
+`mongostore`'s `inventoryDoc.Contents`. A record whose bag content no longer calls a
+container loads what was in it loose, rather than losing it. Coins stay in the purse
+(`COINS_IN_PURSE`); a full bag is `CONTAINER_FULL`; a shop won't buy one with anything
+in it (`NOT_EMPTY`); and `carriesKey` looks inside bags. `inventory` shows "(3 inside)"
+or "(empty)". The General Store sells a leather satchel (capacity 10).
+
 A fight has no location of its own. Nobody can leave a fight without ending it (`move`
 and `recall` refuse, `flee` ends it first), so `DoViolence` reports each swing to
 `World.roomOf(fighter)` -- wherever the fighter is standing now.
@@ -854,7 +1142,16 @@ pieces are worth (`object.Equipment.ArmorClass`); a mob's is whatever `"ac"` in 
 mobs.json says, on the same absolute scale, and the loader defaults a mob that doesn't say
 to the baseline. It is a pointer in `loader.mobEntry` so that an absent key and an explicit
 `"ac": 0` stay distinguishable: zero means a thing a d20 can never miss, and that is what
-every mob missing the key silently used to be. Nothing displays AC to the player yet.
+every mob missing the key silently used to be. A player sees their own on `stat`, and a
+mob's through `cast assess`.
+
+**`sim/`** (and `cmd/watchmud-sim`) fights a simulated player -- `player.New` wearing a
+`sim.Kit` made at one power -- against fresh `mobile.NewInstance`s of real content, both
+swinging once a round, player first, through `combat.AttemptMeleeAttack` and
+`TakeMeleeDamage` exactly as `DoViolence` does. Melee only: no abilities, scripts,
+wear, regeneration or groups, and it says so in its output. It's the measuring stick
+for tuning (LEVELS.md); if `DoViolence` grows something that changes a fight's odds,
+teach `sim.Fight` the same or say what it leaves out.
 
 `combat` splits its interfaces by lifetime, not by entity:
 
@@ -864,7 +1161,9 @@ every mob missing the key silently used to be. Nothing displays AC to the player
   `Id() uuid.UUID`, `Dead()`, `TakeMeleeDamage()`. The ledger and `World.DoViolence` work
   in these terms.
 
-`combat.FightLedger` holds `Fight` records keyed on `uuid.UUID`. `Fight(A, B)` writes *two*
+`combat.FightLedger` holds `Fight` records keyed on `uuid.UUID`; `GetFights` hands them
+back in the order they started (`seq`), so who swings first in a round is the same
+every round -- it was a map's whim. `Fight(A, B)` writes *two*
 entries, `A->B` and `B->A`, so an attacker can be killed mid-round by their own target --
 which is why `DoViolence` checks `Fighter.Dead()` before letting anyone swing. Both
 `*player.Player` and `*mobile.Instance` satisfy `Combatant`, which is what keeps the melee
@@ -901,6 +1200,19 @@ table -- damage and healing never pull a mob.
   the only gate: `HandleIncomingMessage` refuses a marked command from anyone whose
   record lacks `Wizard`, before any handler runs. Forget it and the command is open to
   every player. Grant it with `make wizard NAME=...`, while they're logged out.
+  Beside it, **`command.Talk`** marks every command that speaks to other players, and
+  the same check refuses one from a player a wizard has muted (`mute <name>`); a
+  frozen player (`freeze <name>`) can only look and quit. Both are on the record
+  (`Muted`, `Frozen`), so a logout doesn't shake them off; a second `mute`/`freeze`
+  undoes it, and a wizard can't be moderated. A new talking command needs the marker.
+  The wizard's toolkit (`world/h_wiz_admin.go`): `goto` (zone/room, player or mob),
+  `transfer`, `purge [target]`, `zreset [zone]`, `echo`/`gecho` (say a restart is
+  coming), `users`, `mute`, `freeze` -- each logged through `logWizCommand`.
+- **Player reports** (`bug`, `idea`, `typo`; `world/h_report.go`, the leaf `report/`):
+  logged at warn with the player and "zone/room", the latest 50 kept in memory for a
+  wizard's `reports`, and filed to mongo's `reports` collection when there is one --
+  through `World.SetReportFiler`, which `cmd/watchmud` points at `mongostore.File` on a
+  goroutine of its own, since the world mustn't wait on a database.
   `Bot` on the record is the same kind of hand-set flag (`make bot NAME=...`); it only
   lists the character among the bots at the bottom of `who`, and nothing may branch on it.
 - **`Send` returns nothing.** `player.Sender` is `Send(msg any)`. The only error any
@@ -919,8 +1231,8 @@ table -- damage and healing never pull a mob.
   `2.knife`, `20 coins`. Every command now carries the raw string and lets the handler call
   it -- the second grammar (`get`'s old pre-parsed `FindMode`/`Index`/`Target`) went away
   with protobuf, along with `message.FindMode`.
-- Logging is mixed: newer code uses zerolog (`github.com/rs/zerolog/log`), older code the
-  stdlib `log`. Follow whichever the file already uses.
+- Logging is zerolog (`github.com/rs/zerolog/log`) throughout the server; only
+  `cmd/watchmud-bots` uses the stdlib `log`.
 - Config is `app.local.yaml` (`-config` to override, `-content` overrides just the content
   path). `serverconfig.Load` uses `yaml.UnmarshalStrict`, so an unknown key is a hard startup
   failure -- add the struct field and the YAML key in the same change. `deploy/app.yaml`

@@ -1,6 +1,7 @@
 package telnet
 
 import (
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -8,8 +9,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/gameserver"
+	"github.com/watchmud/watchmud/loader"
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
@@ -137,7 +140,7 @@ var commandCases = []commandCase{
 		name:  "inventory with one item",
 		setup: func(_ *world.World, p *player.Player, o *player.Player) { p.Inventory().Add(testKnife()) },
 		input: "inv",
-		want:  "You are carrying:\n\tknife\n",
+		want:  "Inventory\n  knife  power 0\n",
 	},
 	{
 		name:      "say reaches the room",
@@ -203,10 +206,26 @@ var commandCases = []commandCase{
 	{
 		name:  "a verb nobody knows",
 		input: "florb the thing",
-		want:  "",
-		// parseCommand rejects it before the world ever sees it; the
-		// connection prints the parser's error itself.
-		wantParseError: "Unknown request: florb",
+		// the parser sends any verb it doesn't know to the world, which might
+		// have a social by that name; it hasn't, so it's an unknown request
+		want: "Unknown request: florb\n",
+	},
+	{
+		name:      "a social, alone",
+		input:     "smile",
+		want:      "You smile.\n",
+		wantOther: "testdood smiles.\n",
+	},
+	{
+		name:      "a social, at someone",
+		input:     "smile otherdood",
+		want:      "You smile at otherdood.\n",
+		wantOther: "testdood smiles at you.\n",
+	},
+	{
+		name:  "a social that takes no target",
+		input: "stretch otherdood",
+		want:  "That's one you do alone.\n",
 	},
 	{
 		name:  "role with nothing equipped",
@@ -486,7 +505,7 @@ var commandCases = []commandCase{
 		name:  "abilities lists what the gear grants",
 		setup: func(_ *world.World, p *player.Player, _ *player.Player) { holdTestCenser(p) },
 		input: "abilities",
-		want:  "heal         20 mana  10s cooldown  a censer (power 1)  ready\n",
+		want:  "Abilities\n  heal  20 mana  10s cooldown  a censer (power 1)  ready\n",
 	},
 }
 
@@ -685,37 +704,20 @@ const roleBlockStriker = `You are fighting as a Striker.
 Change what you're wearing to change your role.
 `
 
-// Tabs, so these are quoted rather than raw. There is no ability block: what
-// a character can do is their gear, and the six scores were a number nothing
-// read.
-const statBlockNoGear = "Status:\n" +
-	"Player:\ttestdood\n" +
-	"Lineage:\tHuman\tRole: none\n" +
-	"Power:\t0\n" +
-	"Health:\t100 of 100\n" +
-	"Coins:\t0\n" +
-	"Location:\t(wrathrock - temple_square)\n\n"
-
-const statBlockTank = "Status:\n" +
-	"Player:\ttestdood\n" +
-	"Lineage:\tHuman\tRole: Tank\n" +
-	"Power:\t0\n" +
-	"Health:\t100 of 100\n" +
-	"Coins:\t0\n" +
-	"Location:\t(wrathrock - temple_square)\n\n"
-
-const statBlockPowered = "Status:\n" +
-	"Player:\ttestdood\n" +
-	"Lineage:\tHuman\tRole: Tank\n" +
-	"Power:\t7\n" +
-	"Health:\t100 of 100\n" +
-	"Coins:\t0\n" +
-	"Location:\t(wrathrock - temple_square)\n\n"
+// No ability block: what a character can do is their gear, and the six
+// scores were a number nothing read.
+const statBlockNoGear = "testdood, the Human\n" +
+	"  Health       100/100\n" +
+	"  Mana         100/100\n" +
+	"  Power        0\n" +
+	"  Armor class  10\n" +
+	"  Coins        0\n" +
+	"  Where        Temple Square, Wrathrock\n"
 
 func TestRenderPurse(t *testing.T) {
-	assert.Equal(t, "You aren't carrying anything.\n", render(event.Inventory{}, "testdood"), "an empty purse says nothing")
-	assert.Equal(t, "You aren't carrying anything.\nYou have 1 coin.\n", render(event.Inventory{Coins: 1}, "testdood"))
-	assert.Equal(t, "You aren't carrying anything.\nYou have 30 coins.\n", render(event.Inventory{Coins: 30}, "testdood"))
+	assert.Equal(t, "You aren't carrying anything.\n", plain(render(event.Inventory{}, "testdood")), "an empty purse says nothing")
+	assert.Equal(t, "You aren't carrying anything.\nYou have 1 coin.\n", plain(render(event.Inventory{Coins: 1}, "testdood")))
+	assert.Equal(t, "You aren't carrying anything.\nYou have 30 coins.\n", plain(render(event.Inventory{Coins: 30}, "testdood")))
 }
 
 func TestRenderShopList(t *testing.T) {
@@ -723,9 +725,9 @@ func TestRenderShopList(t *testing.T) {
 		{Item: "a short sword", Power: 2, Price: 40},
 		{Item: "a waterskin", Power: 1, Price: 10},
 	}}, "testdood")
-	assert.Equal(t, "For sale here:\n"+
-		"  a short sword  [power 2]  40 coins\n"+
-		"  a waterskin    [power 1]  10 coins\n", got)
+	assert.Equal(t, "For sale\n"+
+		"  a short sword  power 2  40 coins\n"+
+		"  a waterskin    power 1  10 coins\n", plain(got))
 	assert.Equal(t, "You buy a short sword for 40 coins.\n", render(event.Bought{Item: "a short sword", Cost: 40}, "testdood"))
 	assert.Equal(t, "You sell a scrap of rat pelt for 4 coins.\n", render(event.Sold{Item: "a scrap of rat pelt", Coins: 4}, "testdood"))
 	assert.Equal(t, "The shopkeeper would give you 1 coin for a feather.\n", render(event.Valued{Item: "a feather", Coins: 1}, "testdood"))
@@ -820,4 +822,331 @@ func TestRender_assessedMidFight(t *testing.T) {
 		"  Health 132/180  AC 16  Power 15  Hits for 2d8\n"+
 		"  Fighting you\n"+
 		"  Stunned for 2 more rounds\n", plain(render(m, "testdood")))
+}
+
+const statBlockTank = "testdood, the Human Tank\n" +
+	"  Health       100/100\n" +
+	"  Mana         100/100\n" +
+	"  Power        0\n" +
+	"  Armor class  10\n" +
+	"  Coins        0\n" +
+	"  Where        Temple Square, Wrathrock\n"
+
+const statBlockPowered = "testdood, the Human Tank\n" +
+	"  Health       100/100\n" +
+	"  Mana         100/100\n" +
+	"  Power        7\n" +
+	"  Armor class  10\n" +
+	"  Coins        0\n" +
+	"  Where        Temple Square, Wrathrock\n"
+
+// The same thing in the same shape is one line with a count; a different
+// power or condition is a different line.
+func TestRenderInventory_groups(t *testing.T) {
+	feather := event.InventoryItem{ShortDescription: "a long goose feather", Power: 1}
+	worn := event.InventoryItem{ShortDescription: "a knife", Power: 2, Durability: 20, MaxDurability: 25}
+	got := plain(render(event.Inventory{Items: []event.InventoryItem{
+		feather, worn, feather, feather,
+		{ShortDescription: "a long goose feather", Power: 3},
+	}, Coins: 12}, "testdood"))
+
+	assert.Equal(t, "Inventory\n"+
+		"  a long goose feather (x3)  power 1\n"+
+		"  a knife                    power 2  20/25\n"+
+		"  a long goose feather       power 3\n"+
+		"You have 12 coins.\n", got)
+}
+
+// A bag says how much it holds, so two empty ones fold and a full one doesn't.
+func TestRenderInventory_bags(t *testing.T) {
+	empty := event.InventoryItem{ShortDescription: "a leather satchel", Power: 1, Bag: true}
+	full := event.InventoryItem{ShortDescription: "a leather satchel", Power: 1, Bag: true, Holding: 3}
+	got := plain(render(event.Inventory{Items: []event.InventoryItem{empty, full, empty}}, "testdood"))
+
+	assert.Equal(t, "Inventory\n"+
+		"  a leather satchel (x2) (empty)  power 1\n"+
+		"  a leather satchel (3 inside)    power 1\n", got)
+}
+
+// A door: the one who did it, the room that watched, and the far side, which
+// hears it without seeing who.
+func TestRender_doorChanged(t *testing.T) {
+	opened := event.DoorChanged{Actor: "testdood", Door: "iron grate", Direction: rules.DirectionWest, Change: event.DoorOpened}
+	assert.Equal(t, "You open the iron grate.\n", plain(render(opened, "testdood")))
+	assert.Equal(t, "testdood opens the iron grate.\n", plain(render(opened, "otherdood")))
+
+	far := event.DoorChanged{Door: "iron grate", Direction: rules.DirectionEast, Change: event.DoorOpened}
+	assert.Equal(t, "The iron grate to the east opens.\n", plain(render(far, "otherdood")))
+	far.Change = event.DoorUnlocked
+	assert.Equal(t, "You hear a click from the iron grate to the east.\n", plain(render(far, "otherdood")))
+	far.Direction, far.Change = rules.DirectionUp, event.DoorClosed
+	assert.Equal(t, "The iron grate above closes.\n", plain(render(far, "otherdood")))
+
+	assert.Equal(t, "Exits:\neast, west (closed)\n", plain(render(event.Exits{Exits: []event.Exit{
+		{Direction: rules.DirectionEast}, {Direction: rules.DirectionWest, Closed: true},
+	}}, "testdood")))
+}
+
+func TestRender_containerChanged(t *testing.T) {
+	m := event.ContainerChanged{Actor: "testdood", Container: "strongbox", Change: event.DoorUnlocked}
+	assert.Equal(t, "You unlock the strongbox.\n", plain(render(m, "testdood")))
+	assert.Equal(t, "testdood unlocks the strongbox.\n", plain(render(m, "otherdood")))
+}
+
+// "put x in y", "put x into y"; a missing container is the handler's to answer
+func TestParse_put(t *testing.T) {
+	for line, want := range map[string]command.Put{
+		"put knife in chest":        {Target: "knife", Into: "chest"},
+		"put all.pelt into the bin": {Target: "all.pelt", Into: "the bin"},
+		"put 20 coins in strongbox": {Target: "20 coins", Into: "strongbox"},
+		"put knife":                 {Target: "knife"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err, line)
+		assert.Equal(t, want, cmd, line)
+	}
+	m := event.Put{Actor: "testdood", Item: "a knife", Into: "a strongbox"}
+	assert.Equal(t, "You put a knife in a strongbox.\n", plain(render(m, "testdood")))
+	assert.Equal(t, "testdood puts a knife in a strongbox.\n", plain(render(m, "otherdood")))
+}
+
+// "give x to y"; the giver, the one given to, and the room
+func TestParse_give(t *testing.T) {
+	for line, want := range map[string]command.Give{
+		"give knife to bob":    {Target: "knife", To: "bob"},
+		"give 20 coins to Bob": {Target: "20 coins", To: "Bob"},
+		"give all.pelt to bob": {Target: "all.pelt", To: "bob"},
+		"give knife":           {Target: "knife"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err, line)
+		assert.Equal(t, want, cmd, line)
+	}
+	m := event.Gave{Actor: "testdood", Recipient: "bob", Item: "a knife"}
+	assert.Equal(t, "You give a knife to bob.\n", plain(render(m, "testdood")))
+	assert.Equal(t, "testdood gives you a knife.\n", plain(render(m, "bob")))
+	assert.Equal(t, "testdood gives a knife to bob.\n", plain(render(m, "otherdood")))
+	assert.Equal(t, "Give it to whom?\n", failureText("give", "NO_RECIPIENT"))
+}
+
+// look <thing>: an object, a mob, a player
+func TestRender_lookedAt(t *testing.T) {
+	hood := event.LookedAtObject{Item: "a bandit hood", Slot: rules.SlotHead, ArmorType: rules.ArmorTypeLeather,
+		Worn: true, Power: 3, Durability: 12, MaxDurability: 20, Armor: 1, Abilities: []string{"assess"}}
+	assert.Equal(t, "A bandit hood\n"+
+		"  Leather armor, worn on the head. Power 3.\n"+
+		"  Condition 12/20.\n"+
+		"  Adds 1 to armor class.\n"+
+		"  Lets you cast assess.\n"+
+		"  You have it on.\n", plain(render(hood, "testdood")))
+
+	knife := event.LookedAtObject{Item: "a knife", Slot: rules.SlotWield, Power: 1, Damage: "1d4", Broken: true, MaxDurability: 20}
+	assert.Equal(t, "A knife\n  A weapon. Power 1.\n  Condition broken.\n  Hits for 1d4.\n", plain(render(knife, "testdood")))
+
+	bag := event.LookedAtObject{Item: "a leather satchel", Power: 1, Container: true, Holding: 3, Capacity: 10}
+	assert.Equal(t, "A leather satchel\n  Power 1.\n  Holding 3 of 10.\n", plain(render(bag, "testdood")))
+	box := event.LookedAtObject{Item: "a strongbox", Container: true, Closed: true, Locked: true}
+	assert.Contains(t, plain(render(box, "testdood")), "It's locked.")
+
+	rat := event.LookedAtMob{Name: "giant rat", Health: 40, Fighting: "bob"}
+	assert.Equal(t, "The giant rat is badly hurt, fighting bob.\n", plain(render(rat, "testdood")))
+	assert.Equal(t, "The giant rat is in perfect health.\n", plain(render(event.LookedAtMob{Name: "giant rat", Health: 100}, "testdood")))
+
+	bob := event.LookedAtPlayer{Name: "Bob", Lineage: "Wood Elf", Role: "Tank", Health: 80, Wearing: []string{"a knife", "a leather cap"}}
+	assert.Equal(t, "Bob is a Wood Elf, slightly hurt.\n  Geared as a Tank.\n  Wearing a knife, a leather cap.\n",
+		plain(render(bob, "testdood")))
+	assert.Contains(t, plain(render(event.LookedAtPlayer{Name: "Ann", Lineage: "Orc", Health: 100}, "Ann")), "You are an Orc, in perfect health.")
+
+	for _, line := range []string{"look knife", "examine knife", "exa knife"} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, command.Look{Target: "knife"}, cmd, line)
+	}
+}
+
+// groups: follow, the walk after, the list, and gtell
+func TestRender_groups(t *testing.T) {
+	f := event.Following{Follower: "ann", Leader: "bob"}
+	assert.Equal(t, "You now follow bob.\n", plain(render(f, "ann")))
+	assert.Equal(t, "ann now follows you.\n", plain(render(f, "bob")))
+	f.Stopped = true
+	assert.Equal(t, "You stop following bob.\n", plain(render(f, "ann")))
+	assert.Equal(t, "ann stops following you.\n", plain(render(f, "bob")))
+
+	assert.Equal(t, "You follow bob north.\n", plain(render(event.Followed{Leader: "bob", Direction: rules.DirectionNorth}, "ann")))
+	assert.Equal(t, "bob leaves north, but you can't follow in the middle of a fight.\n",
+		plain(render(event.Followed{Leader: "bob", Direction: rules.DirectionNorth, Fighting: true}, "ann")))
+
+	list := event.GroupList{Members: []event.GroupMember{
+		{Name: "bob", Leader: true, Health: 97, MaxHealth: 100, Mana: 80, MaxMana: 100, Room: "The Mill Yard"},
+		{Name: "ann", Health: 5, MaxHealth: 100, Mana: 100, MaxMana: 100, Room: "Temple Square"},
+	}}
+	assert.Equal(t, "Group\n"+
+		"  bob (leader)  97/100hp   80/100m  The Mill Yard\n"+
+		"  ann            5/100hp  100/100m  Temple Square\n", plain(render(list, "ann")))
+
+	told := event.GroupTold{Speaker: "ann", Value: "ready?"}
+	assert.Equal(t, "You tell the group, 'ready?'\n", plain(render(told, "ann")))
+	assert.Equal(t, "ann tells the group, 'ready?'\n", plain(render(told, "bob")))
+
+	for line, want := range map[string]command.Command{
+		"follow bob":   command.Follow{Target: "bob"},
+		"follow":       command.Follow{},
+		"ungroup ann":  command.Ungroup{Target: "ann"},
+		"group":        command.Group{},
+		"gt on my way": command.GroupTell{Value: "on my way"},
+		"gtell ready?": command.GroupTell{Value: "ready?"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err, line)
+		assert.Equal(t, want, cmd, line)
+	}
+}
+
+func TestRender_swept(t *testing.T) {
+	assert.Equal(t, "The janitor sweeps up a pelt and tips it into a barrow.\n",
+		plain(render(event.Swept{Sweeper: "janitor", Item: "a pelt"}, "testdood")))
+}
+
+func TestRender_assist(t *testing.T) {
+	m := event.Assisted{Actor: "ann", Member: "bob", Target: "wolf"}
+	assert.Equal(t, "You leap to bob's aid against the wolf!\n", plain(render(m, "ann")))
+	assert.Equal(t, "ann leaps to bob's aid against the wolf!\n", plain(render(m, "bob")))
+	assert.Equal(t, "You'll join your group's fights.\n", plain(render(event.AssistSet{On: true}, "ann")))
+	assert.Equal(t, "You'll stay out of your group's fights unless you join in.\n", plain(render(event.AssistSet{}, "ann")))
+	cmd, err := parseCommand(strings.Fields("assist OFF"))
+	require.NoError(t, err)
+	assert.Equal(t, command.Assist{Setting: "off"}, cmd)
+}
+
+func TestRender_ooc(t *testing.T) {
+	assert.Equal(t, "[ooc] ann: anyone for the mill?\n", plain(render(event.OOCSaid{Speaker: "ann", Value: "anyone for the mill?"}, "bob")))
+	assert.Equal(t, "You've left the ooc channel. 'ooc on' to come back.\n", plain(render(event.OOCSet{}, "bob")))
+	for _, line := range []string{"ooc hi there", "newbie hi there", "nb hi there"} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, command.OOC{Value: "hi there"}, cmd, line)
+	}
+}
+
+func TestRender_snatched(t *testing.T) {
+	assert.Equal(t, "The crow snatches up a goose feather.\n",
+		plain(render(event.Snatched{Mob: "crow", Item: "a goose feather"}, "testdood")))
+}
+
+func TestRender_junkAndDonate(t *testing.T) {
+	j := event.Junked{Actor: "ann", Item: "a pelt"}
+	assert.Equal(t, "You junk a pelt. It's gone.\n", plain(render(j, "ann")))
+	assert.Equal(t, "ann junks a pelt.\n", plain(render(j, "bob")))
+	d := event.Donated{Actor: "ann", Item: "a pelt"}
+	assert.Equal(t, "You donate a pelt. It's waiting in the donation room.\n", plain(render(d, "ann")))
+	assert.Equal(t, "A pelt appears, donated.\n", plain(render(event.Appeared{Item: "a pelt"}, "bob")))
+	for line, want := range map[string]command.Command{
+		"junk all.pelt": command.Junk{Target: "all.pelt"},
+		"donate knife":  command.Donate{Target: "knife"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, want, cmd, line)
+	}
+}
+
+func TestRender_quaff(t *testing.T) {
+	q := event.Quaffed{Actor: "ann", Item: "a healing draught"}
+	assert.Equal(t, "You quaff a healing draught.\n", plain(render(q, "ann")))
+	assert.Equal(t, "ann quaffs a healing draught.\n", plain(render(q, "bob")))
+	for _, line := range []string{"quaff draught", "drink draught"} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, command.Quaff{Target: "draught"}, cmd, line)
+	}
+}
+
+func TestRender_talk(t *testing.T) {
+	sz := event.Socialized{Actor: "ann", Target: "bob", ToActor: "You bow to bob.", ToTarget: "ann bows to you.", ToRoom: "ann bows to bob."}
+	assert.Equal(t, "You bow to bob.\n", plain(render(sz, "ann")))
+	assert.Equal(t, "ann bows to you.\n", plain(render(sz, "bob")))
+	assert.Equal(t, "ann bows to bob.\n", plain(render(sz, "cal")))
+	assert.Equal(t, "ann waves.\n", plain(render(event.Emoted{Actor: "ann", Text: "waves."}, "bob")))
+
+	w := event.Whispered{From: "ann", To: "bob", Value: "psst"}
+	assert.Equal(t, "You whisper to bob, 'psst'\n", plain(render(w, "ann")))
+	assert.Equal(t, "ann whispers to you, 'psst'\n", plain(render(w, "bob")))
+	assert.Equal(t, "ann whispers something to bob.\n", plain(render(w, "cal")))
+	w.Ask = true
+	assert.Equal(t, "You ask bob, 'psst'\n", plain(render(w, "ann")))
+	assert.Equal(t, "ann asks bob something.\n", plain(render(w, "cal")))
+
+	assert.Equal(t, "Toggles\n  color   on\n  ooc     on\n  tells   off\n  shouts  on\n  assist  on\n  'toggle <name>' switches one.\n",
+		plain(render(event.Toggles{Color: true, OOC: true, Shouts: true, Assist: true}, "ann")))
+
+	for line, want := range map[string]command.Command{
+		": waves":           command.Emote{Text: "waves"},
+		"r on my way":       command.Reply{Value: "on my way"},
+		"ask keeper prices": command.Whisper{To: "keeper", Value: "prices", Ask: true},
+		"whisper bob hi":    command.Whisper{To: "bob", Value: "hi"},
+		"notell":            command.Toggle{Name: "tell"},
+		"bow bob":           command.Social{Name: "bow", Target: "bob"},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, want, cmd, line)
+	}
+}
+
+// every social in the real content is reachable: no verb the parser knows
+// shadows one
+func TestSocials_noneShadowed(t *testing.T) {
+	cat, err := loader.LoadCatalog(os.DirFS("../content/rules"))
+	require.NoError(t, err)
+	require.NotEmpty(t, cat.SocialList())
+	for _, s := range cat.SocialList() {
+		cmd, err := parseCommand([]string{s.Name})
+		require.NoError(t, err)
+		assert.Equal(t, command.Social{Name: s.Name}, cmd, "%s is taken by another command", s.Name)
+	}
+}
+
+func TestRender_wizardAdmin(t *testing.T) {
+	assert.Equal(t, "You have been muted.\n", plain(render(event.Moderated{Target: "ann", On: true}, "ann")))
+	assert.Equal(t, "ann is thawed.\n", plain(render(event.Moderated{Target: "ann", Freeze: true}, "wiz")))
+	assert.Equal(t, "Users (2)\n  wiz  Temple Square  Wrathrock  wizard\n  ann  General Store  Wrathrock  muted\n",
+		plain(render(event.UserList{Users: []event.User{
+			{Name: "wiz", Room: "Temple Square", Zone: "Wrathrock", Wizard: true},
+			{Name: "ann", Room: "General Store", Zone: "Wrathrock", Muted: true},
+		}}, "wiz")))
+	assert.Equal(t, "Restarting soon.\n", plain(render(event.Echoed{Text: "Restarting soon."}, "ann")))
+}
+
+func TestRender_positions(t *testing.T) {
+	assert.Equal(t, "You sit back and rest.\n", plain(render(event.PositionChanged{Actor: "ann", To: "resting"}, "ann")))
+	assert.Equal(t, "ann lies down and goes to sleep.\n", plain(render(event.PositionChanged{Actor: "ann", To: "sleeping"}, "bob")))
+	assert.Equal(t, "ann wakes and gets up.\n", plain(render(event.PositionChanged{Actor: "ann", Woke: true}, "bob")))
+	assert.Contains(t, plain(render(event.RoomDescription{Name: "Square", Players: []string{"Ann", "Bob"}, PlayerPositions: []string{"resting", ""}}, "cal")),
+		"Ann is resting here.\nBob is here.\n")
+	cmd, err := parseCommand([]string{"wake"})
+	require.NoError(t, err)
+	assert.Equal(t, command.Position{Wake: true}, cmd)
+}
+
+func TestRender_smallCommands(t *testing.T) {
+	assert.Equal(t, "It's 9:41 pm in Wrathrock, Tuesday, October 6: night.\n",
+		plain(render(event.TimeOfDay{Clock: "9:41 pm", Day: "Tuesday, October 6", Part: "night"}, "ann")))
+	assert.Equal(t, "bob splits some coins 2 ways: you get 15 coins.\n", plain(render(event.SplitCoins{Actor: "bob", Each: 15, Among: 2}, "ann")))
+	assert.Contains(t, plain(render(event.CommandList{}, "ann")), "wimpy")
+	for line, want := range map[string]command.Command{
+		"hit rat":    command.Kill{Target: "rat"},
+		"hold torch": command.Wear{Target: "torch"},
+		"score":      command.Stat{},
+	} {
+		cmd, err := parseCommand(strings.Fields(line))
+		require.NoError(t, err)
+		assert.Equal(t, want, cmd, line)
+	}
+}
+
+func TestRender_moon(t *testing.T) {
+	assert.Equal(t, "Full moon tonight. Be careful.\n", plain(render(event.MoonWarning{}, "ann")))
+	assert.Equal(t, "It's 10:00 pm in Wrathrock, Saturday, September 26: night.\nThe moon is full.\n",
+		plain(render(event.TimeOfDay{Clock: "10:00 pm", Day: "Saturday, September 26", Part: "night", Moon: "full"}, "ann")))
 }

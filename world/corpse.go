@@ -2,6 +2,7 @@ package world
 
 import (
 	"fmt"
+	"slices"
 	"time"
 	"uuid"
 
@@ -59,6 +60,12 @@ func (w *World) becomeMobileCorpse(m *mobile.Instance) {
 			log.Error().Err(err).Msgf("becomeMobileCorpse: adding %s to the corpse of %s", drop.Definition.Name, m.Definition.Name)
 		}
 	}
+	// and whatever it had picked up
+	for _, taken := range slices.Collect(m.Inventory.All()) {
+		if err := object.Move(taken, m.Inventory, corpse.Contents); err != nil {
+			log.Error().Err(err).Msgf("becomeMobileCorpse: %s's %s", m.Definition.Name, taken.Definition.Name)
+		}
+	}
 	corpse.Coins = w.rollCoins(m) // after the loot, so its dice come first
 	r := w.mobileRoom(m)
 	w.RemoveMobile(m)
@@ -105,6 +112,9 @@ func (w *World) rollLoot(m *mobile.Instance) []*object.Instance {
 		if err != nil {
 			log.Error().Err(err).Msgf("rollLoot: %s", m.Definition.Id)
 			bump = 100 // no bump
+		}
+		if w.fullMoonNight() {
+			bump /= 2 // the moon's luck: twice the chance of a bump
 		}
 		item := object.NewInstance(uuid.New(), entry.Object)
 		item.Power = m.Power() + rules.LootPowerBump(bump)

@@ -25,6 +25,16 @@ var wizardCommands = []command.Command{
 	command.NoHassle{},
 	command.Slay{Target: "target"},
 	command.Gold{Amount: "100"},
+	command.Goto{Target: "wrathrock/market_square"},
+	command.Transfer{Target: "testdood"},
+	command.Purge{Target: "nothing"},
+	command.ZReset{},
+	command.Echo{Text: "hello"},
+	command.Echo{Text: "hello", Global: true},
+	command.Users{},
+	command.Reports{},
+	command.Moderate{Target: "nobody"},
+	command.Moderate{Target: "nobody", Freeze: true},
 }
 
 func (s *wizardSuite) TestTheListIsMarked() {

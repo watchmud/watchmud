@@ -80,6 +80,7 @@
     ],
     "short_description": "A wild dog.",
     "description_in_room": "A mangy wild dog watches you, hackles up.",
+    "flags": [ "moonstruck" ],
     "max_health": 14,
     "wandering_definition": {
       "can_wander": true,
@@ -131,6 +132,7 @@
     ],
     "short_description": "A bandit.",
     "description_in_room": "A bandit in a patched jerkin fingers a cudgel.",
+    "script": "bandit",
     "max_health": 24,
     "wandering_definition": {
       "can_wander": false
@@ -185,6 +187,7 @@
     ],
     "short_description": "The hedge-witch.",
     "description_in_room": "The hedge-witch sorts herbs and pays you no mind at all.",
+    "script": "hedge_witch",
     "max_health": 28,
     "wandering_definition": {
       "can_wander": false
@@ -227,5 +230,23 @@
         "chance": 30
       }
     ]
+  },
+  {
+    "id": "crow",
+    "name": "crow",
+    "aliases": [ "bird" ],
+    "short_description": "A crow.",
+    "description_in_room": "A crow hops about, eyeing anything that glints.",
+    "max_health": 6,
+    "wandering_definition": {
+      "can_wander": true,
+      "check_frequency_seconds": 20,
+      "check_percentage": 60,
+      "wander_style": "random"
+    },
+    "ac": 11,
+    "damage": "1d2",
+    "power": 1,
+    "script": "crow"
   }
 ]

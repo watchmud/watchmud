@@ -85,6 +85,8 @@ func calculateDamage(roller rules.Roller, fighter Combatant, victim Combatant) (
 		modifier = " (vulnerability)"
 		damage = damage * 2
 	}
+	// a blow never heals: dice like 1d2-3 can roll below zero
+	damage = max(damage, 0)
 	log.Trace().Msgf(" %s does %d damage to %s%s", fighter.Name(), damage, victim.Name(), modifier)
 	return damage, nil
 }

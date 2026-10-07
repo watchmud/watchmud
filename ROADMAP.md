@@ -154,7 +154,7 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
 
 - ~~**The smoke test.**~~ Done 2026-09-30: `bot/` (a telnet client and one scenario) and
   `cmd/watchmud-bot`, run by `deploy.sh` after every restart and by `go test` against
-  the real content in-process. Load testing is still open; it builds on `bot.Client`.
+  the real content in-process. Load testing: `cmd/watchmud-load` (2026-10-06).
 - ~~**Inhabitants.**~~ Done 2026-09-30: `bot.Adventurer` and `cmd/watchmud-bots`, the
   `bots` compose service -- always-on, listed apart in `who` from a flag on the
   record, hunting the Hollowfields, donating what they find, and honest when told
@@ -162,9 +162,9 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
   Future: ~~a **Wanderer** (roams, fights only when attacked, never loots)~~ done
   2026-10-06 (`bot/wanderer.go`, spec in `docs/superpowers/specs/`), ~~a
   **Socialite** (greets new characters in town, answers newbie questions)~~ done
-  2026-10-06 (`bot/socialite.go`, `bot/faq.go`), bots that
-  **explore and map** the world instead of following hand-written hunting grounds
-  (needs room names to stay unique -- true today, not enforced), and bots that **wear
+  2026-10-06 (`bot/socialite.go`, `bot/faq.go`), ~~bots that
+  **explore and map** the world~~ done 2026-10-06 (`bot/explorer.go`; hunters
+  following that map instead of hand-written grounds is the next step), and bots that **wear
   the upgrades they find** and grow into the Barrow.
 
 The Context section below describes the tree as it was in September 2026, before any of
@@ -681,9 +681,15 @@ Additive once the byte loop exists:
   2026-10-01: `telnet/wrap.go`; no NAWS, no wrapping.
 - Then the MUD-specific layer as it earns its keep: `MSSP`, `GMCP`, `MCCP`, `MXP`.
   GMCP done 2026-10-06: `Char.Vitals` and `Room.Info` (CLAUDE.md, telnet/). Mudlet
-  hands them to scripts; drawing bars or a map from them is a Mudlet package we
-  could ship later. MSSP waits until the game wants to be listed.
-- Test against tintin++ specifically, since that's the target.
+  hands them to scripts; `mudlet/` is the package that draws bars and a map from them,
+  served from www.watchmud.com (2026-10-06). MSSP waits until the game wants to be listed.
+- ~~Test against tintin++ specifically, since that's the target.~~ Done 2026-10-06 with
+  tintin++ 2.02.20 (Ubuntu's), scripted against a local server: `#action`s on every
+  login question fired -- the GA after each prompt is what lets them -- so a new
+  character was made with no typing; the password wasn't echoed; lines wrapped to the
+  width tintin sent by NAWS; color came through; say, emote, time, walking, wimpy and
+  quit all read right. GMCP was offered and did no harm. (A tintin `#action` on the
+  prompt needs `%*` or a regex for "100/100", not `%d`.)
 
 ---
 
@@ -786,7 +792,8 @@ Named so they don't get rediscovered as surprises:
   resolved at startup. The real work is the hooks (entered room, died, health crossed a
   line, heard something, pulse) and a small action API over them.
   The first two examples need Go features that don't exist yet -- mobs have no inventory,
-  and there are no doors or locks. Taunts need nothing new: `event.Said` already takes a
+  and ~~there are no doors or locks~~ (doors, locks and keys done 2026-10-06, and
+  chests on the same `lock.Lock`). Taunts need nothing new: `event.Said` already takes a
   speaker name and renders to the room. So taunts are the first case -- a fight-started
   and a fight-pulse hook, and one action, `say` -- and the King's half-health script is
   the second.
@@ -816,8 +823,10 @@ Named so they don't get rediscovered as surprises:
   not branching on it.** Combat that wants tankiness should read the armor, not the label.
 - ~~**`server.handleLogin`** logs the error from `player.FromRecord` and then falls through
   and uses the player anyway.~~ Already fixed: it returns the error.
-- **`world/settings.go`** is a single `VERBOSE_LOGGING` const, and logging is split between
-  zerolog and stdlib `log` depending on file age. Worth one consolidating pass eventually.
+- ~~**`world/settings.go`** is a single `VERBOSE_LOGGING` const, and logging is split
+  between zerolog and stdlib `log` depending on file age.~~ Done 2026-10-06: the const is
+  gone (ping logs at trace), and the server is all zerolog; only `cmd/watchmud-bots`, a
+  command-line tool, still uses `log`.
 
 ---
 

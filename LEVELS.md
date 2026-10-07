@@ -54,6 +54,7 @@ move is one change.
 | Max mana | 100, flat (`rules.MaxMana`) | the budget a healer walks into a fight with |
 | Heal | 20 mana, 10s cooldown, 10 + 2 per power (`abilities.json`) | whether one healer keeps a tank up |
 | Smite | 25 mana, 20s cooldown, 8 + 3 per power, always lands (`abilities.json`) | how much faster a striker opens a fight than a swing does |
+| Healing draught | heal at power 2 (14 health) for 20 coins, no mana; one potion per 10s (`rules.QuaffCooldown`) | whether a pack of them makes a fight unlosable |
 | Dropped decay | 30m (`rules.DroppedDecay`) | how long a donation waits for a newbie |
 | Bare hands damage | 1d2 (`rules.BareHands`) | also a mob with no `"damage"` |
 | Averaging worn power | rounds down | how soon one upgrade shows in your number |
@@ -62,6 +63,24 @@ move is one change.
 | Damage per point of delta | ±5%, rounded, a hit does at least 1 | how long fights above your power take |
 | Loot power bump | 10% chance of +1, 2% of +2 | **the pace of the whole game** |
 | Corpse decay | 5 minutes (`rules.CorpseDecay`) | time to loot vs. rooms filling up |
+| Full-moon night | wild dogs aggressive; loot bump chance doubled (`world/moon.go`) | a night to be careful, and a night to be out |
+| Janitor sweeps | after 5 minutes on the floor (`world.JunkAfter`) | time to drop a thing for a friend |
+
+**Measure before tuning:** `go run ./cmd/watchmud-sim` fights a simulated player
+against every mob, a thousand times at each power, through the real combat code, and
+prints win rates (`-mob zone/id` for rounds and health left; `-kit` for other gear).
+Melee only: no abilities, summons, wear or regeneration. What it said on 2026-10-06,
+for a tuning pass to start from rather than a decision:
+
+- **A new character is stronger than the bands say.** The starting kit at power 1
+  beats a power-4 bandit 96% of the time and a power-5 wolf about 80%. Players have
+  100 health against mobs' 20-35; a fight's outcome is mostly hit points, and the
+  power delta's ±5% damage and +½ to-hit barely move it.
+- **The mill's bosses are group fights even before their scripts.** The Drowned
+  Miller alone: barrow plate, helm and the stalker's spear win 27% at power 7 and
+  85% at 10. The Barrow-King: 0% alone at any power.
+- Win rates aren't always monotonic in power (drowned millhands, 87% at 5, 82% at 6):
+  `PowerHitModifier`'s half points round, so a power step can buy nothing.
 
 ## Phases
 
@@ -141,6 +160,16 @@ placeholders above get replaced.
 Started: **the Hollowfields** (1-5, south of Wrathrock -- farms, bandits, an old wood)
 and **the Sunken Barrow** (6-10, down under the overturned oak in the wood's far corner),
 whose Barrow-King (power 15) is the first boss.
+
+**The Drowned Mill** (4-7, west of the Millpond; 2026-10-06, spec in
+`docs/superpowers/specs/`) is the step between: marsh eels, reed stalkers and drowned
+millhands, and the Drowned Miller (power 8, 90 health, 2d6) in the wheel pit, a boss
+for two. It drops mid-tier gear for every kind of player, one ability each -- the
+stalker's spear (smite), the river-stone pendant (heal), the miller's mallet (stun),
+iron gauntlets (provoke) -- plus eelskin boots and millhand's gloves. The miller is
+behind a locked iron grate; the rusted key drops from millhands (25%), so reaching him
+is a hunt first. His strongbox in the pit is locked too, and its key is in the grain bin
+up in the loft: a river-stone pendant and eelskin boots at power 7, put back each reset. Every number is a first guess.
 
 **The Barrow-King is a group fight, and it takes all three kinds of gear.** Nothing may
 branch on a role, so each has to be something the gear actually does:

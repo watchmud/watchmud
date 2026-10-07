@@ -23,6 +23,12 @@ type Content struct {
 	Catalog  *rules.Catalog
 	// Scripts is every script some mob names, compiled, by "zone/name".
 	Scripts map[string]*script.Program
+
+	// pendingDoors are doors read with the rooms, waiting for the objects
+	// their keys name (doors.go).
+	pendingDoors []pendingDoor
+	// pendingChests likewise, for containers whose keys are objects.
+	pendingChests []pendingChest
 }
 
 func NewContent(settings *Settings, catalog *rules.Catalog, zones []*spaces.Zone) *Content {
@@ -69,7 +75,19 @@ func LoadContent(fsys fs.FS) (*Content, error) {
 	if err := c.loadRooms(worldFS); err != nil {
 		return nil, err
 	}
+	// every room on its zone's grid, for a client that maps; the exits are
+	// all connected by now
+	for _, z := range c.Zones {
+		z.LayGrid()
+	}
 	if err := c.loadObjectDefinitions(worldFS); err != nil {
+		return nil, err
+	}
+	// after objects: a door's key is one, and so is a chest's
+	if err := c.hangDoors(); err != nil {
+		return nil, err
+	}
+	if err := c.fitChests(); err != nil {
 		return nil, err
 	}
 	if err := c.loadMobileDefinitions(worldFS); err != nil {
@@ -152,6 +170,11 @@ func (c *Content) loadRooms(fsys fs.FS) error {
 
 		for i := range entries {
 			entry := &entries[i]
+			// a second room with an id would take the first one's place, and
+			// its exits: the original cut off, settings pointing at the copy
+			if _, dup := zone.Rooms[entry.Id]; dup {
+				return fmt.Errorf("zone %s: two rooms with the id %q", zonename, entry.Id)
+			}
 
 			r := spaces.NewRoom(zone, entry.Id, entry.Name, entry.Description)
 			r.SetFlags(entry.Flags)
@@ -180,6 +203,9 @@ func (c *Content) loadRooms(fsys fs.FS) error {
 					exit.DestinationRoomId,
 				); err != nil {
 					return err
+				}
+				if exit.Door != nil {
+					c.pendingDoors = append(c.pendingDoors, pendingDoor{zonename, entry.Id, exit.Direction, *exit.Door})
 				}
 			}
 		}
@@ -229,6 +255,11 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 			return err
 		}
 		for _, obj := range objEntries {
+			// as for mobs: a second "rope" that's a lantern would make every
+			// rope a lantern
+			if _, dup := c.Zones[zonename].ObjectDefinitions[obj.Id]; dup {
+				return fmt.Errorf("zone %s: two objects with the id %q", zonename, obj.Id)
+			}
 			d := object.NewDefinition(
 				obj.Id,
 				obj.Name,
@@ -254,6 +285,9 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 			if d.Abilities, err = objectAbilities(zonename, obj, c.Catalog); err != nil {
 				return err
 			}
+			if d.Quaff, err = objectQuaff(zonename, obj, c.Catalog); err != nil {
+				return err
+			}
 			d.MaxDurability, err = objectDurability(zonename, obj, c.Catalog.Durability)
 			if err != nil {
 				return err
@@ -264,7 +298,42 @@ func (c *Content) loadObjectDefinitions(fsys fs.FS) error {
 				return err
 			}
 
+			if obj.Container != nil {
+				// a chest is furniture: it stays where it is (chests.go);
+				// a bag is carried
+				if !obj.Container.Portable && !d.NoTake() {
+					d.Behaviors = append(d.Behaviors, rules.ObjectBehaviorNoTake)
+				}
+				c.pendingChests = append(c.pendingChests, pendingChest{zonename, d, *obj.Container})
+			}
+
 			c.Zones[zonename].AddObjectDefinition(d)
+		}
+	}
+	return nil
+}
+
+// checkPath refuses a followPath wanderer whose path can't be walked: fewer
+// than two rooms is nowhere to go (and a one-room path once indexed before
+// its start), and every step names a room that exists.
+func (c *Content) checkPath(zonename string, mob mobEntry) error {
+	if mob.WanderingDefinition.WanderStyle != rules.WanderFollowPath {
+		return nil
+	}
+	path := mob.WanderingDefinition.Path
+	if len(path) < 2 {
+		return fmt.Errorf("mob %s/%s: a followPath needs at least two rooms, has %d", zonename, mob.Id, len(path))
+	}
+	for _, id := range path {
+		found := false
+		for _, z := range c.Zones {
+			if _, ok := z.Rooms[id]; ok {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("mob %s/%s: path names a room nothing has: %q", zonename, mob.Id, id)
 		}
 	}
 	return nil
@@ -286,6 +355,14 @@ func (c *Content) loadMobileDefinitions(fsys fs.FS) error {
 			return err
 		}
 		for _, mob := range mobEntries {
+			// a copy-pasted entry with its id unchanged would quietly
+			// replace the first: every instruction naming it spawns the copy
+			if _, dup := c.Zones[zonename].MobileDefinitions[mob.Id]; dup {
+				return fmt.Errorf("zone %s: two mobs with the id %q", zonename, mob.Id)
+			}
+			if err := c.checkPath(zonename, mob); err != nil {
+				return err
+			}
 			ac, err := mobArmorClass(zonename, mob)
 			if err != nil {
 				return err
@@ -355,6 +432,12 @@ func (c *Content) loadZoneInstructions(fsys fs.FS) error {
 		}
 		zone := c.Zones[zonename]
 		for _, entry := range insts {
+			// zero would mean "add one every reset" to an object and "never"
+			// to a mob; neither is what a missing number means
+			if entry.InstanceMax < 1 {
+				return fmt.Errorf("zone %s: %s %s%s in %s: instance_max must be at least 1",
+					zonename, entry.Type, entry.ObjectId, entry.MobileId, entry.RoomId)
+			}
 			switch entry.Type {
 			case "CreateObject":
 				zone.AddCommand(spaces.CreateObject{
@@ -362,6 +445,8 @@ func (c *Content) loadZoneInstructions(fsys fs.FS) error {
 					RoomId:             entry.RoomId,
 					ZoneId:             entry.ZoneId,
 					InstanceMax:        entry.InstanceMax,
+					ContainerId:        entry.Container,
+					Power:              entry.Power,
 				})
 			case "CreateMobile":
 				zone.AddCommand(spaces.CreateMobile{
@@ -394,6 +479,22 @@ func mobArmorClass(zoneName string, mob mobEntry) (int, error) {
 		return 0, fmt.Errorf("mob %s/%s: negative ac %d", zoneName, mob.Id, *mob.AC)
 	}
 	return *mob.AC, nil
+}
+
+// objectQuaff checks a potion's ability: one the catalog has, and one a
+// drinker can aim at themselves -- a potion of smite has nobody to hit.
+func objectQuaff(zoneName string, obj objectEntry, cat *rules.Catalog) (string, error) {
+	if obj.Quaff == "" {
+		return "", nil
+	}
+	a, known := cat.Abilities[obj.Quaff]
+	if !known {
+		return "", fmt.Errorf("object %s/%s: quaff: unknown ability %q", zoneName, obj.Id, obj.Quaff)
+	}
+	if a.Target != rules.TargetSelf && a.Target != rules.TargetFriend {
+		return "", fmt.Errorf("object %s/%s: quaff: %q isn't something to drink -- its target is %q", zoneName, obj.Id, obj.Quaff, a.Target)
+	}
+	return obj.Quaff, nil
 }
 
 // objectAbilities checks what an object grants against the catalog: an

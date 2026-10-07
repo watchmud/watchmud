@@ -34,6 +34,34 @@ func TestObjectAbilities(t *testing.T) {
 	assert.ErrorContains(t, err, "hollowfield/censer")
 }
 
+// a potion is drunk by its drinker: an ability aimed at a foe isn't one
+func TestObjectQuaff(t *testing.T) {
+	cat, err := rules.NewTestCatalog()
+	require.NoError(t, err)
+	require.NoError(t, cat.SetAbilities([]*rules.Ability{
+		{Id: "heal", Name: "heal", Target: rules.TargetFriend},
+		{Id: "smite", Name: "smite", Target: rules.TargetFoe},
+	}))
+
+	got, err := objectQuaff("wrathrock", objectEntry{Id: "draught", Quaff: "heal"}, cat)
+	require.NoError(t, err)
+	assert.Equal(t, "heal", got)
+
+	_, err = objectQuaff("wrathrock", objectEntry{Id: "draught", Quaff: "hael"}, cat)
+	assert.ErrorContains(t, err, "unknown ability")
+	_, err = objectQuaff("wrathrock", objectEntry{Id: "draught", Quaff: "smite"}, cat)
+	assert.ErrorContains(t, err, "isn't something to drink")
+}
+
+// the General Store sells one
+func TestLoadContent_healingDraught(t *testing.T) {
+	c, err := LoadContent(os.DirFS("../content"))
+	require.NoError(t, err)
+	d, found := c.Zones["wrathrock"].ObjectDefinitions["healing_draught"]
+	require.True(t, found)
+	assert.Equal(t, "heal", d.Quaff)
+}
+
 // a newbie's way to a heal, and a barrow healer's better one
 func TestLoadContent_healersHeal(t *testing.T) {
 	c, err := LoadContent(os.DirFS("../content"))

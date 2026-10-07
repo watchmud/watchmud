@@ -195,3 +195,15 @@ func (s *scriptsSuite) TestScriptWaitEndsWithTheFight() {
 	_, found := room.FindMobile("imp")
 	s.Assert().False(found)
 }
+
+// a say in the room reaches on_hear, after the room has heard it
+func (s *scriptsSuite) TestSayReachesOnHear() {
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Say{Value: "Hello, heckler"})))
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Say{Value: "nice shop"})))
+
+	s.Assert().Equal([]string{
+		"testdood: Hello, heckler",
+		"Heckler: Hello yourself, testdood.",
+		"testdood: nice shop",
+	}, s.said())
+}

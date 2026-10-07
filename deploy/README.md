@@ -76,6 +76,20 @@ docker compose -f deploy/compose.yaml exec mongo mongosh -u root -p \
 It asks for the password (`MONGO_ROOT_PASSWORD`). The name is capitalized the way the
 game stores it: `Bob`, not `bob`.
 
+What a wizard can do in the game, beside playing:
+
+| | |
+|---|---|
+| `gecho <words>` | say something to everyone -- "restarting in five minutes" before a deploy |
+| `users` | who's playing, where, and who's muted or frozen |
+| `mute <name>`, `freeze <name>` | a player can't talk to anyone; can only look and quit. Again to undo. Kept on their record |
+| `goto <zone/room or name>`, `transfer <name>` | go somewhere; bring someone to you |
+| `purge [thing]`, `zreset [zone]` | clear the room; reset a zone now |
+| `reports` | the latest `bug`/`idea`/`typo` reports since the restart (all of them: see "Reports") |
+| `slay`, `restore`, `load`, `gold`, `nohassle`, `roomstatus`, `echo` | the older tools |
+
+Every one is logged at warn with `commandType=wiz`.
+
 ## Releasing
 
 `master` is development. A release is a `release/X.Y` branch cut from it, and each
@@ -148,6 +162,10 @@ disconnects everyone a second time.
 
 "no goose at the millpond" is a pass: a player got there first.
 
+A walk that fails "attacked on the way" isn't a bad deploy either: on a full-moon night
+(6 pm to 6 am Seattle, when `time` says the moon is full) the Hollowfields' wild dogs
+roam aggressive and can catch the bot. Run it again, or check by hand.
+
 It needs a character, made once by hand -- the bot never creates one, since names are
 permanent:
 
@@ -185,10 +203,11 @@ Each bot is a character made once by hand -- the bots never create one:
 3. In `deploy/.env`: `WATCHMUD_BOTS=Wren,Pim` (hunters), `WATCHMUD_WANDERERS=Odo`
    (wanderers: they roam the safe parts of the world, linger, fight only back and
    take nothing), `WATCHMUD_SOCIALITES=Mabel` (one is plenty: it stands in Temple
-   Square welcoming new characters and answering questions) and
-   `WATCHMUD_BOTS_PASSWORD=...`, then
-   `docker compose -f deploy/compose.yaml up -d bots`. Either list can be empty; a
-   name in both stops the service at startup.
+   Square welcoming new characters and answering questions), `WATCHMUD_EXPLORERS=...`
+   (explorers: they walk every exit they safely may until they've mapped it all,
+   then wander) and `WATCHMUD_BOTS_PASSWORD=...`, then
+   `docker compose -f deploy/compose.yaml up -d bots`. Any list can be empty; a name
+   in two stops the service at startup. Five bots at most, all lists together.
 
 At most 5: they all connect from the one container, and the game allows 5
 connections per address. `docker compose -f deploy/compose.yaml logs -f bots` shows
@@ -207,6 +226,9 @@ The game logs where each connection came from (`telnet 1.2.3.4:5678`). After the
 first real players connect, **check those are their addresses**. If every
 connection comes from the same address (a gateway, a proxy), the 5-per-address
 connection cap is counting that address, and the sixth player is refused.
+(IPv6 counts by /64.) There's also a cap of 200 connections in all
+(`telnet.maxConns`): past it, "The game is full right now." A login must be over
+within 5 minutes of connecting.
 
 ## Health
 
@@ -226,6 +248,27 @@ docker compose -f deploy/compose.yaml exec watchmud /app/watchmud -config /app/a
 A restart disconnects everyone, but a wedged world already has: look at the logs (a
 panic in a pulse is recovered and logged, a hang isn't), then `docker compose -f
 deploy/compose.yaml restart watchmud`. The bots wait for healthy before they start.
+
+**From outside**, `.github/workflows/uptime.yaml` checks every 15 minutes that both ports
+get an answer from the world -- not just the banner, which the connection writes on its
+own and a wedged loop would still print -- by giving a name, `Uptimeprobe`, and hanging
+up at "Create them?". It also fails when the TLS certificate has under 10 days left. A
+failed run is GitHub emailing you; three tries 20s apart keep a deploy's restart from
+setting it off. It runs from master only. Never create `Uptimeprobe`: the check would
+still pass (a taken name asks for a password), but there's no reason to.
+
+## Reports
+
+Players file `bug`, `idea` and `typo` reports in the game. Each is a warn-level log
+line (`report=bug player=... room=zone/room`) and a document in mongo's `reports`
+collection; a wizard reads the latest 50 since the restart with `reports`. To read
+them all:
+
+```sh
+docker compose -f deploy/compose.yaml exec mongo mongosh -u root -p \
+  --authenticationDatabase admin watchmud --quiet \
+  --eval 'db.reports.find().sort({at: -1}).limit(50)'
+```
 
 ## Backups
 
@@ -321,6 +364,6 @@ docker compose -f deploy/compose.yaml up -d watchmud
 
 ## Not done yet
 
-- **Nothing acts on unhealthy.** The health check (above) notices a hang; a person
-  restarts it. An alert -- or an autoheal sidecar, if restarts become routine -- is
-  later.
+- **Nothing acts on unhealthy.** The health check (above) notices a hang, and the uptime
+  workflow emails about it; a person restarts it. An autoheal sidecar, if restarts
+  become routine, is later.

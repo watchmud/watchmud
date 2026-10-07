@@ -4,6 +4,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/watchmud/watchmud/lock"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -52,6 +53,29 @@ type Definition struct {
 	// unbroken, by rules.Ability id. Assigned by the loader, which refuses
 	// an id the catalog doesn't define.
 	Abilities []string
+
+	// Quaff makes this a potion: drinking it uses this ability, by
+	// rules.Ability id, on the drinker at the potion's power, and uses the
+	// potion up. Assigned by the loader, which refuses an id the catalog
+	// doesn't define or one that isn't aimed at a friend or self.
+	Quaff string
+
+	// Container makes this a chest: something that holds things, with a lid
+	// that can be shut and a lock its key fits. Nil for anything else. Each
+	// instance gets its own contents and its own lock (NewInstance).
+	// Assigned by the loader.
+	Container *ContainerSpec
+}
+
+// ContainerSpec is how a chest starts: open or closed, locked or not, and the
+// key that fits ("zone/object"; empty for a lid with no lock). A Portable one
+// is a bag: carried, always open, its contents saved with whoever carries it.
+// Capacity is how many things fit; zero is no limit.
+type ContainerSpec struct {
+	Initial  lock.State
+	Key      string
+	Portable bool
+	Capacity int
 }
 
 func NewDefinition(
@@ -85,6 +109,11 @@ func (d *Definition) IsWeapon() bool {
 
 func (d *Definition) NoTake() bool {
 	return slices.Contains(d.Behaviors, rules.ObjectBehaviorNoTake)
+}
+
+// NoSell is whether shops refuse it.
+func (d *Definition) NoSell() bool {
+	return slices.Contains(d.Behaviors, rules.ObjectBehaviorNoSell)
 }
 
 func (d *Definition) Takeable() bool {

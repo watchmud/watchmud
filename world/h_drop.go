@@ -26,7 +26,11 @@ func (w *World) handleDrop(msg *gameserver.HandlerParameter, cmd command.Drop) {
 		return
 	}
 
-	// TODO handle "coins" (target.Quantity)
+	// coins are a number in the purse, not a thing that can lie on a floor
+	if isCoins(target.Name) {
+		msg.Fail(event.CoinsInPurse)
+		return
+	}
 
 	room := w.playerRoom(msg.Player)
 	objectsToDrop := targetsIn(target, msg.Player.Inventory().All())

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"runtime"
 	"runtime/debug"
 	"sync/atomic"
 	"time"
@@ -27,6 +28,19 @@ type GameServer struct {
 	store          player.Store
 	// bcryptCost is bcrypt.DefaultCost; tests turn it down to MinCost.
 	bcryptCost int
+	// bcryptSlots is how many hashes run at once: one a CPU. Each is
+	// deliberately slow, and a crowd of logins mustn't take every core from
+	// the world goroutine.
+	bcryptSlots chan struct{}
+	// logouts counts each name's logouts since start, and creating holds
+	// the names being created: both world-goroutine only, for the checks a
+	// login or a creation makes after its store lookup comes back.
+	logouts  map[string]int
+	creating map[string]bool
+	// inFlight is the connections with a lookup or a hash away on a
+	// goroutine, and gone those of them that hung up meanwhile.
+	inFlight map[gameserver.Conn]bool
+	gone     map[gameserver.Conn]bool
 	// lastBeat is unix nanoseconds at the end of the last tick, for the
 	// health check (health.go); zero until Run starts.
 	lastBeat atomic.Int64
@@ -40,8 +54,18 @@ func New(w *world.World, c *rules.Catalog, s player.Store) *GameServer {
 		catalog:        c,
 		store:          s,
 		bcryptCost:     bcrypt.DefaultCost,
+		bcryptSlots:    make(chan struct{}, runtime.GOMAXPROCS(0)),
+		logouts:        map[string]int{},
+		creating:       map[string]bool{},
+		inFlight:       map[gameserver.Conn]bool{},
+		gone:           map[gameserver.Conn]bool{},
 	}
 }
+
+// SetPasswordCost is bcrypt's cost for passwords made and checked from here
+// on, for a server whose characters are throwaway -- tests and the load test,
+// which would otherwise spend most of their time hashing. Never production.
+func (gs *GameServer) SetPasswordCost(cost int) { gs.bcryptCost = cost }
 
 // SetTickInterval is how often Run ticks; zero is rules.PulseInterval. Every
 // pulse job counts pulses rather than reading a clock, so a faster tick runs
@@ -169,13 +193,53 @@ func (gs *GameServer) dispatch(msg *gameserver.HandlerParameter) error {
 		return gs.handleLogin(msg, cmd)
 	case command.CreatePlayer:
 		return gs.handleCreatePlayer(msg, cmd)
+	case loginLooked:
+		if gs.hungUp(msg.Client) {
+			return nil
+		}
+		return gs.handleLoginLooked(msg, cmd)
 	case loginChecked:
+		if gs.hungUp(msg.Client) {
+			return nil
+		}
 		return gs.handleLoginChecked(msg, cmd)
+	case command.Logout:
+		// The parameter's player was snapshotted when the Logout was built,
+		// on the connection's goroutine -- maybe before a login queued ahead
+		// of it attached one. The connection's own is the one to log out, or
+		// a nil snapshot leaves the just-logged-in character a ghost.
+		msg.Player = msg.Client.Player()
+		// a character's record changes as they leave: a login still being
+		// checked for them loads it again (handleLoginChecked)
+		if p := msg.Player; p != nil {
+			gs.logouts[p.Name()]++
+		} else if gs.inFlight[msg.Client] {
+			// gone mid-login: whatever comes back for it is dropped, or the
+			// character would be in the world with nobody there to play
+			// them -- and no Logout ever to come
+			gs.gone[msg.Client] = true
+		}
+		return gs.world.HandleIncomingMessage(msg)
 	case createHashed:
+		if gs.hungUp(msg.Client) {
+			delete(gs.creating, cmd.Name)
+			return nil
+		}
 		return gs.handleCreateHashed(msg, cmd)
 	default:
 		return gs.world.HandleIncomingMessage(msg)
 	}
+}
+
+// hungUp takes note that c's lookup or hash has come back, and answers
+// whether c hung up while it was away; if so, the answer is for nobody.
+func (gs *GameServer) hungUp(c gameserver.Conn) bool {
+	delete(gs.inFlight, c)
+	if gs.gone[c] {
+		delete(gs.gone, c)
+		return true
+	}
+	return false
 }
 
 func (gs *GameServer) Receive(msg *gameserver.HandlerParameter) {
@@ -210,19 +274,39 @@ func (gs *GameServer) handleLogin(msg *gameserver.HandlerParameter, cmd command.
 		msg.Client.Send(event.LoginFailed{Reason: event.AlreadyPlaying})
 		return nil
 	}
-	rec, found, err := gs.store.Load(playerName)
-	if err != nil {
-		// store error - problem with the store, return an error
-		return err
+	gs.lookUp(msg.Client, playerName, cmd.Password)
+	// on to handleLoginLooked
+	return nil
+}
+
+// lookUp loads name's record on a goroutine of its own and hands it back to
+// the world as loginLooked. The store is a database: on the world goroutine
+// a slow answer -- mongo gives up after five seconds -- would stop the game
+// for everyone, once for every name typed at the door.
+func (gs *GameServer) lookUp(c gameserver.Conn, name string, password command.Secret) {
+	gen := gs.logouts[name]
+	gs.inFlight[c] = true
+	go func() {
+		rec, found, err := gs.store.Load(name)
+		gs.Receive(gameserver.NewHandlerParameter(c, loginLooked{
+			Name: name, Password: password, Rec: rec, Found: found, Err: err, Gen: gen,
+		}))
+	}()
+}
+
+func (gs *GameServer) handleLoginLooked(msg *gameserver.HandlerParameter, cmd loginLooked) error {
+	if cmd.Err != nil {
+		// store error - problem with the store; recovering answers the login
+		return fmt.Errorf("handleLogin %s: %w", cmd.Name, cmd.Err)
 	}
-	if !found {
+	if !cmd.Found {
 		// not an error - could represent a new player (player creation),
 		// unless the world has the word already
-		if gs.world.IsReservedName(playerName) {
+		if gs.world.IsReservedName(cmd.Name) {
 			msg.Client.Send(event.LoginFailed{Reason: event.NameReserved})
 			return nil
 		}
-		log.Info().Str("playerName", playerName).Msg("playerName not found in store")
+		log.Debug().Str("playerName", cmd.Name).Msg("playerName not found in store")
 		msg.Client.Send(event.LoginFailed{Reason: event.NoSuchPlayer})
 		return nil
 	}
@@ -231,9 +315,13 @@ func (gs *GameServer) handleLogin(msg *gameserver.HandlerParameter, cmd command.
 		return nil
 	}
 
+	rec := cmd.Rec
+	gs.inFlight[msg.Client] = true
 	go func() {
+		gs.bcryptSlots <- struct{}{}
+		defer func() { <-gs.bcryptSlots }()
 		ok := bcrypt.CompareHashAndPassword([]byte(rec.PasswordHash), []byte(cmd.Password)) == nil
-		gs.Receive(gameserver.NewHandlerParameter(msg.Client, loginChecked{Name: playerName, Ok: ok}))
+		gs.Receive(gameserver.NewHandlerParameter(msg.Client, loginChecked{Name: cmd.Name, Ok: ok, Rec: rec, Gen: cmd.Gen}))
 	}()
 	// return to handleLoginChecked
 	return nil
@@ -259,19 +347,25 @@ func (gs *GameServer) handleLoginChecked(msg *gameserver.HandlerParameter, cmd l
 		msg.Client.Send(event.LoginFailed{Reason: event.AlreadyPlaying})
 		return nil
 	}
-	// reload record
-	rec, found, err := gs.store.Load(cmd.Name)
-	if err != nil {
-		// store error - problem with the store, return an error
-		return err
-	}
-	if !found {
-		// shouldn't happen unless something crazy with database
-		// not an error - could represent a new player (player creation)
-		log.Info().Str("playerName", cmd.Name).Msg("playerName not found in store")
-		msg.Client.Send(event.LoginFailed{Reason: event.NoSuchPlayer})
+	// The record was loaded before the password was checked. If the
+	// character has logged out since -- another session, quitting with
+	// newer gear -- it's stale: load it again, off this goroutine, and come
+	// back here, the password already known good.
+	if gs.logouts[cmd.Name] != cmd.Gen {
+		gen := gs.logouts[cmd.Name]
+		gs.inFlight[msg.Client] = true
+		go func() {
+			rec, found, err := gs.store.Load(cmd.Name)
+			if err != nil || !found {
+				// handleLoginLooked answers either, as at the start
+				gs.Receive(gameserver.NewHandlerParameter(msg.Client, loginLooked{Name: cmd.Name, Found: found, Err: err, Gen: gen}))
+				return
+			}
+			gs.Receive(gameserver.NewHandlerParameter(msg.Client, loginChecked{Name: cmd.Name, Ok: true, Rec: rec, Gen: gen}))
+		}()
 		return nil
 	}
+	rec := cmd.Rec
 
 	// turn the record into a player.Player
 	p, err := player.FromRecord(rec, msg.Client, gs.catalog, gs.world)
@@ -301,8 +395,10 @@ func (gs *GameServer) handleCreatePlayer(msg *gameserver.HandlerParameter, cmd c
 		return nil
 	}
 	if len(cmd.Password) == 0 {
+		// answered here, so no error for recovering to answer a second time
+		log.Warn().Str("playerName", playerName).Msg("handleCreatePlayer: no password")
 		msg.Client.Send(event.CreateFailed{Reason: event.BadRequest})
-		return fmt.Errorf("handleCreatePlayer %s: %s", playerName, event.BadRequest)
+		return nil
 	}
 	if gs.world.IsReservedName(playerName) {
 		msg.Client.Send(event.CreateFailed{Reason: event.NameReserved})
@@ -312,11 +408,10 @@ func (gs *GameServer) handleCreatePlayer(msg *gameserver.HandlerParameter, cmd c
 	// The name has to be checked here. It used to be the database's unique
 	// index that refused a duplicate, but saves are queued now and that error
 	// only reaches the writer goroutine, long after both characters are
-	// playing. Load sees the queue as well as the database, and dispatch is
-	// one command at a time, so this cannot race another creation.
-	if _, taken, err := gs.store.Load(playerName); err != nil {
-		return fmt.Errorf("handleCreatePlayer %s: %w", playerName, err)
-	} else if taken {
+	// playing. The store is asked on the creation's goroutine; a second
+	// creation of the name meanwhile is refused here, by creating, which only
+	// the world goroutine touches.
+	if gs.creating[playerName] {
 		msg.Client.Send(event.CreateFailed{Reason: event.NameTaken})
 		return nil
 	}
@@ -335,31 +430,41 @@ func (gs *GameServer) handleCreatePlayer(msg *gameserver.HandlerParameter, cmd c
 		return errors.New("handleCreatePlayer: no lineages defined in the catalog")
 	}
 
-	// separate go func because bcrypt is slooooow and can't be on the gameserver's goroutine.
-	// its ok because this doesn't modify any game / world state.
+	gs.creating[playerName] = true // until handleCreateHashed
+	gs.inFlight[msg.Client] = true
+
+	// separate go func because the store is a database and bcrypt is
+	// slooooow, and neither can be on the gameserver's goroutine. It's ok
+	// because this doesn't modify any game / world state.
 	go func() {
-		hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), gs.bcryptCost)
-		if err != nil {
-			log.Warn().Err(err).Msg("Failed to hash password?! Bad bad not good.")
-			msg.Client.Send(event.CreateFailed{Reason: event.Unknown})
+		done := createHashed{Name: playerName, Lineage: cmd.Lineage}
+		defer func() { gs.Receive(gameserver.NewHandlerParameter(msg.Client, done)) }()
+		if _, taken, err := gs.store.Load(playerName); err != nil || taken {
+			done.Taken, done.Err = taken, err
 			return
 		}
-		gs.Receive(gameserver.NewHandlerParameter(msg.Client, createHashed{
-			Name:         playerName,
-			Lineage:      cmd.Lineage,
-			HashPassword: command.Secret(hash),
-		}))
+		gs.bcryptSlots <- struct{}{}
+		defer func() { <-gs.bcryptSlots }()
+		hash, err := bcrypt.GenerateFromPassword([]byte(cmd.Password), gs.bcryptCost)
+		if err != nil {
+			done.Err = fmt.Errorf("hashing a password: %w", err)
+			return
+		}
+		done.HashPassword = command.Secret(hash)
 	}()
 	// control goes to handleCreateHashed
 	return nil
 }
 
 func (gs *GameServer) handleCreateHashed(msg *gameserver.HandlerParameter, cmd createHashed) error {
-	// Checked again: another connection could have created this name while
-	// the hash was being made.
-	if _, taken, err := gs.store.Load(cmd.Name); err != nil {
-		return fmt.Errorf("handleCreateHashed %s: %w", cmd.Name, err)
-	} else if taken {
+	// Whatever happened, the name is free to try again: the record is saved
+	// (and queued, so the store's Load sees it) before anyone could.
+	delete(gs.creating, cmd.Name)
+	if cmd.Err != nil {
+		// recovering answers the conversation
+		return fmt.Errorf("handleCreateHashed %s: %w", cmd.Name, cmd.Err)
+	}
+	if cmd.Taken {
 		msg.Client.Send(event.CreateFailed{Reason: event.NameTaken})
 		return nil
 	}
@@ -425,6 +530,20 @@ func (gs *GameServer) recovering(msg *gameserver.HandlerParameter, handle func(*
 			Str("command", fmt.Sprintf("%T", msg.Command)).
 			Str("stack", string(debug.Stack())).
 			Msgf("panic handling a command: %v", r)
+		switch msg.Command.(type) {
+		case loginChecked, createHashed:
+			// A login's last step: the conversation is waiting on an answer
+			// that would never come, even if the player was already
+			// attached. Undo the half-done login and answer it.
+			if p := msg.Client.Player(); p != nil {
+				if gs.world.IsPlaying(p.Name()) {
+					gs.world.RemovePlayer(p)
+				}
+				msg.Client.SetPlayer(nil)
+			}
+			msg.Client.Send(event.LoginFailed{Reason: event.Unknown})
+			return
+		}
 		if p := msg.Client.Player(); p != nil {
 			verb := ""
 			if msg.Command != nil {
@@ -438,6 +557,11 @@ func (gs *GameServer) recovering(msg *gameserver.HandlerParameter, handle func(*
 	if err := handle(msg); err != nil {
 		// don't return error, we're not halting the server
 		log.Error().Err(err).Msg("error dispatching message")
+		// but answer a login: the connection is waiting on one, and would
+		// wait for good -- holding its address's slot -- on a store hiccup
+		if msg.Client.Player() == nil {
+			msg.Client.Send(event.LoginFailed{Reason: event.Unknown})
+		}
 	}
 }
 

@@ -1,0 +1,110 @@
+From 91d37d3b3bfacee95098218adec4569a2baa1ec0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 6 Oct 2026 11:33:59 +0000
+Subject: [PATCH 3/7] The target grammar refuses what would panic or pick the
+ wrong thing
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_0165cfX3CZMtTWVCk9QNEtcV
+---
+ world/target_parser.go      | 18 +++++++++++++++++-
+ world/target_parser_test.go | 28 ++++++++++++++++++++++++++++
+ 2 files changed, 45 insertions(+), 1 deletion(-)
+
+diff --git a/world/target_parser.go b/world/target_parser.go
+index 1c39a60..34e1f0a 100644
+--- a/world/target_parser.go
++++ b/world/target_parser.go
+@@ -40,6 +40,11 @@ func parseTarget(target string) (result Target, err error) {
+ 		if err != nil {
+ 			return
+ 		}
++		// "0 coins" isn't "coins", which means all of them
++		if quant < 1 {
++			err = errors.New("QUANTITY_BELOW_ONE")
++			return
++		}
+ 		result.Quantity = quant
+ 		item = parts[1]
+ 	} else {
+@@ -59,6 +64,12 @@ func parseTarget(target string) (result Target, err error) {
+ 		}
+ 	} else if len(dotparts) == 2 {
+ 		// "x.foo"
++		// "all." and "2." name nothing; only bare "all" means everything, and
++		// a line sent half-typed mustn't junk whatever is second in the pack
++		if dotparts[1] == "" {
++			err = errors.New("NOTHING_AFTER_THE_DOT")
++			return
++		}
+ 		if strings.EqualFold(dotparts[0], "all") {
+ 			// "all.foo"
+ 			result.All = true
+@@ -70,6 +81,11 @@ func parseTarget(target string) (result Target, err error) {
+ 			if err != nil {
+ 				return
+ 			}
++			// counted from 1: "-1.knife" would index before the start
++			if identifier < 1 {
++				err = errors.New("INDEX_BELOW_ONE")
++				return
++			}
+ 			result.Identifier = identifier
+ 			result.Name = dotparts[1]
+ 		}
+@@ -106,7 +122,7 @@ func targetsIn(t Target, contents iter.Seq[*object.Instance]) []*object.Instance
+ 	if n == 0 {
+ 		n = 1
+ 	}
+-	if n > len(matches) {
++	if n < 1 || n > len(matches) {
+ 		return nil
+ 	}
+ 	return matches[n-1 : n]
+diff --git a/world/target_parser_test.go b/world/target_parser_test.go
+index 8a28bc8..77f9b72 100644
+--- a/world/target_parser_test.go
++++ b/world/target_parser_test.go
+@@ -7,7 +7,11 @@ import (
+ 	"uuid"
+ 
+ 	"github.com/stretchr/testify/suite"
++	"github.com/watchmud/watchmud/command"
++	"github.com/watchmud/watchmud/event"
++	"github.com/watchmud/watchmud/gameserver"
+ 	"github.com/watchmud/watchmud/object"
++	"github.com/watchmud/watchmud/player"
+ 	"github.com/watchmud/watchmud/rules"
+ )
+ 
+@@ -159,3 +163,27 @@ func (suite *TargetParserSuite) TestTargetsIn_EmptyContainer() {
+ 	suite.Require().NoError(err)
+ 	suite.Assert().Empty(targetsIn(target, empty))
+ }
++
++// What would act on the wrong thing, or panic, is refused instead: an index
++// before the first, a number or "all." with no name after it (a half-typed
++// "junk 2." mustn't junk whatever's second), and a count of none -- "put 0
++// coins" isn't "put coins", which is all of them.
++func (suite *TargetParserSuite) TestParseRefuses() {
++	for _, bad := range []string{"-1.knife", "0.knife", "2.", "all.", "0 coins", "-5 coins"} {
++		_, err := parseTarget(bad)
++		suite.Assert().Error(err, bad)
++	}
++}
++
++// and from the player's side: get -1.knife used to panic
++func (suite *TargetParserSuite) TestNegativeIndexDoesntPanic() {
++	w, err := NewTestWorld()
++	suite.Require().NoError(err)
++	r := &player.Recorder{}
++	p := player.NewTestPlayer(uuid.New(), "dood", r)
++	w.PlacePlayer(p, w.StartRoom)
++	suite.Require().NotPanics(func() {
++		suite.Require().NoError(w.HandleIncomingMessage(gameserver.NewHandlerParameter(gameserver.NewTestConn(p), command.Get{Target: "-1.knife"})))
++	})
++	suite.Assert().Equal(event.ParseError, sent[event.Failed](suite.T(), r, len(r.Sent)-1).Code)
++}
+-- 
+2.43.0
+

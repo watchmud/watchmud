@@ -199,3 +199,13 @@ func (s *HandleDropSuite) TestPickingUpStopsTheClock() {
 	s.Require().Len(knives, 1)
 	s.Assert().True(knives[0].DecaysAt.IsZero())
 }
+
+// coins aren't a thing on the floor: they stay in the purse
+func (s *HandleDropSuite) TestCoinsStayInThePurse() {
+	s.p.AddCoins(10)
+	cmd := command.Drop{Target: "5 coins"}
+	s.w.handleDrop(s.handlerParameter(cmd), cmd)
+
+	s.Assert().Equal(event.CoinsInPurse, sent[event.Failed](s.T(), s.r, 0).Code)
+	s.Assert().Equal(10, s.p.Coins())
+}

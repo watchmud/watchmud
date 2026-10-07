@@ -31,4 +31,21 @@ type objectEntry struct {
 
 	// Abilities this grants while equipped, by rules.Ability id: ["heal"]
 	Abilities []string `json:"abilities"`
+
+	// Quaff makes it a potion: the ability drinking it uses, on the drinker.
+	Quaff string `json:"quaff"`
+
+	// Container makes it a chest (chests.go).
+	Container *containerEntry `json:"container"`
+}
+
+// containerEntry is a chest's lid: how it starts, and the key that fits.
+type containerEntry struct {
+	Closed bool   `json:"closed"`
+	Locked bool   `json:"locked"`
+	Key    string `json:"key"`
+	// Portable makes it a bag: carried, no lid, saved with its carrier.
+	Portable bool `json:"portable"`
+	// Capacity is how many things fit; zero, no limit.
+	Capacity int `json:"capacity"`
 }

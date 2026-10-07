@@ -26,6 +26,9 @@ const DefaultDatabase = "watchmud"
 // go looking in the same place the server writes.
 const CollectionName = "players"
 
+// ReportsName is where bug, idea and typo reports go: one document each.
+const ReportsName = "reports"
+
 // defaultTimeout bounds one operation. player.Store has no context to pass --
 // its callers are the world goroutine and the login path, neither of which has
 // one -- so the deadline is set here. It exists so an unreachable mongo fails
@@ -35,6 +38,7 @@ const defaultTimeout = 5 * time.Second
 type Store struct {
 	client  *mongo.Client
 	players *mongo.Collection
+	reports *mongo.Collection
 	timeout time.Duration
 }
 
@@ -60,6 +64,7 @@ func New(ctx context.Context, uri string, database string) (*Store, error) {
 	s := &Store{
 		client:  client,
 		players: client.Database(database).Collection(CollectionName),
+		reports: client.Database(database).Collection(ReportsName),
 		timeout: defaultTimeout,
 	}
 

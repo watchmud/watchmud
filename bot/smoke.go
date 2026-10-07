@@ -164,8 +164,10 @@ const (
 )
 
 // recallRe is Temple Square, or one of recall's refusals.
+// Each a line of its own, after a prompt perhaps: a player saying the words
+// mustn't count (Adventurer's patterns explain).
 var recallRe = `(?m)(?:^(?:` + prompt + `)?Temple Square\n(?s:.*?)` + prompt + `)|` +
-	regexp.QuoteMeta(notReadyText) + `|` + regexp.QuoteMeta(noRecallText)
+	`^(?:` + prompt + `)?(?:` + regexp.QuoteMeta(notReadyText) + `$|` + regexp.QuoteMeta(noRecallText) + `)`
 
 // recall goes back to Temple Square, waiting out the cooldown if it has to.
 func recall(c *Client) error {
@@ -207,6 +209,10 @@ func walk(c *Client) (int, error) {
 		}
 		body, err := room(c, r.room)
 		if err != nil {
+			// a wild dog on a full-moon night, most likely: not the deploy's fault
+			if strings.Contains(c.Transcript(), busyText) {
+				return 0, fmt.Errorf("going %s to %s: attacked on the way: %w", r.dir, r.room, err)
+			}
 			return 0, fmt.Errorf("going %s to %s: %w", r.dir, r.room, err)
 		}
 		last = body

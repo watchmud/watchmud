@@ -26,6 +26,11 @@ type Catalog struct {
 	// the loader through SetAbilities; none is a game where nobody casts.
 	Abilities map[string]*Ability
 
+	// Socials are the gestures players make, keyed on name. Assigned by the
+	// loader through SetSocials; none is a game without them.
+	Socials     map[string]*Social
+	socialOrder []*Social
+
 	// StartingGear is what a new character is created holding. Assigned by
 	// the loader rather than passed to NewCatalog, for the same reason
 	// object.Definition.RoleWeights is: it is content that has to be checked

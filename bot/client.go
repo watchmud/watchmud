@@ -43,7 +43,17 @@ type Client struct {
 
 // Dial connects to addr, trying again until it can or ctx is done.
 func Dial(ctx context.Context, addr string) (*Client, error) {
+	return DialFrom(ctx, addr, "")
+}
+
+// DialFrom is Dial from a chosen local address, "" for any. The load test
+// uses it to spread connections over 127.0.0.x: the server allows only a
+// few from any one address.
+func DialFrom(ctx context.Context, addr, local string) (*Client, error) {
 	var d net.Dialer
+	if local != "" {
+		d.LocalAddr = &net.TCPAddr{IP: net.ParseIP(local)}
+	}
 	for {
 		nc, err := d.DialContext(ctx, "tcp", addr)
 		if err == nil {

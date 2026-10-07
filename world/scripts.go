@@ -21,7 +21,24 @@ func (w *World) ResumeScripts() {
 // starts a fight -- kill and aggro -- comes through here, so no opener is
 // missed. Joining a fight a mob is already in isn't a start for that mob, and
 // neither is the ledger retargeting it after a death.
+//
+// Then the rest of a group in the room joins in: see assist.
 func (w *World) startFight(attacker, defender combat.Combatant) error {
+	if err := w.joinFight(attacker, defender); err != nil {
+		return err
+	}
+	w.assist(attacker, defender)
+	w.assist(defender, attacker)
+	return nil
+}
+
+// joinFight is startFight without the group: the ledger and the openers.
+func (w *World) joinFight(attacker, defender combat.Combatant) error {
+	for _, c := range []combat.Combatant{attacker, defender} {
+		if p, ok := c.(*player.Player); ok {
+			w.standUp(p)
+		}
+	}
 	attackerWas, defenderWas := w.fightLedger.InFight(attacker), w.fightLedger.InFight(defender)
 	if err := w.fightLedger.Fight(attacker, defender); err != nil {
 		return err

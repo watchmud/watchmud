@@ -16,3 +16,9 @@ function on_fight_pulse(me, foe)
     me:say(pick(taunts))
   end
 end
+
+function on_hear(me, speaker, said)
+  if said.words.hello then
+    me:say("Hello yourself, " .. speaker.name .. ".")
+  end
+end

@@ -12,14 +12,18 @@ import "github.com/watchmud/watchmud/rules"
 //
 // Mana is the exception: players get it back fighting or not, since a
 // healer with nothing left to cast is a spectator.
+//
+// Sitting, resting and sleeping bring both back faster
+// (player.Position.RegenPercent): the reason to sit down at all.
 func (w *World) Regenerate() {
 	for p := range w.Players() {
 		// mana before the fight check: a healer gets it back mid-fight
-		p.RestoreMana(rules.ManaRegenAmount(p.MaxMana()))
+		faster := p.Position().RegenPercent()
+		p.RestoreMana(rules.ManaRegenAmount(p.MaxMana()) * faster / 100)
 		if p.Dead() || w.fightLedger.InFight(p) {
 			continue
 		}
-		p.RestoreHealth(rules.RegenAmount(p.MaxHealth()))
+		p.RestoreHealth(rules.RegenAmount(p.MaxHealth()) * faster / 100)
 	}
 	for _, mob := range w.Mobiles() {
 		if mob.Dead() || w.fightLedger.InFight(mob) {

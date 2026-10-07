@@ -19,7 +19,8 @@ func (w *World) doZoneActivity(now time.Time) {
 	for _, z := range w.content.Zones {
 		if z.ResetMode == rules.ZoneResetNoPlayers || z.ResetMode == rules.ZoneResetAlways {
 			// is it time yet for this zone's lifetime?
-			if now.Sub(z.LastReset) > z.Lifetime {
+			// noPlayers waits until the zone is empty, as it says
+			if now.Sub(z.LastReset) > z.Lifetime && !(z.ResetMode == rules.ZoneResetNoPlayers && z.HasPlayers()) {
 				if errs := z.Reset(w.occupancy); len(errs) != 0 {
 					for _, err := range errs {
 						log.Warn().Str("zone", z.Id).Err(err).Msg("zone reset error")

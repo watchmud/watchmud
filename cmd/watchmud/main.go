@@ -21,6 +21,7 @@ import (
 	"github.com/watchmud/watchmud/memstore"
 	"github.com/watchmud/watchmud/mongostore"
 	"github.com/watchmud/watchmud/player"
+	"github.com/watchmud/watchmud/report"
 	"github.com/watchmud/watchmud/server"
 	"github.com/watchmud/watchmud/serverconfig"
 	"github.com/watchmud/watchmud/telnet"
@@ -118,6 +119,18 @@ func run() error {
 	w, err := world.New(content, saver, roller)
 	if err != nil {
 		return fmt.Errorf("loading world: %w", err)
+	}
+	// reports go to mongo when there is one, each on a goroutine of its own:
+	// the world mustn't wait on a database, and losing a report to an error
+	// is a log line, not an outage
+	if ms, ok := store.(*mongostore.Store); ok {
+		w.SetReportFiler(func(r report.Report) {
+			go func() {
+				if err := ms.File(r); err != nil {
+					log.Error().Err(err).Msg("filing a report")
+				}
+			}()
+		})
 	}
 	gameServer := server.New(w, content.Catalog, saver)
 

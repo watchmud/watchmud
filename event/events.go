@@ -76,14 +76,19 @@ type RoomDescription struct {
 	Description string
 	Exits       string
 	Players     []string
-	Objects     []string
-	Mobs        []string
+	// PlayerPositions is beside Players: "" for standing, else "sitting",
+	// "resting" or "sleeping".
+	PlayerPositions []string
+	Objects         []string
+	Mobs            []string
 
 	// Where the room is, for a client that maps (GMCP Room.Info): "zone/room",
 	// the zone's name, and where each exit leads. Nothing renders them.
 	Id     string
 	Area   string
 	ExitTo []ExitTo
+	// X, Y, Z are where the room sits on its zone's grid (spaces.LayGrid).
+	X, Y, Z int
 }
 
 // ExitTo is one way out of a room and the room it leads to, "zone/room".
@@ -108,6 +113,34 @@ type Exits struct {
 type Exit struct {
 	Direction rules.Direction
 	RoomName  string
+	Closed    bool // a closed door stands in it
+}
+
+// DoorChange is what happened to a door.
+type DoorChange string
+
+const (
+	DoorOpened   DoorChange = "opened"
+	DoorClosed   DoorChange = "closed"
+	DoorLocked   DoorChange = "locked"
+	DoorUnlocked DoorChange = "unlocked"
+)
+
+// ContainerChanged is a chest opened, closed, locked or unlocked, seen by
+// the room it's in.
+type ContainerChanged struct {
+	Actor     string
+	Container string
+	Change    DoorChange
+}
+
+// DoorChanged goes to both rooms a door joins. Direction is the door's from
+// the room hearing it; Actor is empty on the far side, where nobody saw who.
+type DoorChanged struct {
+	Actor     string
+	Door      string
+	Direction rules.Direction
+	Change    DoorChange
 }
 
 // ---- objects ---------------------------------------------------------------
@@ -119,6 +152,262 @@ type Exit struct {
 type Dropped struct {
 	Actor string
 	Item  string
+}
+
+// Put is something put into a container, seen by the room.
+type Put struct {
+	Actor string
+	Item  string
+	Into  string
+}
+
+// Following is a follow starting or stopping, told to both ends of it.
+type Following struct {
+	Follower string
+	Leader   string
+	Stopped  bool
+}
+
+// Followed is a follower walking after their leader, or -- Fighting -- being
+// left behind by a fight.
+type Followed struct {
+	Leader    string
+	Direction rules.Direction
+	Fighting  bool
+	// Down is a follower left behind for not being on their feet.
+	Down bool
+}
+
+// GroupList is "group": the leader first, then followers in the order they
+// joined.
+type GroupList struct {
+	Members []GroupMember
+}
+
+type GroupMember struct {
+	Name      string
+	Leader    bool
+	Health    int
+	MaxHealth int
+	Mana      int
+	MaxMana   int
+	Room      string
+}
+
+// OOCSaid is a line on the ooc channel, to everyone on it, speaker included.
+type OOCSaid struct {
+	Speaker string
+	Value   string
+}
+
+// OOCSet answers "ooc on" and "ooc off".
+type OOCSet struct {
+	On bool
+}
+
+// Assisted is a group member joining another's fight, seen by the room.
+type Assisted struct {
+	Actor  string
+	Member string
+	Target string
+}
+
+// AssistSet answers assist: whether you'll now join your group's fights.
+type AssistSet struct {
+	On bool
+}
+
+// GroupTold is a gtell, to everyone in the group, the speaker included.
+type GroupTold struct {
+	Speaker string
+	Value   string
+}
+
+// Snatched is a mob picking something up off the floor to keep.
+type Snatched struct {
+	Mob  string
+	Item string
+}
+
+// Swept is a sweeper -- the janitor -- taking junk off the floor for good.
+type Swept struct {
+	Sweeper string
+	Item    string
+}
+
+// PositionChanged is a player sitting, resting, sleeping, standing or
+// waking, seen by the room. To is the word: "sitting", "resting",
+// "sleeping", "" for standing; Woke marks standing up from sleep.
+type PositionChanged struct {
+	Actor string
+	To    string
+	Woke  bool
+}
+
+// Tracked is the trail: the first step towards the nearest Target, or Here.
+type Tracked struct {
+	Target    string
+	Direction rules.Direction
+	Here      bool
+}
+
+// SplitCoins is coins shared out: Each to every one of Among, the actor
+// included, what's left over kept by the actor.
+type SplitCoins struct {
+	Actor string
+	Each  int
+	Among int
+}
+
+// WhereList is "where": players in the same zone, by room.
+type WhereList struct {
+	Zone    string
+	Players []WhereEntry
+}
+
+type WhereEntry struct{ Name, Room string }
+
+// CommandList is "commands": the telnet side knows them, so this just asks.
+type CommandList struct{}
+
+// MoonWarning is told to anyone arriving on a full-moon day.
+type MoonWarning struct{}
+
+// TimeOfDay is "time": Wrathrock's clock, which is Seattle's.
+type TimeOfDay struct {
+	Clock string // "9:41 pm"
+	Day   string // "Tuesday, October 6"
+	Part  string // "night", "morning", ...
+	Moon  string // its phase: "waxing gibbous", "full", ...
+}
+
+// WimpySet answers wimpy: the health under which you'll flee, 0 for never.
+type WimpySet struct {
+	At      int
+	Changed bool
+}
+
+// Panicked is wimpy at work: health under the line, so the player runs.
+type Panicked struct{}
+
+// Reported thanks a player for a report.
+type Reported struct {
+	Kind string
+}
+
+// ReportList is "reports": the latest, newest first.
+type ReportList struct {
+	Reports []ReportEntry
+}
+
+type ReportEntry struct {
+	Kind, Player, Room, Text, When string
+}
+
+// Echoed is a wizard's echo or gecho: the text, as it is.
+type Echoed struct {
+	Text string
+}
+
+// UserList is "users": everyone playing, and where.
+type UserList struct {
+	Users []User
+}
+
+type User struct {
+	Name, Room, Zone           string
+	Wizard, Bot, Muted, Frozen bool
+}
+
+// Moderated is a mute or freeze switched, told to the wizard and the player.
+type Moderated struct {
+	Target string
+	Freeze bool
+	On     bool
+}
+
+// Purged is how much a purge took out of the room.
+type Purged struct {
+	Mobs, Objects int
+}
+
+// ZoneWasReset answers zreset.
+type ZoneWasReset struct {
+	Zone string
+}
+
+// Socialized is a social done, its lines already filled in: ToActor for the
+// one who did it, ToTarget for a player it was done to, ToRoom for everyone
+// else. Target is empty when it was done alone.
+type Socialized struct {
+	Actor    string
+	Target   string
+	ToActor  string
+	ToTarget string
+	ToRoom   string
+}
+
+// SocialList is "socials": every one, by name.
+type SocialList struct {
+	Names []string
+}
+
+// Emoted is an emote: the actor's name, then the text, for everyone.
+type Emoted struct {
+	Actor string
+	Text  string
+}
+
+// Whispered is a whisper or an ask: the words for the two ends, and only
+// that something was said for the room.
+type Whispered struct {
+	From  string
+	To    string
+	Value string
+	Ask   bool
+}
+
+// Toggles is "toggle": what a player has switched on.
+type Toggles struct {
+	Color, OOC, Tells, Shouts, Assist bool
+}
+
+// Toggled is one toggle switched.
+type Toggled struct {
+	Name string
+	On   bool
+}
+
+// Junked is something destroyed by its owner, seen by the room.
+type Junked struct {
+	Actor string
+	Item  string
+}
+
+// Quaffed is a potion drunk, seen by the room; what it does follows as its
+// ability's own event (Healed, Warded).
+type Quaffed struct {
+	Actor string
+	Item  string
+}
+
+// Donated is something sent to the donation room, seen by the room it left.
+type Donated struct {
+	Actor string
+	Item  string
+}
+
+// Appeared is a donation arriving, seen by the donation room.
+type Appeared struct {
+	Item string
+}
+
+// Gave is one thing, or some coins, passed from Actor to Recipient: the
+// giver, the one given to and the room each see it their own way.
+type Gave struct {
+	Actor     string
+	Recipient string
+	Item      string
 }
 
 type Got struct {
@@ -227,6 +516,15 @@ type InventoryItem struct {
 	Id               string
 	ShortDescription string
 	Category         rules.ObjectCategory
+	// Power and condition, as EquippedItem has them: what a player weighs
+	// before wearing or selling something.
+	Power         int
+	Durability    int
+	MaxDurability int
+	Broken        bool
+	// Bag is whether it holds things, and Holding how many it does.
+	Bag     bool
+	Holding int
 }
 
 type Equipment struct {
@@ -303,11 +601,15 @@ type Stat struct {
 	// Role, empty when the player is wearing nothing that speaks to one.
 	Role          string
 	Power         int
+	ArmorClass    int
 	CurrentHealth int
 	MaxHealth     int
+	CurrentMana   int
+	MaxMana       int
 	Coins         int
-	ZoneId        string
-	RoomId        string
+	// where they are, by name
+	RoomName string
+	ZoneName string
 }
 
 // Considered answers consider. Delta is yours less theirs, clamped the way
@@ -461,6 +763,48 @@ type Assessed struct {
 	Damage     string
 	Fighting   string
 	Stunned    int
+}
+
+// LookedAtObject is "look <thing>" on an object: what one thing is, for the
+// one looking. Slot is rules.SlotNone for something nobody wears; Damage is
+// empty for anything not wielded; Armor is what it adds to armor class.
+// Abilities are names, in the item's order.
+type LookedAtObject struct {
+	Item          string
+	Slot          rules.EquipmentSlot
+	ArmorType     rules.ArmorType
+	Worn          bool
+	Power         int
+	Durability    int
+	MaxDurability int
+	Broken        bool
+	Damage        string
+	Armor         int
+	Abilities     []string
+	// a container: a bag, or a chest with a lid
+	Container bool
+	Holding   int
+	Capacity  int
+	Closed    bool
+	Locked    bool
+}
+
+// LookedAtMob is "look <mob>": how it seems, not its numbers -- those are
+// assess's. Health is a percentage the renderer puts into words.
+type LookedAtMob struct {
+	Name     string
+	Health   int
+	Fighting string
+}
+
+// LookedAtPlayer is "look <player>": who they are and what they have on.
+type LookedAtPlayer struct {
+	Name     string
+	Lineage  string
+	Role     string
+	Health   int
+	Fighting string
+	Wearing  []string
 }
 
 // Staggered is a stunned combatant's round going by without a swing.

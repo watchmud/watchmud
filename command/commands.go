@@ -76,6 +76,141 @@ type Get struct {
 
 func (Get) Verb() string { return "get" }
 
+// Put is "put knife in chest": something carried into an open container on
+// the floor. Target takes get's grammar, coins included.
+type Put struct {
+	Target string
+	Into   string
+}
+
+func (Put) Verb() string { return "put" }
+
+// Social is a gesture from rules/socials.json: "smile", "bow bob". It is
+// what the parser makes of any verb it doesn't know, so Verb is the name
+// typed -- one that names no social fails as an unknown request.
+type Social struct {
+	Name   string
+	Target string
+}
+
+func (s Social) Verb() string { return s.Name }
+
+// Socials lists them.
+type Socials struct{}
+
+func (Socials) Verb() string { return "socials" }
+
+// Emote is "emote waves hello" or ": waves hello": the room reads the
+// player's name and then the text.
+type Emote struct {
+	Text string
+}
+
+func (Emote) Verb() string { return "emote" }
+
+// Reply is a tell to whoever last told you something.
+type Reply struct {
+	Value string
+}
+
+func (Reply) Verb() string { return "reply" }
+
+// Whisper is "whisper bob hello" or, with Ask, "ask bob hello": to one in the
+// room, player or mob; the rest of the room sees that something was said.
+type Whisper struct {
+	To    string
+	Value string
+	Ask   bool
+}
+
+func (w Whisper) Verb() string {
+	if w.Ask {
+		return "ask"
+	}
+	return "whisper"
+}
+
+// Toggle is "toggle" for the list of what a player can switch, or "toggle
+// tell" to switch one. notell and noshout are its shorthands.
+type Toggle struct {
+	Name string
+}
+
+func (Toggle) Verb() string { return "toggle" }
+
+// Junk is "junk <item>": destroyed, nothing back.
+type Junk struct {
+	Target string
+}
+
+func (Junk) Verb() string { return "junk" }
+
+// Quaff is "quaff <potion>": drunk, and gone.
+type Quaff struct {
+	Target string
+}
+
+func (Quaff) Verb() string { return "quaff" }
+
+// Donate is "donate <item>": sent to the donation room, from anywhere.
+type Donate struct {
+	Target string
+}
+
+func (Donate) Verb() string { return "donate" }
+
+// Give is "give knife to bob": something carried, or coins, to another player
+// in the same room. Target takes get's grammar.
+type Give struct {
+	Target string
+	To     string
+}
+
+func (Give) Verb() string { return "give" }
+
+// Follow is "follow ann": walk where they walk. No target, or your own name,
+// stops following.
+type Follow struct {
+	Target string
+}
+
+func (Follow) Verb() string { return "follow" }
+
+// Ungroup is the leader's: "ungroup bob" stops one follower, "ungroup" all.
+type Ungroup struct {
+	Target string
+}
+
+func (Ungroup) Verb() string { return "ungroup" }
+
+// OOC is the out-of-character channel: "ooc <words>" to everyone on it,
+// "ooc on" and "ooc off" to join and leave it.
+type OOC struct {
+	Value string
+}
+
+func (OOC) Verb() string { return "ooc" }
+
+// Assist is "assist [on|off]": whether you join your group's fights. Just
+// "assist" switches it.
+type Assist struct {
+	Setting string
+}
+
+func (Assist) Verb() string { return "assist" }
+
+// Group lists the group you're in.
+type Group struct{}
+
+func (Group) Verb() string { return "group" }
+
+// GroupTell is "gtell hello": to everyone in your group, wherever they are.
+type GroupTell struct {
+	Value string
+}
+
+func (GroupTell) Verb() string { return "gtell" }
+
 type Drop struct {
 	Target string
 }
@@ -97,6 +232,18 @@ type Repair struct {
 }
 
 func (Repair) Verb() string { return "repair" }
+
+// Open, Close, Lock and Unlock act on a door: its name, an alias, or the
+// direction it's in. Lock and Unlock need its key in hand.
+type Open struct{ Target string }
+type Close struct{ Target string }
+type Lock struct{ Target string }
+type Unlock struct{ Target string }
+
+func (Open) Verb() string   { return "open" }
+func (Close) Verb() string  { return "close" }
+func (Lock) Verb() string   { return "lock" }
+func (Unlock) Verb() string { return "unlock" }
 
 // ---- trading -----------------------------------------------------------------
 
@@ -236,6 +383,140 @@ type Wizard interface {
 	wizard()
 }
 
+// Talk marks a command that speaks to other players: a muted player can't
+// use one. The world checks it before any handler runs, as it does Wizard.
+type Talk interface {
+	Command
+	talk()
+}
+
+func (Say) talk()       {}
+func (Tell) talk()      {}
+func (TellAll) talk()   {}
+func (OOC) talk()       {}
+func (Emote) talk()     {}
+func (Whisper) talk()   {}
+func (Reply) talk()     {}
+func (Social) talk()    {}
+func (GroupTell) talk() {}
+
+// Position is sit, rest, sleep, stand and wake: To says which. Wake is
+// standing up from sleep.
+type Position struct {
+	To   string // "sit", "rest", "sleep", "stand"
+	Wake bool
+}
+
+func (p Position) Verb() string {
+	if p.Wake {
+		return "wake"
+	}
+	return p.To
+}
+
+// Track is "track bandit": which way the nearest one is.
+type Track struct{ Target string }
+
+func (Track) Verb() string { return "track" }
+
+// Split shares coins out among the group in the room: "split 30".
+type Split struct{ Amount string }
+
+func (Split) Verb() string { return "split" }
+
+// Where is who's playing in your part of the world, and where.
+type Where struct{}
+
+func (Where) Verb() string { return "where" }
+
+// Commands lists every command a player can type.
+type Commands struct{}
+
+func (Commands) Verb() string { return "commands" }
+
+// Time is the time in Wrathrock -- the Pacific Northwest's own.
+type Time struct{}
+
+func (Time) Verb() string { return "time" }
+
+// Wimpy is "wimpy 20": flee on your own when health drops below it in a
+// fight. "wimpy" alone says what it's set to; "wimpy 0" is never.
+type Wimpy struct{ Amount string }
+
+func (Wimpy) Verb() string { return "wimpy" }
+
+// Report is bug, idea or typo: a note for whoever runs the game.
+type Report struct {
+	Kind string
+	Text string
+}
+
+func (r Report) Verb() string { return r.Kind }
+
+// Reports lists the latest reports, for a wizard.
+type Reports struct{}
+
+func (Reports) Verb() string { return "reports" }
+func (Reports) wizard()      {}
+
+// Goto takes a wizard to a room ("zone/room"), a player, or a mob.
+type Goto struct{ Target string }
+
+func (Goto) Verb() string { return "goto" }
+
+// Transfer brings a player to the wizard.
+type Transfer struct{ Target string }
+
+func (Transfer) Verb() string { return "transfer" }
+
+// Purge clears the room of mobs and things on the floor, or one of them.
+type Purge struct{ Target string }
+
+func (Purge) Verb() string { return "purge" }
+
+// ZReset resets a zone now: the wizard's, or one named.
+type ZReset struct{ Zone string }
+
+func (ZReset) Verb() string { return "zreset" }
+
+// Echo puts text in front of the room, or with Global everyone playing.
+type Echo struct {
+	Text   string
+	Global bool
+}
+
+func (e Echo) Verb() string {
+	if e.Global {
+		return "gecho"
+	}
+	return "echo"
+}
+
+// Users lists who is playing and where.
+type Users struct{}
+
+func (Users) Verb() string { return "users" }
+
+// Moderate is mute and freeze, switched for one player.
+type Moderate struct {
+	Target string
+	Freeze bool // else mute
+}
+
+func (m Moderate) Verb() string {
+	if m.Freeze {
+		return "freeze"
+	}
+	return "mute"
+}
+
+func (Goto) wizard()       {}
+func (Transfer) wizard()   {}
+func (Purge) wizard()      {}
+func (ZReset) wizard()     {}
+func (Echo) wizard()       {}
+func (Users) wizard()      {}
+func (Moderate) wizard()   {}
 func (Load) wizard()       {}
 func (Restore) wizard()    {}
 func (RoomStatus) wizard() {}

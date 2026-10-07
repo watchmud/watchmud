@@ -1,0 +1,52 @@
+From db3fcbb86788e330a6c65ee6b030d980ffa6ce05 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 6 Oct 2026 11:34:03 +0000
+Subject: [PATCH 4/7] kill takes the whole name
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_0165cfX3CZMtTWVCk9QNEtcV
+---
+ telnet/parse.go       | 2 +-
+ telnet/render_test.go | 9 +++++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/telnet/parse.go b/telnet/parse.go
+index 38e6bda..67502c4 100644
+--- a/telnet/parse.go
++++ b/telnet/parse.go
+@@ -138,7 +138,7 @@ func parseCommand(tokens []string) (command.Command, error) {
+ 		if len(tokens) < 2 {
+ 			return nil, errors.New("What do you want to attack?")
+ 		}
+-		return command.Kill{Target: tokens[1]}, nil
++		return command.Kill{Target: rest}, nil // the whole name: "kill wild dog" isn't "kill wild"
+ 
+ 	case "flee":
+ 		return command.Flee{}, nil
+diff --git a/telnet/render_test.go b/telnet/render_test.go
+index 2b0dfc3..bea4f0b 100644
+--- a/telnet/render_test.go
++++ b/telnet/render_test.go
+@@ -8,6 +8,7 @@ import (
+ 
+ 	"github.com/stretchr/testify/assert"
+ 	"github.com/stretchr/testify/require"
++	"github.com/watchmud/watchmud/command"
+ 	"github.com/watchmud/watchmud/event"
+ 	"github.com/watchmud/watchmud/gameserver"
+ 	"github.com/watchmud/watchmud/object"
+@@ -821,3 +822,11 @@ func TestRender_assessedMidFight(t *testing.T) {
+ 		"  Fighting you\n"+
+ 		"  Stunned for 2 more rounds\n", plain(render(m, "testdood")))
+ }
++
++// kill takes the whole name: "kill wild dog" mustn't be "kill wild", which
++// is whichever wild thing is listed first
++func TestParse_killTakesTheWholeName(t *testing.T) {
++	cmd, err := parseCommand(strings.Fields("kill wild dog"))
++	require.NoError(t, err)
++	assert.Equal(t, command.Kill{Target: "wild dog"}, cmd)
++}
+-- 
+2.43.0
+

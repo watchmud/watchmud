@@ -26,6 +26,9 @@ type Zone struct {
 	Power rules.PowerBand
 	// Shops is the rooms that trade, by room id.
 	Shops map[string]*Shop
+	// Doors is the doors this zone's content declared, which its resets put
+	// back how they started.
+	Doors []*Door
 }
 
 func NewZone(id string, name string, resetMode rules.ZoneReset, lifetime time.Duration) *Zone {
@@ -59,6 +62,16 @@ func (z *Zone) AddCommand(c ZoneCommand) {
 	z.Commands = append(z.Commands, c)
 }
 
+// HasPlayers is whether anyone is in any of the zone's rooms.
+func (z *Zone) HasPlayers() bool {
+	for _, r := range z.Rooms {
+		if len(r.Players()) > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func (z *Zone) String() string {
 	return fmt.Sprintf("(Zone %s: '%s')", z.Id, z.Name)
 }
@@ -82,6 +95,15 @@ func (z *Zone) Reset(o *Occupancy) []error {
 			errs = append(errs, fmt.Errorf("zone %s unhandled Zone Command Type: %s", z.Id, cmd))
 		}
 
+	}
+
+	// A door with someone beside it is left as it is: re-locked behind
+	// them, a door can be the only way out of a room whose mob the same
+	// reset has just put back. It's reset by the first one nobody's near.
+	for _, d := range z.Doors {
+		if !d.occupied() {
+			d.Reset()
+		}
 	}
 
 	// Set the last reset time, even if there were errors. Whatever
@@ -110,15 +132,60 @@ func (z *Zone) createMobile(occ *Occupancy, cmd CreateMobile) error {
 }
 
 // Create an object and put it in a room. If there was an error, return the error.
+// createObject tops a room's floor, or a container in it, up to InstanceMax of
+// this definition. A container already there is reset, lid and lock, to how its
+// definition starts it: a reset closes and locks what content said was.
 func (z *Zone) createObject(cmd CreateObject) error {
 	defn := z.ObjectDefinitions[cmd.ObjectDefinitionId]
 	if defn == nil {
-		return errors.New(fmt.Sprintf("createObject: definition id not found: %s", cmd))
+		return fmt.Errorf("createObject: definition id not found: %s", cmd)
 	}
 	r := z.Rooms[cmd.RoomId]
 	if r == nil {
-		return errors.New(fmt.Sprintf("createObject: room not found: %s", cmd))
+		return fmt.Errorf("createObject: room not found: %s", cmd)
+	}
+	into := r.Inventory
+	if cmd.ContainerId != "" {
+		container := firstOf(r.Inventory, z.ObjectDefinitions[cmd.ContainerId])
+		if container == nil || container.Contents == nil {
+			return fmt.Errorf("createObject: no container %q in the room for %s", cmd.ContainerId, cmd)
+		}
+		into = container.Contents
+	}
+	if countOf(into, defn) >= cmd.InstanceMax {
+		if c := firstOf(into, defn); c != nil && c.Lock != nil {
+			c.Lock.Reset()
+		}
+		return nil
 	}
 	inst := object.NewInstance(uuid.New(), defn)
-	return r.Inventory.Add(inst)
+	inst.Power = z.Power.Min
+	if cmd.Power != nil {
+		inst.Power = *cmd.Power
+	}
+	return into.Add(inst)
+}
+
+// firstOf is the first object of this definition in the list, or nil. The
+// definition itself, not its id: a knife from another zone is another knife.
+func firstOf(l *object.List, defn *object.Definition) *object.Instance {
+	if defn == nil {
+		return nil
+	}
+	for inst := range l.All() {
+		if inst.Definition == defn {
+			return inst
+		}
+	}
+	return nil
+}
+
+func countOf(l *object.List, defn *object.Definition) int {
+	n := 0
+	for inst := range l.All() {
+		if inst.Definition == defn {
+			n++
+		}
+	}
+	return n
 }

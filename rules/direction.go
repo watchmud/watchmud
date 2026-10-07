@@ -132,3 +132,22 @@ func (d Direction) MarshalText() ([]byte, error) {
 	}
 	return []byte(strings.ToLower(table[d].name)), nil
 }
+
+// Opposite is the way back: North for South, Up for Down. DirectionNone has none.
+func (d Direction) Opposite() Direction {
+	switch d {
+	case DirectionNorth:
+		return DirectionSouth
+	case DirectionSouth:
+		return DirectionNorth
+	case DirectionEast:
+		return DirectionWest
+	case DirectionWest:
+		return DirectionEast
+	case DirectionUp:
+		return DirectionDown
+	case DirectionDown:
+		return DirectionUp
+	}
+	return DirectionNone
+}

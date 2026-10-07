@@ -73,6 +73,7 @@ func TestGMCP_roomInfo(t *testing.T) {
 			{Direction: rules.DirectionNorth, To: "sample/start"},
 			{Direction: rules.DirectionSouth, To: "wrathrock/market_square"},
 		},
+		X: 2, Y: -1,
 	}
 
 	out := writes(t, c, gmcpOn(true), room)
@@ -92,6 +93,7 @@ func TestGMCP_roomInfo(t *testing.T) {
 			"n": roomNum("sample/start"),
 			"s": roomNum("wrathrock/market_square"),
 		},
+		Grid: grid{X: 2, Y: -1},
 	}, info)
 	assert.Contains(t, out, "Temple Square\r\n", "and the room as text, as ever")
 }

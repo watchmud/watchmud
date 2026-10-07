@@ -5,6 +5,7 @@ package script
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -13,10 +14,17 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-// CallTimeout is how long one hook call -- or a program's top level, at load
-// -- may run before it is stopped. Huge for a taunt; a script that needs
-// longer is doing something a script shouldn't.
+// CallTimeout is how long one hook call may run before it is stopped. Huge
+// for a taunt; a script that needs longer is doing something a script
+// shouldn't.
 const CallTimeout = 10 * time.Millisecond
+
+// LoadTimeout is the same for a program's top level, run once when content
+// loads. Roomier: it builds a script's tables, off the world's clock, and a
+// busy machine at startup -- or a test under the race detector -- once took a
+// shopkeeper's past 10ms and refused to build the world. A loop that never
+// ends still fails the load.
+const LoadTimeout = 500 * time.Millisecond
 
 const (
 	// callStackSize caps Lua call depth, so runaway recursion is a Lua error
@@ -75,8 +83,19 @@ type hookCall struct {
 	says int
 	// summoned counts this call's summons against MaxSummonsPerCall.
 	summoned int
+	// swept counts this call's sweeps against MaxSweepsPerCall.
+	swept int
+	// fled is whether this call has tried me:flee() already.
+	fled bool
+	// took is whether this call has used its one me:take().
+	took bool
 	// waited is this run's seconds of waiting so far, against MaxWaitPerCall
 	waited int
+	// yielding is a wait that hasn't paused the hook yet. gopher-lua can only
+	// yield from the hook's own Lua code: a wait inside an iterator or a
+	// metamethod is swallowed, and the hook carries on at once. Anything
+	// the hook does while this is set is that, and is refused.
+	yielding bool
 	// wait is the one it's in now, for Tick to count down
 	wait int
 }
@@ -135,9 +154,19 @@ func newSandbox() *sandbox {
 		}
 		return format(L)
 	}))
-	// getmetatable("") would otherwise hand a script the one string table
-	// every program's method calls go through.
-	strLib.RawSetString("__metatable", lua.LString("locked"))
+	// Strings' metatable was the string library itself, with __index
+	// pointing back at it -- so every program's copy of "string" carried
+	// string.__index, the one table all their method calls go through, and
+	// one script could change ("x"):upper for every other. Strings get a
+	// metatable of their own instead, whose __index is a copy no program
+	// holds, locked against getmetatable; and the library loses the
+	// metatable fields, so its copies don't lead anywhere.
+	strLib.RawSetString("__index", lua.LNil)
+	strLib.RawSetString("__metatable", lua.LNil)
+	stringMeta := s.L.NewTable()
+	stringMeta.RawSetString("__index", copyTable(s.L, strLib))
+	stringMeta.RawSetString("__metatable", lua.LString("locked"))
+	s.L.SetMetatable(lua.LString(""), stringMeta)
 
 	// wait can't pause through pcall: gopher-lua's pcall takes a yield for a
 	// return, and the hook would carry on at once. Count the protected calls
@@ -163,7 +192,18 @@ func (s *sandbox) running(L *lua.LState, helper string) *hookCall {
 	if s.current == nil {
 		L.RaiseError("%s: only inside a hook", helper)
 	}
+	s.current.notSwallowed(L)
 	return s.current
+}
+
+// waitSwallowed is the error for a wait that couldn't pause the hook.
+const waitSwallowed = "wait: can't pause inside an iterator or a metamethod"
+
+// notSwallowed raises waitSwallowed if a wait is pending that never paused.
+func (h *hookCall) notSwallowed(L *lua.LState) {
+	if h.yielding {
+		L.RaiseError(waitSwallowed)
+	}
 }
 
 // chance(pct) is true pct percent of the time: a d100 under pct, the same
@@ -212,6 +252,7 @@ func (s *sandbox) wait(L *lua.LState) int {
 	}
 	h.waited += secs
 	h.wait = secs
+	h.yielding = true // until resume sees the hook actually paused
 	return L.Yield()
 }
 
@@ -230,11 +271,11 @@ func cappedRep(L *lua.LState) int {
 	return 1
 }
 
-// call runs fn protected, under CallTimeout, with h as the hook in progress
-// (nil for a top level). An error, a timeout, a stack overflow or a panic
+// call runs a program's top level protected, under LoadTimeout, with h as
+// the hook in progress (nil for a top level). An error, a timeout, a stack overflow or a panic
 // inside gopher-lua all come back as an error; none of them escape.
 func (s *sandbox) call(fn *lua.LFunction, h *hookCall, args ...lua.LValue) (err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), LoadTimeout)
 	defer cancel()
 	s.L.SetContext(ctx)
 	s.current = h
@@ -270,7 +311,12 @@ func (s *sandbox) resume(th *lua.LState, fn *lua.LFunction, h *hookCall, args ..
 	case lua.ResumeError:
 		return false, err
 	case lua.ResumeYield:
+		h.yielding = false
 		return false, nil
+	}
+	if h.yielding {
+		// it finished with a wait that never paused it
+		return false, errors.New(waitSwallowed)
 	}
 	return true, nil
 }

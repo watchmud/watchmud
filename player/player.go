@@ -30,6 +30,18 @@ type Player struct {
 	// noColor is the player turning ANSI color off. Inverted so the zero
 	// value, which is every record written before there was a choice, is on.
 	noColor bool
+	// noOOC is the player leaving the ooc channel; inverted the same way.
+	noOOC bool
+	// noTell and noShout are tells and shouts switched off, the same way.
+	noTell, noShout bool
+	// muted can't talk to anyone; frozen can only look and quit. A wizard's
+	// doing, kept on the record.
+	muted, frozen bool
+	// position is standing, sitting, resting or sleeping; see position.go.
+	position Position
+	// wimpy is the health under which the player flees a fight on their
+	// own; 0 is never. Kept on the record.
+	wimpy int
 	// coins is the purse. Never negative: Spend refuses what it can't pay.
 	coins int
 	// backfilled is the backfill starting gear this character has been
@@ -254,6 +266,23 @@ func (p *Player) Spend(n int) bool {
 	return true
 }
 func (p *Player) SetColor(on bool) { p.noColor = !on }
+
+// OOC is whether the player hears the ooc channel.
+func (p *Player) OOC() bool      { return !p.noOOC }
+func (p *Player) SetOOC(on bool) { p.noOOC = !on }
+
+func (p *Player) Wimpy() int        { return p.wimpy }
+func (p *Player) SetWimpy(at int)   { p.wimpy = max(at, 0) }
+func (p *Player) Muted() bool       { return p.muted }
+func (p *Player) SetMuted(on bool)  { p.muted = on }
+func (p *Player) Frozen() bool      { return p.frozen }
+func (p *Player) SetFrozen(on bool) { p.frozen = on }
+
+// Tells and Shouts are whether the player hears them.
+func (p *Player) Tells() bool       { return !p.noTell }
+func (p *Player) SetTells(on bool)  { p.noTell = !on }
+func (p *Player) Shouts() bool      { return !p.noShout }
+func (p *Player) SetShouts(on bool) { p.noShout = !on }
 
 // Backfilled is the backfill starting gear this character has been handed.
 func (p *Player) Backfilled() []string { return p.backfilled }

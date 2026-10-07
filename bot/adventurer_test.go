@@ -177,10 +177,15 @@ func TestRest_pollsUntilRested(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- a.rest(context.Background()) }()
 
+	// it sits down to rest, polls its prompt until it's healed, and gets up
+	assert.Equal(t, "rest", g.heard())
+	g.say("You sit back and rest.\r\n<40/100hp> ")
 	assert.Equal(t, "", g.heard())
 	g.say("<60/100hp> ")
 	assert.Equal(t, "", g.heard())
 	g.say("<95/100hp> ")
+	assert.Equal(t, "stand", g.heard())
+	g.say("You stand up.\r\n<95/100hp> ")
 	require.NoError(t, <-done)
 	assert.Equal(t, 95, a.health)
 }
@@ -207,7 +212,7 @@ func TestRecall_waitsOutTheCooldown(t *testing.T) {
 	t.Cleanup(func() { recallRetry = retry })
 	a, g := adventurer(t)
 	done := make(chan error, 1)
-	go func() { done <- a.recall() }()
+	go func() { done <- a.recall(context.Background()) }()
 
 	assert.Equal(t, "recall", g.heard())
 	g.say("You can't recall again yet.\r\n<100/100hp 100/100m> ")
@@ -216,4 +221,17 @@ func TestRecall_waitsOutTheCooldown(t *testing.T) {
 
 	require.NoError(t, <-done)
 	assert.Equal(t, home, a.here)
+}
+
+// someone walking in is noted for hunt to look into -- not the bot itself,
+// and not a sibling, who are known not to be players to make way for
+func TestNotice_someoneCame(t *testing.T) {
+	a := NewAdventurer(AdventurerConfig{Name: "Wren", Siblings: []string{"Tansy"}})
+	a.notice(Chunk{Text: "Tansy enters.\nWren enters.\n"})
+	assert.False(t, a.someoneCame)
+	a.notice(Chunk{Text: "Ann enters.\n"})
+	assert.True(t, a.someoneCame)
+	a.someoneCame = false
+	a.notice(Chunk{Text: "Ann has entered the game.\n"})
+	assert.True(t, a.someoneCame, "logging in on the ground counts too")
 }

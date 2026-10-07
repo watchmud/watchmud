@@ -8,6 +8,9 @@ const (
 	MobileFlagNone            MobileFlag = ""
 	MobileFlagAggressive      MobileFlag = "aggressive"
 	MobileFlagPlayerCantFight MobileFlag = "nofight"
+	// MobileFlagMoonstruck is aggressive on a full-moon night in Wrathrock's
+	// sky, and not otherwise. See world/moon.go.
+	MobileFlagMoonstruck MobileFlag = "moonstruck"
 )
 
 var ErrUnknownMobileFlag = errors.New("unknown mobile flag")
@@ -19,6 +22,7 @@ var mobileFlags = enum[MobileFlag]{
 		MobileFlagNone,
 		MobileFlagAggressive,
 		MobileFlagPlayerCantFight,
+		MobileFlagMoonstruck,
 	},
 }
 

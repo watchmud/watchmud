@@ -1,0 +1,253 @@
+From a1f9e3eb584126546f3f6a41294cc3366ad0c93a Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 6 Oct 2026 11:33:39 +0000
+Subject: [PATCH 2/7] Saves that fail are retried on their own, and trusted
+ less
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_0165cfX3CZMtTWVCk9QNEtcV
+---
+ writebehind/store.go      | 58 ++++++++++++++++++++++----
+ writebehind/store_test.go | 88 ++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 138 insertions(+), 8 deletions(-)
+
+diff --git a/writebehind/store.go b/writebehind/store.go
+index a8198a5..b879045 100644
+--- a/writebehind/store.go
++++ b/writebehind/store.go
+@@ -8,6 +8,7 @@ import (
+ 	"fmt"
+ 	"reflect"
+ 	"sync"
++	"time"
+ 	"uuid"
+ 
+ 	"github.com/rs/zerolog/log"
+@@ -20,6 +21,10 @@ type Store struct {
+ 	pending map[uuid.UUID]*player.Record // newest unwritten record per player; guarded by mu
+ 	written map[uuid.UUID]*player.Record // last record that reached inner; writer goroutine only
+ 
++	// retry is the first wait before trying again what failed to write,
++	// doubling to maxRetry while it keeps failing.
++	retry time.Duration
++
+ 	wake chan struct{} // buffered 1: "there is something to write"
+ 	quit chan struct{} // closed by Close
+ 	done chan struct{} // closed by the writer once it has finished
+@@ -35,11 +40,15 @@ type batchSaver interface {
+ 	SaveAll(recs []*player.Record) (failed []int, err error)
+ }
+ 
+-func New(inner player.Store) *Store {
++func New(inner player.Store) *Store { return newRetrying(inner, time.Second) }
++
++// newRetrying is New with retry's first wait chosen: tests don't wait seconds.
++func newRetrying(inner player.Store, retry time.Duration) *Store {
+ 	s := &Store{
+ 		inner:   inner,
+ 		pending: make(map[uuid.UUID]*player.Record),
+ 		written: make(map[uuid.UUID]*player.Record),
++		retry:   retry,
+ 		wake:    make(chan struct{}, 1), // doorbell pattern
+ 		quit:    make(chan struct{}),
+ 		done:    make(chan struct{}),
+@@ -48,20 +57,45 @@ func New(inner player.Store) *Store {
+ 	return s
+ }
+ 
++// maxRetry is the longest wait between tries at a store that keeps failing.
++const maxRetry = 30 * time.Second
++
++// closeTries is how many more times Close's last flush is tried.
++const closeTries = 5
++
++// run writes whenever there's something new, and tries again on its own
++// whatever failed: the last player out quitting during a database blip has
++// nobody after them whose save would ring the bell. Closing, it keeps
++// trying until everything is written, or Close stops waiting.
+ func (s *Store) run() {
+ 	defer close(s.done)
++	wait := s.retry
++	var again <-chan time.Time // nil: nothing to retry
+ 	for {
+ 		select {
+ 		case <-s.wake:
+-			s.flush()
++		case <-again:
+ 		case <-s.quit:
+-			s.flush()
++			// a few more tries, a second apart at most: a database that's
++			// briefly away gets its records; one refusing a record for good
++			// doesn't hold the shutdown up
++			for tries := 0; s.flush() && tries < closeTries; tries++ {
++				time.Sleep(min(wait, time.Second))
++				wait *= 2
++			}
+ 			return
+ 		}
++		if s.flush() {
++			again = time.After(wait)
++			wait = min(wait*2, maxRetry)
++		} else {
++			again, wait = nil, s.retry
++		}
+ 	}
+ }
+ 
+-func (s *Store) flush() {
++// flush writes what's pending, and answers whether anything failed to write.
++func (s *Store) flush() (failedAny bool) {
+ 	// copy queue under the lock
+ 	s.mu.Lock()
+ 	batch := make([]*player.Record, 0, len(s.pending))
+@@ -90,23 +124,33 @@ func (s *Store) flush() {
+ 		}
+ 		for i, r := range changed {
+ 			if unwritten[i] {
+-				continue // stays pending; next wake tries again
++				// Stays pending, to try again. And whatever the store holds
++				// for them is unknown now -- the write may have landed and
++				// said otherwise -- so the next record is written whatever
++				// it looks like: compared to the last known one, a change
++				// undone would be skipped, leaving the store the change.
++				delete(s.written, r.Id)
++				failedAny = true
++				continue
+ 			}
+ 			s.written[r.Id] = r
+ 			s.forget(r)
+ 		}
+-		return
++		return failedAny
+ 	}
+ 	// save one at a time
+ 	for _, r := range changed {
+ 		if err := s.inner.Save(r); err != nil {
+-			// left in pending; next wake tries again
++			// left in pending, to try again; unknown in the store, as above
+ 			log.Error().Err(err).Str("player", r.Name).Msg("writebehind: save failed")
++			delete(s.written, r.Id)
++			failedAny = true
+ 			continue
+ 		}
+ 		s.written[r.Id] = r
+ 		s.forget(r)
+ 	}
++	return failedAny
+ }
+ 
+ // Forget takes r out of the queue, unless a newer record replaced it
+diff --git a/writebehind/store_test.go b/writebehind/store_test.go
+index f0de691..4e79109 100644
+--- a/writebehind/store_test.go
++++ b/writebehind/store_test.go
+@@ -3,7 +3,9 @@ package writebehind
+ import (
+ 	"context"
+ 	"errors"
++	"sync"
+ 	"testing"
++	"time"
+ 	"uuid"
+ 
+ 	"github.com/stretchr/testify/assert"
+@@ -108,7 +110,7 @@ func (b *batchStore) SaveAll(recs []*player.Record) ([]int, error) {
+ // they are written and leave the queue, and only the bad one is left.
+ func TestBatch_oneBadRecordOnlyFailsItself(t *testing.T) {
+ 	inner := &batchStore{Store: memstore.New(), reject: map[string]bool{"bad": true}}
+-	s := New(inner)
++	s := newRetrying(inner, time.Millisecond)
+ 
+ 	require.NoError(t, s.Save(&player.Record{Id: uuid.New(), Name: "good"}))
+ 	require.NoError(t, s.Save(&player.Record{Id: uuid.New(), Name: "bad"}))
+@@ -125,3 +127,87 @@ func TestBatch_oneBadRecordOnlyFailsItself(t *testing.T) {
+ 	_, found, _ := inner.Store.Load("bad")
+ 	assert.False(t, found)
+ }
++
++// flakyStore fails its first n writes, then works -- a database blip.
++type flakyStore struct {
++	*memstore.Store
++	mu    sync.Mutex
++	fails int
++}
++
++func (f *flakyStore) Save(r *player.Record) error {
++	f.mu.Lock()
++	defer f.mu.Unlock()
++	if f.fails > 0 {
++		f.fails--
++		return errors.New("blip")
++	}
++	return f.Store.Save(r)
++}
++
++func (f *flakyStore) Load(name string) (*player.Record, bool, error) {
++	f.mu.Lock()
++	defer f.mu.Unlock()
++	return f.Store.Load(name)
++}
++
++// A save that fails is tried again on its own: the last player out
++// quitting during a blip has nobody after them to ring the bell.
++func TestRetriesWithoutAnotherSave(t *testing.T) {
++	inner := &flakyStore{Store: memstore.New(), fails: 2}
++	s := newRetrying(inner, time.Millisecond)
++	require.NoError(t, s.Save(&player.Record{Id: uuid.New(), Name: "last"}))
++
++	assert.Eventually(t, func() bool {
++		_, found, _ := inner.Load("last")
++		return found
++	}, 2*time.Second, 5*time.Millisecond)
++	require.NoError(t, s.Close(context.Background()))
++}
++
++// unsureStore says a write failed, having written it -- a timeout after the
++// database had done it -- while lie is set.
++type unsureStore struct {
++	flakyStore
++	lie bool
++}
++
++func (u *unsureStore) Save(r *player.Record) error {
++	u.mu.Lock()
++	defer u.mu.Unlock()
++	_ = u.Store.Save(r)
++	if u.lie {
++		u.lie = false
++		return errors.New("timed out, maybe")
++	}
++	return nil
++}
++
++func (u *unsureStore) lieOnce() {
++	u.mu.Lock()
++	defer u.mu.Unlock()
++	u.lie = true
++}
++
++// After a write it can't be sure of, the next record is written even if it
++// matches the last one known to be: a change undone in between (remove a
++// sword, wield it again) mustn't leave the store with the change.
++func TestAnUnsureWriteIsNotTrusted(t *testing.T) {
++	inner := &unsureStore{flakyStore: flakyStore{Store: memstore.New()}}
++	s := newRetrying(inner, time.Hour) // the test does its own retrying, through Save
++	id := uuid.New()
++	wielding := &player.Record{Id: id, Name: "dood", CurHealth: 1}
++
++	require.NoError(t, s.Save(wielding))
++	require.Eventually(t, func() bool { _, ok, _ := inner.Load("dood"); return ok }, time.Second, time.Millisecond)
++
++	inner.lieOnce()
++	require.NoError(t, s.Save(&player.Record{Id: id, Name: "dood", CurHealth: 2})) // lands, "fails"
++	require.Eventually(t, func() bool { r, _, _ := inner.Load("dood"); return r.CurHealth == 2 }, time.Second, time.Millisecond)
++
++	again := *wielding
++	require.NoError(t, s.Save(&again))
++	require.NoError(t, s.Close(context.Background()))
++	got, _, _ := inner.Store.Load("dood")
++	assert.Equal(t, 1, got.CurHealth, "the store has what the player has")
++}
+-- 
+2.43.0
+
