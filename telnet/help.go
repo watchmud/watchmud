@@ -73,8 +73,8 @@ var helpSections = []helpSection{
 			[]string{"follow", "group", "gt", "gtell", "ungroup", "assist", "split"}},
 		{"socials, toggle", "smile, bow, wave and more; what you hear", []string{"socials", "toggle"}},
 		{"bug, idea, typo <words>", "tell whoever runs the game", []string{"bug", "idea", "typo"}},
-		{"who, where, time", "who's playing; who's near you; the hour", []string{"who", "where", "time"}},
-		{"commands, quit", "every command there is; save and leave", []string{"commands", "quit"}},
+		{"who, where, time, quit", "who's on; who's near; the hour; save and leave",
+			[]string{"who", "where", "time", "quit", "commands"}},
 	}},
 }
 
@@ -85,6 +85,16 @@ type helpTopic struct {
 }
 
 var helpTopics = map[string]helpTopic{
+	"rules": {"scripts, bots, and playing fair",
+		"Triggers, aliases, speedwalks, and scripts that draw bars or a map are all\n" +
+			"welcome: play however your client makes it easiest.\n" +
+			"\n" +
+			"A character that plays while nobody is at the keyboard -- hunting, looting,\n" +
+			"selling on its own -- is a bot. Bots are flagged by whoever runs the game and\n" +
+			"listed apart under Bots in 'who'; if you want to run one, say so with 'idea'\n" +
+			"first. An unflagged one may be frozen.\n" +
+			"\n" +
+			"Be decent to each other. 'bug', 'idea' and 'typo' reach whoever runs the game.\n"},
 	"bots": {"who the bots are",
 		"The characters listed under Bots in 'who' are programs, not people. Most\n" +
 			"hunt the Hollowfields, rest when they're hurt, and give what they find to\n" +

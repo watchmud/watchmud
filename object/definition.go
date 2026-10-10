@@ -111,6 +111,11 @@ func (d *Definition) NoTake() bool {
 	return slices.Contains(d.Behaviors, rules.ObjectBehaviorNoTake)
 }
 
+// NoDonate is whether the donation room refuses it.
+func (d *Definition) NoDonate() bool {
+	return slices.Contains(d.Behaviors, rules.ObjectBehaviorNoDonate)
+}
+
 // NoSell is whether shops refuse it.
 func (d *Definition) NoSell() bool {
 	return slices.Contains(d.Behaviors, rules.ObjectBehaviorNoSell)

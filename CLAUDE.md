@@ -784,6 +784,12 @@ death. A shop is a zone's `shops.json` (room, and objects at a power, named the 
 names them) loaded into `spaces.Zone.Shops`; it sells new instances of its stock without
 end, buys anything worth a coin -- not a `"noSell"` thing, such as the mill's keys,
 which a reset puts back every few minutes -- and never resells what it bought.
+A boss's own drops (the King's blade and crown, the Miller's mallet and gauntlets) are
+`"noSell"` and `"noDonate"` too: `donate` passes them over (`keepUndonatable`, a bag
+holding one included) and `look` says they're hard won. Drops a boss shares with lesser
+mobs (barrow plate, the river-stone pendant) stay tradeable. **Watching it:**
+`World.Economy` -- people's coins and bots' apart, and the donation room's count and
+power -- is logged every `economyLogInterval` (15 minutes) from the heartbeat.
 
 ### Player death
 

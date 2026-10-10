@@ -8,6 +8,7 @@ import (
 	"github.com/watchmud/watchmud/command"
 	"github.com/watchmud/watchmud/event"
 	"github.com/watchmud/watchmud/object"
+	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/rules"
 )
 
@@ -94,4 +95,47 @@ func (s *junkSuite) TestWornStaysOn() {
 	s.Assert().Len(s.r.Sent, 1, "the pelt, not the helm")
 	_, kept := s.p.Inventory().Get(worn.Id)
 	s.Assert().True(kept)
+}
+
+// A boss's own drop stays with whoever won it -- loose, or in a bag -- and
+// "donate all" sends the rest.
+func (s *junkSuite) TestDonateRefusesWhatWasEarned() {
+	crown := s.carry("crown", nil)
+	crown.Definition.Behaviors = []rules.ObjectBehavior{rules.ObjectBehaviorNoDonate}
+	s.do(command.Donate{Target: "crown"})
+	s.Assert().Equal(event.NoDonate, s.failed())
+
+	bag := s.carry("satchel", &object.ContainerSpec{Portable: true})
+	s.Require().NoError(object.Move(crown, s.p.Inventory(), bag.Contents))
+	s.do(command.Donate{Target: "satchel"})
+	s.Assert().Equal(event.NoDonate, s.failed(), "nor smuggled in a bag")
+
+	pelt := s.carry("pelt", nil)
+	s.do(command.Donate{Target: "all"})
+	_, kept := s.p.Inventory().Get(pelt.Id)
+	s.Assert().False(kept, "the pelt went")
+	_, kept = s.p.Inventory().Get(bag.Id)
+	s.Assert().True(kept, "the bag with the crown didn't")
+}
+
+// The economy's numbers: people and bots apart, and the donation room.
+func (s *junkSuite) TestEconomy() {
+	s.p.AddCoins(30)
+	bot := player.NewTestPlayer(uuid.New(), "botty", nil)
+	bot.SetBot(true)
+	bot.AddCoins(500)
+	s.w.PlacePlayer(bot, s.w.StartRoom)
+	pelt := s.carry("pelt", nil)
+	pelt.Power = 3
+	s.do(command.Donate{Target: "pelt"})
+
+	r := s.w.Economy()
+	s.Assert().Equal(1, r.People)
+	s.Assert().Equal(30, r.PeopleCoins)
+	s.Assert().Equal(30, r.MostCoins)
+	s.Assert().Equal(1, r.Bots)
+	s.Assert().Equal(500, r.BotCoins)
+	s.Assert().Equal(3, r.DonatedTopPower)
+	s.Assert().Positive(r.Donated)
+	s.w.LogEconomy() // and it doesn't fall over
 }

@@ -795,6 +795,8 @@ type LookedAtObject struct {
 	Capacity  int
 	Closed    bool
 	Locked    bool
+	// Earned is a boss's own drop: no shop buys it, and it can't be donated.
+	Earned bool
 }
 
 // LookedAtMob is "look <mob>": how it seems, not its numbers -- those are

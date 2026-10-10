@@ -980,6 +980,8 @@ func TestRender_lookedAt(t *testing.T) {
 	assert.Equal(t, "A leather satchel\n  Power 1.\n  Holding 3 of 10.\n", plain(render(bag, "testdood")))
 	box := event.LookedAtObject{Item: "a strongbox", Container: true, Closed: true, Locked: true}
 	assert.Contains(t, plain(render(box, "testdood")), "It's locked.")
+	crown := event.LookedAtObject{Item: "the black iron crown", Power: 15, Earned: true}
+	assert.Contains(t, plain(render(crown, "testdood")), "Hard won: no shop will buy it, and it can't be donated.\n")
 
 	rat := event.LookedAtMob{Name: "giant rat", Health: 40, Fighting: "bob"}
 	assert.Equal(t, "The giant rat is badly hurt, fighting bob.\n", plain(render(rat, "testdood")))

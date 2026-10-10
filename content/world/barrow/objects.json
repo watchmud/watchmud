@@ -65,6 +65,7 @@
       "sword"
     ],
     "short_description": "the barrow blade",
+    "behaviors": [ "noSell", "noDonate" ],
     "description_on_ground": "A long blade of dark bronze, keen after centuries in the dark, lies here.",
     "equipment_slot": "wield",
     "damage": "2d6",
@@ -102,6 +103,7 @@
       "iron"
     ],
     "short_description": "the black iron crown",
+    "behaviors": [ "noSell", "noDonate" ],
     "description_on_ground": "A crown of black iron lies here, and the air around it is very cold.",
     "equipment_slot": "head",
     "roles": {

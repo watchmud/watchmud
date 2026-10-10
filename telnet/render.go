@@ -1082,6 +1082,9 @@ func renderLookedAtObject(m event.LookedAtObject) string {
 	case m.Container:
 		fmt.Fprintf(&b, "  Holding %d.\n", m.Holding)
 	}
+	if m.Earned {
+		b.WriteString("  Hard won: no shop will buy it, and it can't be donated.\n")
+	}
 	if m.Worn {
 		b.WriteString("  You have it on.\n")
 	}

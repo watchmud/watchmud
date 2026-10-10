@@ -155,6 +155,7 @@ var failureByCode = map[string]string{
 	"CANT_NEST":         "That won't go inside another container.",
 	"COINS_IN_PURSE":    "Your coins stay in your purse.",
 	"NOT_EMPTY":         "Empty it first.",
+	"NO_DONATE":         "That was hard won. It stays with whoever won it.",
 	// the parser and the dispatcher, not a handler
 	"PARSE_ERROR":     "You'll have to phrase that differently.",
 	"UNKNOWN_COMMAND": "I don't understand that.",

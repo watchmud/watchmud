@@ -888,15 +888,23 @@ Named so they don't get rediscovered as surprises:
   cheap:
   - **Coin sinks** beyond durability repair. Coins enter from every kill and shop sale;
     count where they leave.
-  - **What bots may donate.** Today it's everything. Cap it at a power (the bottom of the
+  - ~~**What bots may donate.**~~ Already capped, it turned out (checked 2026-10-10):
+    a hunter only donates its ground's `loot` keywords -- pelts, feathers,
+    carapaces from power 1-2 prey -- never what it finds besides. Was: "Today it's everything. Cap it at a power (the bottom of the
     Hollowfields band, say), or junk the rest, so the donation room helps a new character
-    and never stands in for the climb.
-  - **Top drops can't be donated or sold** (`"noSell"` already exists for keys), so a
+    and never stands in for the climb."
+  - ~~**Top drops can't be donated or sold**~~ Done 2026-10-10: `"noDonate"`, with
+    `"noSell"`, on the drops only a boss has (barrow blade, black iron crown, miller's
+    mallet, iron gauntlets). They can still be given, and dropped -- in the donation
+    room too, by walking there; not worth closing until someone does it. (`"noSell"` already exists for keys), so a
     boss's loot is worn by someone who fought for it.
-  - **A stated automation policy.** Triggers, aliases and GMCP-driven bars are welcome;
+  - ~~**A stated automation policy.**~~ Drafted 2026-10-10 as `help rules` -- the
+    owner's to reword; nothing enforces it beyond `freeze`. Triggers, aliases and GMCP-driven bars are welcome;
     a character that hunts while its player is away is a bot, and bots are flagged on
     the record and listed apart in `who`. Write it into `help` before somebody tests it.
-  - **Watch it.** Coins in circulation per character, and the power of what's in the
+  - ~~**Watch it.**~~ Done 2026-10-10: an `economy` log line every 15 minutes
+    (`World.Economy`), people and bots apart -- only who's online, since the world
+    never reads the store. Coins in circulation per character, and the power of what's in the
     donation room, logged on the save pulse. Inflation shows up there long before players
     say so.
 - **Death never costs gear.** (Recorded 2026-10-08, from the same thread: losing hard-won

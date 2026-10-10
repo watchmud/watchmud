@@ -198,7 +198,16 @@ func (gs *GameServer) heartbeat(pulse rules.PulseCount, delta time.Duration) {
 	if pulse.CheckInterval(savePulse) {
 		recoverPulse("save", gs.world.QueuePlayerRecords)
 	}
+
+	// coins in circulation and the donation room, for watching inflation
+	if pulse.CheckInterval(economyLogInterval) {
+		recoverPulse("economy", gs.world.LogEconomy)
+	}
 }
+
+// economyLogInterval is how often the economy is logged: often enough to
+// see a trend in a day, rarely enough not to bury the rest of the log.
+const economyLogInterval = 15 * time.Minute
 
 // dispatch a message to its handler.
 //
