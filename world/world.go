@@ -163,6 +163,7 @@ func (w *World) arrive(p *player.Player, first bool) {
 	r := w.playerRoom(p)
 	r.SendExcept(p, event.EnteredGame{Actor: p.Name(), First: first})
 	p.Send(event.Color{On: p.Color()}) // ahead of the first thing worth coloring
+	p.Send(event.ScreenReader{On: p.ScreenReader()})
 	p.Send(r.DescriptionExcept(p))
 	w.backfill(p)
 	if w.fullMoonTonight() {

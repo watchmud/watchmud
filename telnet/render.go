@@ -55,6 +55,14 @@ func render(msg any, self string) string {
 	case event.Welcome:
 		return m.Text + "\n"
 
+	case event.ScreenReader:
+		switch {
+		case !m.Changed:
+			return ""
+		case m.On:
+			return "Screen-reader mode is on: words instead of symbols, and no pictures.\n"
+		}
+		return "Screen-reader mode is off.\n"
 	case event.Color:
 		// conn.frame has already switched; this only answers the player
 		switch {
@@ -1210,6 +1218,7 @@ func renderToggles(m event.Toggles) string {
 		{plainCell("tells"), onOff(m.Tells)},
 		{plainCell("shouts"), onOff(m.Shouts)},
 		{plainCell("assist"), onOff(m.Assist)},
+		{plainCell("screenreader"), onOff(m.ScreenReader)},
 	}) + "  'toggle <name>' switches one.\n"
 }
 

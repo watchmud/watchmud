@@ -59,6 +59,15 @@ type conn struct {
 	// last sent, so only a change goes. Owned by writePump.
 	gmcp   bool
 	vitals *vitals
+	// screenReader is whether to render for a screen reader (spoken.go):
+	// the player's saved choice, or the client saying it uses one (MTTS),
+	// unless the player has said otherwise this session (srChosen). All
+	// owned by writePump.
+	screenReader, srClient, srChosen bool
+
+	// ttypes is what the client has answered to TTYPE SEND so far: its
+	// name, its terminal, then "MTTS <bits>". Owned by readPump.
+	ttypes []string
 
 	// How long a line may take to arrive before the connection is dropped,
 	// before login and after. readPump owns readTimeout and switches it
@@ -301,8 +310,9 @@ func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, banner, host
 	// after the banner, which is what a person reads first: a MUD client
 	// that says DO EOR gets EOR after each prompt instead of GA, and one that
 	// says WILL NAWS tells us how wide to wrap, and one that says DO GMCP
-	// gets vitals and rooms as data (gmcp.go)
-	c.Send(negotiation([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP}))
+	// gets vitals and rooms as data (gmcp.go), and one that says WILL TTYPE
+	// is asked what it is -- MTTS, which says if it reads to a screen reader
+	c.Send(negotiation([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP, IAC, DO, optTTYPE}))
 }
 
 func (c *conn) Player() *player.Player {
@@ -790,6 +800,12 @@ func (c *conn) write(msg any) error {
 	case gmcpOn:
 		c.gmcp, c.vitals = bool(m), nil
 		return nil
+	case screenReaderClient:
+		c.srClient = true
+		if !c.srChosen {
+			c.screenReader = true
+		}
+		return nil
 	}
 	if c.gmcp {
 		var data string
@@ -857,11 +873,42 @@ func (c *conn) frame(msg any) string {
 	if m, ok := msg.(event.Color); ok {
 		c.color = m.On // before rendering, so the answer is in the new setting
 	}
-	text := c.layout(msg)
+	text := ""
+	if m, ok := msg.(event.ScreenReader); ok {
+		text = c.screenReaderSet(m)
+	}
+	text += c.layout(msg)
 	if !c.color {
 		text = plain(text)
 	}
 	return wrap(text, c.width)
+}
+
+// render is render, or spoken where screen-reader mode has words of its own.
+func (c *conn) render(msg any, self string) string {
+	if c.screenReader {
+		if text, ok := spoken(msg, self); ok {
+			return text
+		}
+	}
+	return render(msg, self)
+}
+
+// screenReaderSet takes the world's word on screen-reader mode: the
+// player's own command decides outright, while the saved setting at login
+// only adds to what the client said. A client that says so, for a player
+// who hasn't said, gets told how to turn it off.
+func (c *conn) screenReaderSet(m event.ScreenReader) string {
+	if m.Changed {
+		c.screenReader, c.srChosen = m.On, true
+		return ""
+	}
+	c.screenReader = m.On || c.srClient
+	if c.srClient && !m.On {
+		return "Your client says it reads to a screen reader, so the game will too: " +
+			"words instead of symbols, and no pictures. 'screenreader off' to stop.\n"
+	}
+	return ""
 }
 
 // layout is frame without the color decision.
@@ -883,14 +930,14 @@ func (c *conn) layout(msg any) string {
 			return ""
 		}
 		c.atPrompt = true
-		return render(m, "")
+		return c.render(m, "")
 	}
 
 	name := ""
 	if p := c.Player(); p != nil {
 		name = p.Name()
 	}
-	text := render(msg, name)
+	text := c.render(msg, name)
 	if text == "" {
 		return ""
 	}
@@ -943,14 +990,19 @@ func (c *conn) negotiated(verb, option byte) {
 		c.Send(gmcpOn(true))
 	case option == optGMCP && verb == DONT:
 		c.Send(gmcpOn(false))
+	case option == optTTYPE && verb == WILL:
+		c.askTerminalType()
 	}
 }
 
-// subnegotiated hears what a client says about an option. NAWS is the only
-// one listened to: width then height, two bytes each. The height is unused.
+// subnegotiated hears what a client says about an option: NAWS, width then
+// height, two bytes each (the height unused); and TTYPE's answers.
 func (c *conn) subnegotiated(option byte, data []byte) {
 	if option == optNAWS && len(data) >= 4 {
 		c.Send(windowSize(int(data[0])<<8 | int(data[1])))
+	}
+	if option == optTTYPE && len(data) > 0 && data[0] == ttypeIs {
+		c.terminalType(string(data[1:]))
 	}
 }
 

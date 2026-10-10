@@ -17,6 +17,7 @@ type Record struct {
 	Wizard               bool
 	Bot                  bool
 	NoColor              bool // inverted: a record from before the choice is color on
+	ScreenReader         bool // off by default, which is what an old record reads as
 	NoOOC                bool // inverted the same way: everyone starts on the channel
 	NoTell, NoShout      bool // and the same again
 	Muted, Frozen        bool // a wizard's moderation
@@ -90,6 +91,7 @@ func FromRecord(rec *Record, out Sender, cat *rules.Catalog, defs DefinitionSour
 	p.wizard = rec.Wizard
 	p.bot = rec.Bot
 	p.noColor = rec.NoColor
+	p.screenReader = rec.ScreenReader
 	p.noOOC = rec.NoOOC
 	p.noTell, p.noShout = rec.NoTell, rec.NoShout
 	p.muted, p.frozen = rec.Muted, rec.Frozen
@@ -178,6 +180,7 @@ func (p *Player) Record() *Record {
 		Wizard:       p.wizard,
 		Bot:          p.bot,
 		NoColor:      p.noColor,
+		ScreenReader: p.screenReader,
 		NoOOC:        p.noOOC,
 		NoTell:       p.noTell,
 		NoShout:      p.noShout,

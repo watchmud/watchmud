@@ -16,10 +16,14 @@ func (w *World) handleToggle(msg *gameserver.HandlerParameter, cmd command.Toggl
 	p := msg.Player
 	switch strings.TrimSuffix(strings.ToLower(cmd.Name), "s") {
 	case "":
-		p.Send(event.Toggles{Color: p.Color(), OOC: p.OOC(), Tells: p.Tells(), Shouts: p.Shouts(), Assist: !w.groups.noAssist[p]})
+		p.Send(event.Toggles{Color: p.Color(), OOC: p.OOC(), Tells: p.Tells(), Shouts: p.Shouts(),
+			Assist: !w.groups.noAssist[p], ScreenReader: p.ScreenReader()})
 	case "color", "colour":
 		p.SetColor(!p.Color())
 		p.Send(event.Color{On: p.Color(), Changed: true})
+	case "screenreader":
+		p.SetScreenReader(!p.ScreenReader())
+		p.Send(event.ScreenReader{On: p.ScreenReader(), Changed: true})
 	case "ooc":
 		p.SetOOC(!p.OOC())
 		p.Send(event.Toggled{Name: "ooc", On: p.OOC()})

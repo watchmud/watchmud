@@ -568,6 +568,11 @@ type RoomStatus struct {
 
 func (RoomStatus) Verb() string { return "roomstatus" }
 
+// ScreenReader is "screenreader [on|off]": text for a screen reader.
+type ScreenReader struct{ Setting string }
+
+func (ScreenReader) Verb() string { return "screenreader" }
+
 // Goals is where to go next: the zones your power fits, and the one above.
 type Goals struct{}
 

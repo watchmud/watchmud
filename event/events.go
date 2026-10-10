@@ -369,7 +369,7 @@ type Whispered struct {
 
 // Toggles is "toggle": what a player has switched on.
 type Toggles struct {
-	Color, OOC, Tells, Shouts, Assist bool
+	Color, OOC, Tells, Shouts, Assist, ScreenReader bool
 }
 
 // Toggled is one toggle switched.
@@ -575,6 +575,14 @@ type Shouted struct {
 // player having just asked; without it this is the setting being applied at
 // login, which says nothing.
 type Color struct {
+	On      bool
+	Changed bool
+}
+
+// ScreenReader is whether a player's connection renders for a screen reader:
+// words where there are symbols, lists that say how long they are, no
+// pictures. Changed as Color has it.
+type ScreenReader struct {
 	On      bool
 	Changed bool
 }

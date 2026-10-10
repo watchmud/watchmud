@@ -718,7 +718,11 @@ Additive once the byte loop exists:
   width tintin sent by NAWS; color came through; say, emote, time, walking, wimpy and
   quit all read right. GMCP was offered and did no harm. (A tintin `#action` on the
   prompt needs `%*` or a regex for "100/100", not `%d`.)
-- **Screen-reader mode** (added 2026-10-08, from the r/MUD thread under "a new player's
+- **Screen-reader mode** -- done 2026-10-10, both parts, *except the last line*: it
+  hasn't had a blind player try it. MTTS is read (`telnet/ttype.go`), bit 64 turns the
+  mode on; `screenreader` is on the record; `telnet/spoken.go` has the words. Only the
+  screen-reader bit is read from MTTS so far -- 256 colors and UTF-8 aren't used yet.
+  (Added 2026-10-08, from the r/MUD thread under "a new player's
   first hour"). A MUD author there had the protocols done and was asking what makes the
   *text* work for blind players; GMCP bars and Mudlet's map do nothing for them. Two
   parts:

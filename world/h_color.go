@@ -24,3 +24,22 @@ func (w *World) handleColor(msg *gameserver.HandlerParameter, cmd command.Color)
 	msg.Player.SetColor(on)
 	msg.Player.Send(event.Color{On: on, Changed: true})
 }
+
+// handleScreenReader saves whether the player wants text for a screen
+// reader. Like color, the connection does the rendering and the world only
+// remembers the choice.
+func (w *World) handleScreenReader(msg *gameserver.HandlerParameter, cmd command.ScreenReader) {
+	on := !msg.Player.ScreenReader()
+	switch cmd.Setting {
+	case "":
+	case "on":
+		on = true
+	case "off":
+		on = false
+	default:
+		msg.Fail(event.BadRequest)
+		return
+	}
+	msg.Player.SetScreenReader(on)
+	msg.Player.Send(event.ScreenReader{On: on, Changed: true})
+}

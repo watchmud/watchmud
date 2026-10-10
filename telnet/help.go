@@ -62,7 +62,7 @@ var helpSections = []helpSection{
 		{"sit, rest, sleep, stand", "heal faster off your feet; 'wake' to get up",
 			[]string{"sit", "rest", "sleep", "stand", "wake"}},
 		{"stat, role, abilities", "you; what your gear makes you; what it casts", []string{"stat", "role", "abilities"}},
-		{"color [on|off]", "ANSI color, on or off; just color switches it", []string{"color"}},
+		{"color, screenreader", "ANSI color; words, not symbols. on, off or switch", []string{"color", "screenreader"}},
 	}},
 	{"Talking", []helpEntry{
 		{"say <words>, emote <act>", "to the room ('), or act it out (:)", []string{"say", "'", "emote", ":"}},

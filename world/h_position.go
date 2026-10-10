@@ -61,7 +61,8 @@ func awake(cmd command.Command) bool {
 	case command.Position:
 		return c.Wake || c.To == "stand"
 	case command.Logout, command.Stat, command.Inventory, command.ShowEquipment,
-		command.Abilities, command.Group, command.Toggle, command.Who:
+		command.Abilities, command.Group, command.Toggle, command.Who,
+		command.Color, command.ScreenReader:
 		return true
 	}
 	return false

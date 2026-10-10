@@ -52,6 +52,8 @@ The Mudlet add-on still hasn't been run in a real Mudlet: try it before telling 
 **On master, not yet released** -- each needs its line in the site guide when it ships:
 - `goals`: the zones your power fits, the next one, and the walk to each.
 - `map`: the rooms around you, drawn.
+- `screenreader [on|off]`, and MTTS: a client that says it reads to a screen reader
+  gets words instead of symbols. Wants a blind player to try it before it's announced.
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

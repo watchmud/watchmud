@@ -1110,7 +1110,7 @@ func TestRender_talk(t *testing.T) {
 	assert.Equal(t, "You ask bob, 'psst'\n", plain(render(w, "ann")))
 	assert.Equal(t, "ann asks bob something.\n", plain(render(w, "cal")))
 
-	assert.Equal(t, "Toggles\n  color   on\n  ooc     on\n  tells   off\n  shouts  on\n  assist  on\n  'toggle <name>' switches one.\n",
+	assert.Equal(t, "Toggles\n  color         on\n  ooc           on\n  tells         off\n  shouts        on\n  assist        on\n  screenreader  off\n  'toggle <name>' switches one.\n",
 		plain(render(event.Toggles{Color: true, OOC: true, Shouts: true, Assist: true}, "ann")))
 
 	for line, want := range map[string]command.Command{

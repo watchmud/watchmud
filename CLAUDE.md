@@ -269,6 +269,22 @@ spot. A room's `num` is an FNV hash of its "zone/room", stable with nothing stor
 `TestRoomNum_uniqueInTheWorld` fails on a collision in the real content. What a client
 sends back (`Core.Hello`, `Core.Supports.Set`) is ignored.
 
+**Screen-reader mode is a third rendering** (`telnet/spoken.go`, `telnet/ttype.go`).
+`spoken(msg, self)` answers, for the events where symbols or a picture would be read
+out character by character, words instead -- the prompt as "health 80 of 100, mana
+20 of 30. ", the map as a list of ways and rooms, the exits line without brackets,
+"97/100hp" as "97 of 100 health" in the lists and blocks that print it -- and every
+list a line saying how long it is first. Everything else falls through to `render`,
+which is why render's wording tests still read what a sighted player sees.
+`conn.render` picks between them. The mode is `screenReader` on the record, set by
+`screenreader [on|off]` or `toggle screenreader` and sent at arrival as
+`event.ScreenReader` beside `event.Color`; **or the client says so**: `DO TTYPE` goes
+out with the other offers, a client that answers `WILL` is asked up to three times
+(stopping when an answer repeats), and an `MTTS <n>` answer with bit 64 queues
+`screenReaderClient`. The client's word turns the mode on for the session unless the
+player has typed `screenreader` this session; at arrival a player whose record is off
+is told the client turned it on, and how to stop it. Nobody blind has tried it yet.
+
 **`mudlet/` is the other end of it**: `watchmud.lua`, a Mudlet script drawing health and
 mana bars from `Char.Vitals` and a map from `Room.Info` (rooms keyed on `num`, placed
 at their `grid` -- a step from a neighbour only for a server too old to send one --

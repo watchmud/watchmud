@@ -61,7 +61,7 @@ func (s *backfillSuite) TestWornWhenTheSlotIsFree() {
 	s.Assert().Same(token, s.p.Equipment().At(rules.EquipmentSlot("neck")))
 	s.Assert().Equal(1, token.Power, "made at the kit's power")
 	// after the color setting and the room
-	s.Assert().Equal(event.Received{Item: "a temple token", Worn: true}, sent[event.Received](s.T(), s.r, 2))
+	s.Assert().Equal(event.Received{Item: "a temple token", Worn: true}, sent[event.Received](s.T(), s.r, 3))
 	s.Assert().True(s.p.HasBackfilled("wrathrock/temple_token"))
 
 	s.r.Clear()
@@ -81,7 +81,7 @@ func (s *backfillSuite) TestPackedWhenTheSlotIsTaken() {
 
 	s.Require().NotNil(s.token())
 	s.Assert().Same(charm, s.p.Equipment().At(rules.EquipmentSlot("neck")), "the charm stays on")
-	s.Assert().Equal(event.Received{Item: "a temple token", Worn: false}, sent[event.Received](s.T(), s.r, 2))
+	s.Assert().Equal(event.Received{Item: "a temple token", Worn: false}, sent[event.Received](s.T(), s.r, 3))
 
 	s.r.Clear()
 	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Recall{})))
