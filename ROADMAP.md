@@ -167,6 +167,27 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
   following that map instead of hand-written grounds is the next step), and bots that **wear
   the upgrades they find** and grow into the Barrow.
 
+**Then: a new player's first hour.** (Added 2026-10-08, from an r/MUD thread on how
+player expectations have shifted since MMOs -- notes in Obsidian, "Expectations of MUDs
+over the years".) MUDs went from "you arrive in town, go explore", to newbie schools, to
+a guided storyline that walks you through much of the world. Today a new character gets
+the welcome line and whatever the Socialite answers; after the Hollowfields, nothing says
+where to go.
+
+- **`goals` (or `where`): the next zone for your power.** Every zone with a band in
+  `zone_manifest.json` (`"power": {"min", "max"}`) is a step on the ladder; the command
+  names the zones your current power fits, and the one just above, with a line on how to
+  get there from Temple Square. Derived on every read like power itself -- no quest
+  state, no XP, nothing stored -- so it holds to LEVELS.md, and it costs content nothing
+  but a band on each zone and a one-line hint. It reads Hollowfields -> Mill -> Barrow as
+  a path without building a quest system. A real quest chain can come later, if this
+  turns out to be too thin; build it on the same ladder.
+- **A text `map`.** Mudlet players have a map, drawn from GMCP `Room.Info` by `mudlet/`;
+  plain telnet and tintin++ players have nothing but `exits`. A small map around the
+  current room, built from the room definitions (the explorer's `bot/atlas.go` already
+  does the walk, for a bot), gives everyone one. Under screen-reader mode (Phase 7) it
+  must be a list in words -- "north: the Millpond; east: a locked door" -- never ASCII art.
+
 The Context section below describes the tree as it was in September 2026, before any of
 this landed. It is kept for its reasoning, not as a description of the present.
 
@@ -682,7 +703,8 @@ Additive once the byte loop exists:
 - Then the MUD-specific layer as it earns its keep: `MSSP`, `GMCP`, `MCCP`, `MXP`.
   GMCP done 2026-10-06: `Char.Vitals` and `Room.Info` (CLAUDE.md, telnet/). Mudlet
   hands them to scripts; `mudlet/` is the package that draws bars and a map from them,
-  served from www.watchmud.com (2026-10-06). MSSP waits until the game wants to be listed.
+  served from www.watchmud.com (2026-10-06). MSSP waits until the game wants to be listed
+  -- though that may be now: it is small, and r/MUD is the audience a listing reaches.
 - ~~Test against tintin++ specifically, since that's the target.~~ Done 2026-10-06 with
   tintin++ 2.02.20 (Ubuntu's), scripted against a local server: `#action`s on every
   login question fired -- the GA after each prompt is what lets them -- so a new
@@ -690,6 +712,23 @@ Additive once the byte loop exists:
   width tintin sent by NAWS; color came through; say, emote, time, walking, wimpy and
   quit all read right. GMCP was offered and did no harm. (A tintin `#action` on the
   prompt needs `%*` or a regex for "100/100", not `%d`.)
+- **Screen-reader mode** (added 2026-10-08, from the r/MUD thread under "a new player's
+  first hour"). A MUD author there had the protocols done and was asking what makes the
+  *text* work for blind players; GMCP bars and Mudlet's map do nothing for them. Two
+  parts:
+  - **Detect it.** MTTS (the terminal-type exchange, `TTYPE` asked three times) carries
+    a bitvector on its third answer, and bit 64 is "client uses a screen reader".
+    Negotiate it and turn the mode on with no setup. MTTS is worth having anyway -- it
+    also says whether the client does 256 colors, UTF-8, or GMCP.
+  - **`screenreader [on|off]`**, saved on the record like `color`, so a player whose
+    client doesn't say can still ask. With it on: nothing means something by color or
+    a symbol alone; the prompt in words ("health 80 of 100, mana 20 of 30") rather than
+    `80/100`; no ASCII art, divider lines or box drawing; lists that say how many
+    they hold before they start; and the text `map` as a list in words. Wording tests
+    already compare `plain(render(...))`, so the mode is a renderer flag plus tests
+    that read its output as a screen reader would.
+  Ask a blind player to try it before calling it done; a sighted tester won't hear
+  what's wrong.
 
 ---
 
@@ -827,6 +866,32 @@ Named so they don't get rediscovered as surprises:
   between zerolog and stdlib `log` depending on file age.~~ Done 2026-10-06: the const is
   gone (ping logs at trace), and the server is all zerolog; only `cmd/watchmud-bots`, a
   command-line tool, still uses `log`.
+- **Economy inflation, and automation hollowing out the loop.** (Added 2026-10-08, from
+  the r/MUD thread.) One player told how their old MUD died: optimized scripts took max
+  level from months to two days, raid gear sat in the donation room, gold was
+  worthless, and the players who were left idled to keep a chat log going. WatchMUD has
+  every ingredient: shops sell their stock without end, bots hunt around the clock and
+  donate what they find, `mudlet/` makes scripting easy, and power comes only from gear
+  -- so free gear is free progression. Nothing is broken yet; decide these while they're
+  cheap:
+  - **Coin sinks** beyond durability repair. Coins enter from every kill and shop sale;
+    count where they leave.
+  - **What bots may donate.** Today it's everything. Cap it at a power (the bottom of the
+    Hollowfields band, say), or junk the rest, so the donation room helps a new character
+    and never stands in for the climb.
+  - **Top drops can't be donated or sold** (`"noSell"` already exists for keys), so a
+    boss's loot is worn by someone who fought for it.
+  - **A stated automation policy.** Triggers, aliases and GMCP-driven bars are welcome;
+    a character that hunts while its player is away is a bot, and bots are flagged on
+    the record and listed apart in `who`. Write it into `help` before somebody tests it.
+  - **Watch it.** Coins in circulation per character, and the power of what's in the
+    donation room, logged on the save pulse. Inflation shows up there long before players
+    say so.
+- **Death never costs gear.** (Recorded 2026-10-08, from the same thread: losing hard-won
+  gear and being locked out of the zones it opened is what drives some players away.)
+  Not a problem today -- a player leaves no corpse, takes the durability toll and wakes in
+  the death room -- but under "power comes from gear", losing gear is losing levels.
+  Keep it that way; any later change to death should cost time or coins, not equipment.
 
 ---
 
