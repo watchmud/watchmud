@@ -3,5 +3,5 @@
   "start": { "zone_id": "wrathrock", "room_id": "temple_square" },
   "donation": { "zone_id": "wrathrock", "room_id": "donation_room" },
   "player-death": { "zone_id": "wrathrock", "room_id": "temple_square" },
-  "welcome": "Welcome to Wrathrock! Type 'help' to see what you can do. When you're ready for a fight, the Hollowfields lie south: through the market, out the south gate, and down the trail."
+  "welcome": "Welcome to Wrathrock! Type 'help' to see what you can do. When you're ready for a fight, the Hollowfields lie south: through the market, out the south gate, and down the trail. As your gear gets better, 'goals' says where to go next."
 }
