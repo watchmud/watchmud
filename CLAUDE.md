@@ -261,15 +261,15 @@ from: `Char.Vitals` from `event.Prompt` -- only when the numbers changed, since 
 goes out every second -- and `Room.Info` from every `event.RoomDescription`, in IRE's
 shape so existing mapper scripts read it. The world sends nothing new for it: the room
 description carries `Id` ("zone/room"), `Area` and `ExitTo` for this and nothing renders
-them -- and `Comm.Channel.Text` (IRE's shape: channel, talker, the line as shown, plain)
-for every say, tell, shout, ooc and gtell line the player gets, your own tell's and
-shout's "Ok." aside, which chat-capture scripts read; `watchmud.lua` doesn't use it
-yet. Room.Info's description carries `X`/`Y`/`Z`, the room's place on its zone's grid (`spaces.Zone.LayGrid`,
+them -- and `X`/`Y`/`Z`, the room's place on its zone's grid (`spaces.Zone.LayGrid`,
 walking exits out from the first room by id when content loads), sent as `"grid"` so
 a mapper never guesses where a room it recalled, logged or died into goes;
 `TestGrid_theContentFits` fails on an exit that doesn't fit it or two rooms on one
 spot. A room's `num` is an FNV hash of its "zone/room", stable with nothing stored;
-`TestRoomNum_uniqueInTheWorld` fails on a collision in the real content. What a client
+`TestRoomNum_uniqueInTheWorld` fails on a collision in the real content.
+`Comm.Channel.Text` (IRE's shape: channel, talker, the line as shown, plain) goes out
+for every say, tell, shout, ooc and gtell line the player gets -- your own tell's and
+shout's "Ok." aside -- for chat-capture scripts; `watchmud.lua` doesn't use it yet. What a client
 sends back (`Core.Hello`, `Core.Supports.Set`) is ignored.
 
 **Screen-reader mode is a third rendering** (`telnet/spoken.go`, `telnet/ttype.go`).
