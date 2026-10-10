@@ -28,7 +28,7 @@ var helpSections = []helpSection{
 	{"Moving around", []helpEntry{
 		{"n s e w u d", "walk that way", []string{"n", "s", "e", "w", "u", "d"}},
 		{"exits", "where you can go from here", []string{"exits"}},
-		{"recall", "back to the start", []string{"recall"}},
+		{"recall, goals", "back to the start; where to go next, and the way", []string{"recall", "goals"}},
 	}},
 	{"Looking", []helpEntry{
 		{"look, look <thing>", "the room, or something in it (l)", []string{"look", "l"}},

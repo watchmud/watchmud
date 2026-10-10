@@ -903,3 +903,25 @@ type RoomStatusExit struct {
 	ZoneId    string
 	Flags     []rules.RoomFlag
 }
+
+// Goals is "goals": the zones a player's power fits and the next one up,
+// derived from what they wear on every read, like power itself. Nothing about
+// it is stored.
+type Goals struct {
+	Power int
+	// From is the room every Route starts from: the start room, where
+	// recall and death both lead.
+	From string
+	Fits []GoalZone
+	// Next is the zone (or zones, sharing a bottom) just above Fits; empty
+	// once a player has outgrown them all.
+	Next []GoalZone
+}
+
+// GoalZone is one step on the ladder, and the way there from the start room
+// as a speedwalk ("5s 2w"); empty when the start room is in it.
+type GoalZone struct {
+	Name     string
+	Min, Max int
+	Route    string
+}

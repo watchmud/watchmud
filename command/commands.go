@@ -567,3 +567,8 @@ type RoomStatus struct {
 }
 
 func (RoomStatus) Verb() string { return "roomstatus" }
+
+// Goals is where to go next: the zones your power fits, and the one above.
+type Goals struct{}
+
+func (Goals) Verb() string { return "goals" }

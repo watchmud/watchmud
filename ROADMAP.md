@@ -174,7 +174,10 @@ a guided storyline that walks you through much of the world. Today a new charact
 the welcome line and whatever the Socialite answers; after the Hollowfields, nothing says
 where to go.
 
-- **`goals` (or `where`): the next zone for your power.** Every zone with a band in
+- ~~**`goals` (or `where`): the next zone for your power.**~~ Done 2026-10-10 as
+  `goals` (`where` was taken): the bands were already in the manifest, so instead of a
+  hand-written hint per zone it works the walk out from the start room and prints it
+  as a speedwalk -- it can't go stale when content moves. Every zone with a band in
   `zone_manifest.json` (`"power": {"min", "max"}`) is a step on the ladder; the command
   names the zones your current power fits, and the one just above, with a line on how to
   get there from Temple Square. Derived on every read like power itself -- no quest

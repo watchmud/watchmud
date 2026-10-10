@@ -139,6 +139,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handlePosition(msg, cmd)
 	case command.Split:
 		w.handleSplit(msg, cmd)
+	case command.Goals:
+		w.handleGoals(msg, cmd)
 	case command.Where:
 		w.handleWhere(msg, cmd)
 	case command.Commands:

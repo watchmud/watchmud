@@ -1068,6 +1068,11 @@ through `World.flee` -- the same code the `flee` command uses. `hit`, `hold`/`gr
 breadth-first search out from the player's room, through open exits within the zone,
 answering the first step towards the nearest mob of that name -- a trail, not a map:
 step, then track again. It's how you chase a bandit that ran.
+`goals` (`world/h_goals.go`) reads the manifest's power bands as a ladder: the zones
+the player's power fits and the next one up (the lowest bottom above it), each with
+the walk from the start room as a speedwalk ("5s 2w") -- a breadth-first search through
+every exit, doors included, since a door is one to open. Derived every time, like
+power; a zone with no band is no rung. `TestGoals_theRealLadder` pins the real routes.
 
 **The moon** (`moon/`, `world/moon.go`): its phase from the date (a mean synodic month
 from a known new moon, checked against the almanac), and night from Seattle's clock --

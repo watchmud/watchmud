@@ -50,7 +50,7 @@ bots (v0.4.0).
 The Mudlet add-on still hasn't been run in a real Mudlet: try it before telling players.
 
 **On master, not yet released** -- each needs its line in the site guide when it ships:
-nothing yet.
+- `goals`: the zones your power fits, the next one, and the walk to each.
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

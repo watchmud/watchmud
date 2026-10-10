@@ -284,6 +284,25 @@ var commandCases = []commandCase{
 		want:  statBlockTank,
 	},
 	{
+		// testcontent: Wrathrock is the one zone with a band, 1-5, and the
+		// start room is in it
+		name:  "goals with nothing on",
+		input: "goals",
+		want: "Your power is 0.\nNext\n  Wrathrock  power 1-5  you're there\n" +
+			"Nothing suits you yet: wear some gear, and your power will rise.\n" +
+			"Ways are from Temple Square. Better gear raises your power.\n",
+	},
+	{
+		name: "goals when you have outgrown everything",
+		setup: func(_ *world.World, p *player.Player, o *player.Player) {
+			helmet := testHelmet()
+			helmet.Power = 7
+			p.Equipment().Equip(rules.SlotHead, helmet)
+		},
+		input: "goals",
+		want:  "Your power is 7.\nNowhere here is built for you any more: you've outgrown the lot.\n",
+	},
+	{
 		name: "stat shows the power of what is worn",
 		setup: func(_ *world.World, p *player.Player, o *player.Player) {
 			helmet := testHelmet()
