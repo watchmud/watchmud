@@ -227,6 +227,8 @@ func parseCommand(tokens []string) (command.Command, error) {
 		return command.Track{Target: rest}, nil
 	case "split":
 		return command.Split{Amount: rest}, nil
+	case "map":
+		return command.Map{}, nil
 	case "goals":
 		return command.Goals{}, nil
 	case "where":

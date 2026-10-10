@@ -925,3 +925,28 @@ type GoalZone struct {
 	Min, Max int
 	Route    string
 }
+
+// Map is "map": the rooms of the player's zone around them, on the same
+// level, from the zone's grid (spaces.LayGrid). X and Y are relative to the
+// player, east and north; the renderer decides whether that's a picture or a
+// list in words.
+type Map struct {
+	Zone  string
+	Rooms []MapRoom
+}
+
+type MapRoom struct {
+	X, Y  int
+	Name  string
+	Here  bool
+	Exits []MapExit
+}
+
+// MapExit is one way out: Leads is the name of where it goes, Closed a shut
+// door, and Away whether it leaves the zone.
+type MapExit struct {
+	Direction rules.Direction
+	Leads     string
+	Closed    bool
+	Away      bool
+}

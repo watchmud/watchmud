@@ -144,6 +144,8 @@ func render(msg any, self string) string {
 			return fmt.Sprintf("You split the coins %d ways: %s each.\n", m.Among, coinWord(m.Each))
 		}
 		return fmt.Sprintf("%s splits some coins %d ways: you get %s.\n", m.Actor, m.Among, coinWord(m.Each))
+	case event.Map:
+		return renderMap(m)
 	case event.Goals:
 		return renderGoals(m)
 	case event.WhereList:

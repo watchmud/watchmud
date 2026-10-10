@@ -284,6 +284,20 @@ var commandCases = []commandCase{
 		want:  statBlockTank,
 	},
 	{
+		name:  "map",
+		input: "map",
+		want: "Wrathrock\n" +
+			"     [*]-[ ]\n" +
+			"      |\n" +
+			" [ ]-[ ]-[ ]-\n" +
+			"      |\n" +
+			"     [ ]\n" +
+			"      |\n" +
+			"     [ ]\n" +
+			"      |\n" +
+			"You are at the * (Temple Square).\n",
+	},
+	{
 		// testcontent: Wrathrock is the one zone with a band, 1-5, and the
 		// start room is in it
 		name:  "goals with nothing on",

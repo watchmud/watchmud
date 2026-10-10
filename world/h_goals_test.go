@@ -72,3 +72,32 @@ func TestSpeedwalk(t *testing.T) {
 	assert.Equal(t, "3n e 2d", speedwalk([]rules.Direction{rules.DirectionNorth, rules.DirectionNorth, rules.DirectionNorth,
 		rules.DirectionEast, rules.DirectionDown, rules.DirectionDown}))
 }
+
+// The map is the zone around you on your own level: the Mill's cellar shows
+// the wheel pit behind its grate, and not the mill house above.
+func TestMap_theLevelYouAreOn(t *testing.T) {
+	content, err := loader.LoadContent(os.DirFS("../content"))
+	require.NoError(t, err)
+	w, err := New(content, memstore.New(), testdice.New())
+	require.NoError(t, err)
+	rec := &player.Recorder{}
+	p := player.NewTestPlayer(uuid.New(), "testdood", rec)
+	cellar, err := content.Room("mill", "flooded_cellar")
+	require.NoError(t, err)
+	w.PlacePlayer(p, cellar)
+
+	require.NoError(t, w.HandleIncomingMessage(gameserver.NewHandlerParameter(gameserver.NewTestConn(p), command.Map{})))
+	m := sent[event.Map](t, rec, 0)
+	assert.Equal(t, "The Drowned Mill", m.Zone)
+	var names []string
+	for _, r := range m.Rooms {
+		names = append(names, r.Name)
+		if r.Here {
+			assert.Equal(t, "The Flooded Cellar", r.Name)
+			assert.Equal(t, 0, r.X)
+			assert.Equal(t, 0, r.Y)
+		}
+	}
+	assert.Equal(t, []string{"The Wheel Pit", "The Flooded Cellar"}, names, "west to east, and nothing upstairs")
+	assert.True(t, m.Rooms[0].Exits[0].Closed, "the grate starts shut")
+}

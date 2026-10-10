@@ -185,7 +185,10 @@ where to go.
   but a band on each zone and a one-line hint. It reads Hollowfields -> Mill -> Barrow as
   a path without building a quest system. A real quest chain can come later, if this
   turns out to be too thin; build it on the same ladder.
-- **A text `map`.** Mudlet players have a map, drawn from GMCP `Room.Info` by `mudlet/`;
+- ~~**A text `map`.**~~ Done 2026-10-10: `map`, from the grid `spaces.LayGrid` already
+  lays for GMCP, rather than the bot's atlas -- every room of the zone within three
+  steps on your level. The event is rooms and exits, not a picture, so screen-reader
+  mode can say it in words. Mudlet players have a map, drawn from GMCP `Room.Info` by `mudlet/`;
   plain telnet and tintin++ players have nothing but `exits`. A small map around the
   current room, built from the room definitions (the explorer's `bot/atlas.go` already
   does the walk, for a bot), gives everyone one. Under screen-reader mode (Phase 7) it

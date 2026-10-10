@@ -27,7 +27,7 @@ type helpSection struct {
 var helpSections = []helpSection{
 	{"Moving around", []helpEntry{
 		{"n s e w u d", "walk that way", []string{"n", "s", "e", "w", "u", "d"}},
-		{"exits", "where you can go from here", []string{"exits"}},
+		{"exits, map", "where you can go from here; the rooms around you", []string{"exits", "map"}},
 		{"recall, goals", "back to the start; where to go next, and the way", []string{"recall", "goals"}},
 	}},
 	{"Looking", []helpEntry{

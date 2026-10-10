@@ -1073,6 +1073,11 @@ the player's power fits and the next one up (the lowest bottom above it), each w
 the walk from the start room as a speedwalk ("5s 2w") -- a breadth-first search through
 every exit, doors included, since a door is one to open. Derived every time, like
 power; a zone with no band is no rung. `TestGoals_theRealLadder` pins the real routes.
+`map` (`world/h_map.go`, drawn by `telnet/map.go`) is the zone's grid around the
+player -- `mapReach` (3) steps each way, their own level only -- sent as rooms with
+relative X/Y and their exits, so the event is data and the renderer decides it's a
+picture: `[ ]` rooms, `-`/`|` ways, `#` a shut door, `^ v +` ways up and down, `*` you.
+Every room of the zone, visited or not -- nothing about travels is stored.
 
 **The moon** (`moon/`, `world/moon.go`): its phase from the date (a mean synodic month
 from a known new moon, checked against the almanac), and night from Seattle's clock --

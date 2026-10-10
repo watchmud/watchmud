@@ -572,3 +572,8 @@ func (RoomStatus) Verb() string { return "roomstatus" }
 type Goals struct{}
 
 func (Goals) Verb() string { return "goals" }
+
+// Map is a small map of the rooms around you.
+type Map struct{}
+
+func (Map) Verb() string { return "map" }
