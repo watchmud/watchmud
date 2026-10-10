@@ -35,8 +35,8 @@ func (c *conn) askTerminalType() {
 // terminalType hears one answer, on readPump, and asks again until the
 // client repeats itself or has answered enough.
 func (c *conn) terminalType(answer string) {
-	if n := len(c.ttypes); n > 0 && c.ttypes[n-1] == answer {
-		return // the end of the cycle
+	if n := len(c.ttypes); n >= maxTTypes || n > 0 && c.ttypes[n-1] == answer {
+		return // the end of the cycle, or a client answering what nobody asked
 	}
 	c.ttypes = append(c.ttypes, answer)
 	if len(c.ttypes) == 1 {

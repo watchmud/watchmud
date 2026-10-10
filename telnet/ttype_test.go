@@ -89,3 +89,12 @@ func TestScreenReader_savedOn(t *testing.T) {
 	got := writes(t, c, event.ScreenReader{On: true}, fullHealth)
 	assert.Equal(t, "health 100 of 100. "+ga, got)
 }
+
+// Answers nobody asked for are dropped once three are in, not kept.
+func TestTerminalType_unaskedAnswersIgnored(t *testing.T) {
+	c := ttypeConn(t)
+	for i := range 100 {
+		c.subnegotiated(optTTYPE, append([]byte{ttypeIs}, byte('A'+i%26), byte('a'+i/26)))
+	}
+	assert.Len(t, c.ttypes, maxTTypes)
+}
