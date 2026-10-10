@@ -56,6 +56,8 @@ The Mudlet add-on still hasn't been run in a real Mudlet: try it before telling 
   gets words instead of symbols. Wants a blind player to try it before it's announced.
 - Boss-only drops can't be sold or donated; `help rules` (a draft automation policy,
   to be reworded); an `economy` log line every 15 minutes.
+- GMCP `Comm.Channel.Text` for chat-capture scripts (the Mudlet add-on doesn't use it
+  yet -- a chat tab in `watchmud.lua` would, once someone can try it in Mudlet).
 - MCCP2 compression, for clients that ask (Mudlet, tintin). Worth a try in a real
   Mudlet before release: it's tested against Go's zlib only.
 - MSSP, for listing sites: on in deploy/app.yaml. Once released, submitting the game

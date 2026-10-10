@@ -18,6 +18,8 @@ import (
 //
 //   - Char.Vitals {"hp", "maxhp", "mp", "maxmp"}, whenever they change
 //   - Room.Info {"num", "id", "name", "area", "exits", "grid"}, on every room
+//   - Comm.Channel.Text {"channel", "talker", "text"}, on every line said to
+//     the player -- say, tell, shout, ooc, gtell -- for chat-capture scripts
 //
 // Nothing the world sends changes for it. Both come out of events the
 // connection already sees -- event.Prompt, event.RoomDescription -- so GMCP
@@ -71,9 +73,22 @@ func roomNum(ref string) uint32 {
 	return h.Sum32() & 0x7fffffff
 }
 
-// gmcpFor is what GMCP says about msg, if anything, given the vitals last
-// sent; it returns the vitals to remember.
-func gmcpFor(msg any, last *vitals) (string, *vitals) {
+// channelText is Comm.Channel.Text, in IRE's shape, which the chat-capture
+// scripts written for those games read: which channel, who spoke, and the
+// line as the player sees it, without color or the newline.
+type channelText struct {
+	Channel string `json:"channel"`
+	Talker  string `json:"talker"`
+	Text    string `json:"text"`
+}
+
+// gmcpFor is what GMCP says about msg, if anything, to the player called
+// self, given the vitals last sent; it returns the vitals to remember.
+func gmcpFor(msg any, self string, last *vitals) (string, *vitals) {
+	if ch, talker, ok := channelOf(msg, self); ok {
+		text := strings.TrimSuffix(plain(render(msg, self)), "\n")
+		return gmcpMessage("Comm.Channel.Text", channelText{ch, talker, text}), last
+	}
 	switch m := msg.(type) {
 	case event.Prompt:
 		v := vitals{HP: m.CurrentHealth, MaxHP: m.MaxHealth, MP: m.CurrentMana, MaxMP: m.MaxMana}
@@ -103,4 +118,23 @@ func gmcpMessage(pkg string, data any) string {
 	}
 	payload := bytes.ReplaceAll(append([]byte(pkg+" "), body...), []byte{IAC}, []byte{IAC, IAC})
 	return string([]byte{IAC, SB, optGMCP}) + string(payload) + string([]byte{IAC, SE})
+}
+
+// channelOf is which channel msg is a line on, and who said it. Your own
+// tell and shout are left out: the text shows you "Ok.", which is no line
+// for a chat log.
+func channelOf(msg any, self string) (channel, talker string, ok bool) {
+	switch m := msg.(type) {
+	case event.Said:
+		return "say", m.Speaker, true
+	case event.Told:
+		return "tell", m.From, m.From != self
+	case event.Shouted:
+		return "shout", m.Speaker, m.Speaker != self
+	case event.OOCSaid:
+		return "ooc", m.Speaker, true
+	case event.GroupTold:
+		return "gtell", m.Speaker, true
+	}
+	return "", "", false
 }

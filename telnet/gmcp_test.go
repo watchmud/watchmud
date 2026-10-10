@@ -133,3 +133,22 @@ func TestRoomNum_uniqueInTheWorld(t *testing.T) {
 	}
 	assert.Greater(t, len(seen), 20)
 }
+
+// Lines said to the player go out as Comm.Channel.Text too, for a client's
+// chat capture -- but not your own tell's "Ok.".
+func TestGMCP_channelText(t *testing.T) {
+	c := loggedInConn() // testdood
+	out := writes(t, c, gmcpOn(true),
+		event.Said{Speaker: "Ann", Value: "hello"},
+		event.Told{From: "Ann", To: "testdood", Value: "psst"},
+		event.Told{From: "testdood", To: "Ann", Value: "hi"},
+		event.OOCSaid{Speaker: "Bob", Value: "anyone?"},
+		event.GroupTold{Speaker: "testdood", Value: "go"},
+		event.Pong{Target: "testdood"})
+	assert.Equal(t, []string{
+		`Comm.Channel.Text {"channel":"say","talker":"Ann","text":"Ann says, \"hello\"."}`,
+		`Comm.Channel.Text {"channel":"tell","talker":"Ann","text":"Ann tells you, \"psst\"."}`,
+		`Comm.Channel.Text {"channel":"ooc","talker":"Bob","text":"[ooc] Bob: anyone?"}`,
+		`Comm.Channel.Text {"channel":"gtell","talker":"testdood","text":"You tell the group, 'go'"}`,
+	}, gmcpPayloads(out))
+}

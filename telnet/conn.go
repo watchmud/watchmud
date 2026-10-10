@@ -826,8 +826,11 @@ func (c *conn) write(msg any) error {
 		return nil
 	}
 	if c.gmcp {
-		var data string
-		data, c.vitals = gmcpFor(msg, c.vitals)
+		var data, name string
+		if p := c.Player(); p != nil {
+			name = p.Name()
+		}
+		data, c.vitals = gmcpFor(msg, name, c.vitals)
 		if data != "" {
 			if err := c.writeRaw(data); err != nil {
 				return err
