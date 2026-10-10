@@ -51,7 +51,7 @@ var msspFixed = [][2]string{
 	{"ANSI", "1"},
 	{"GMCP", "1"},
 	{"UTF-8", "1"},
-	{"MCCP", "0"},
+	{"MCCP", "1"},
 	{"MSDP", "0"},
 	{"MXP", "0"},
 	{"PUEBLO", "0"},

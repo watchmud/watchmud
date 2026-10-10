@@ -707,6 +707,8 @@ Additive once the byte loop exists:
 - ~~`NAWS` (window size) for wrapping; wrap output to the client's width.~~ Done
   2026-10-01: `telnet/wrap.go`; no NAWS, no wrapping.
 - Then the MUD-specific layer as it earns its keep: `MSSP`, `GMCP`, `MCCP`, `MXP`.
+  MCCP2 done 2026-10-10 (`telnet/mccp.go`), MSSP and MTTS the same day. MXP not
+  planned: GMCP covers what a client needs as data, and MXP is markup in the text.
   GMCP done 2026-10-06: `Char.Vitals` and `Room.Info` (CLAUDE.md, telnet/). Mudlet
   hands them to scripts; `mudlet/` is the package that draws bars and a map from them,
   served from www.watchmud.com (2026-10-06). ~~MSSP waits until the game wants to be

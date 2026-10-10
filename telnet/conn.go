@@ -2,6 +2,7 @@ package telnet
 
 import (
 	"bufio"
+	"compress/zlib"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -70,6 +71,9 @@ type conn struct {
 	ttypes []string
 	// mssp is what to tell a crawler that says DO MSSP; nil, none offered.
 	mssp *MSSP
+	// zout is the compressed stream once the client agrees to MCCP2, nil
+	// until then; writeRaw writes through it. Owned by writePump.
+	zout *zlib.Writer
 
 	// How long a line may take to arrive before the connection is dropped,
 	// before login and after. readPump owns readTimeout and switches it
@@ -320,7 +324,7 @@ func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, l listener, 
 	// says WILL NAWS tells us how wide to wrap, and one that says DO GMCP
 	// gets vitals and rooms as data (gmcp.go), and one that says WILL TTYPE
 	// is asked what it is -- MTTS, which says if it reads to a screen reader
-	offers := []byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP, IAC, DO, optTTYPE}
+	offers := []byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP, IAC, DO, optTTYPE, IAC, WILL, optMCCP2}
 	if c.mssp != nil {
 		offers = append(offers, IAC, WILL, optMSSP)
 	}
@@ -812,6 +816,8 @@ func (c *conn) write(msg any) error {
 	case gmcpOn:
 		c.gmcp, c.vitals = bool(m), nil
 		return nil
+	case compress:
+		return c.compress(bool(m))
 	case screenReaderClient:
 		c.srClient = true
 		if !c.srChosen {
@@ -857,6 +863,12 @@ func (c *conn) promptEnd() string {
 func (c *conn) writeRaw(text string) error {
 	if err := c.netConn.SetWriteDeadline(time.Now().Add(writeTimeout)); err != nil {
 		return err
+	}
+	if c.zout != nil {
+		if _, err := io.WriteString(c.zout, text); err != nil {
+			return err
+		}
+		return c.zout.Flush() // each write whole on arrival, not when a block fills
 	}
 	_, err := io.WriteString(c.netConn, text)
 	return err
@@ -1004,6 +1016,10 @@ func (c *conn) negotiated(verb, option byte) {
 		c.Send(gmcpOn(false))
 	case option == optTTYPE && verb == WILL:
 		c.askTerminalType()
+	case option == optMCCP2 && verb == DO:
+		c.Send(compress(true))
+	case option == optMCCP2 && verb == DONT:
+		c.Send(compress(false))
 	case option == optMSSP && verb == DO && c.mssp != nil:
 		c.Send(negotiation(c.mssp.subnegotiation()))
 	}

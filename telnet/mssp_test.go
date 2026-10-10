@@ -57,7 +57,7 @@ func TestMSSP_offeredAndAnswered(t *testing.T) {
 	go start(serverEnd, &fakeServer{}, nil, listener{banner: "Welcome.\r\n", mssp: m}, "test",
 		&addressLimit{max: 1, open: map[string]int{}})
 
-	buf := make([]byte, len("Welcome.\r\n")+15)
+	buf := make([]byte, len("Welcome.\r\n")+18)
 	_, err := io.ReadFull(client, buf)
 	require.NoError(t, err)
 	assert.True(t, bytes.HasSuffix(buf, []byte{IAC, WILL, optMSSP}))

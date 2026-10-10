@@ -98,8 +98,8 @@ func TestStart_offersEORAndGMCPAndAsksForNAWSAndTTYPE(t *testing.T) {
 	t.Cleanup(func() { _ = client.Close() })
 	go start(serverEnd, &fakeServer{}, nil, listener{banner: "Welcome.\r\n"}, "test", &addressLimit{max: 1, open: map[string]int{}})
 
-	buf := make([]byte, len("Welcome.\r\n")+12)
+	buf := make([]byte, len("Welcome.\r\n")+15)
 	_, err := io.ReadFull(client, buf)
 	require.NoError(t, err)
-	assert.Equal(t, "Welcome.\r\n"+string([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP, IAC, DO, optTTYPE}), string(buf))
+	assert.Equal(t, "Welcome.\r\n"+string([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP, IAC, DO, optTTYPE, IAC, WILL, optMCCP2}), string(buf))
 }

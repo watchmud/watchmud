@@ -285,6 +285,12 @@ out with the other offers, a client that answers `WILL` is asked up to three tim
 player has typed `screenreader` this session; at arrival a player whose record is off
 is told the client turned it on, and how to stop it. Nobody blind has tried it yet.
 
+**MCCP2** (`telnet/mccp.go`): `WILL MCCP2` goes out with the other offers; a client's
+`DO` queues `compress(true)`, and writePump writes the start marker plain and from then
+on `writeRaw` goes through a `zlib.Writer`, flushed after every write so a prompt
+arrives whole. `DONT` closes the stream and output is plain again. Everything above
+`writeRaw` -- frame, GMCP, the prompt marks -- neither knows nor cares.
+
 **MSSP** (`telnet/mssp.go`) is for listing sites' crawlers: with `mssp.enabled` in the
 config, `WILL MSSP` goes out with the other offers, and a `DO` gets one subnegotiation
 of name/value pairs -- name, players, uptime, host, ports, website, then `msspFixed`,
