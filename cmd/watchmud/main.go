@@ -146,6 +146,13 @@ func run() error {
 			opts.TLSPort = cfg.TLS.Port
 			opts.CertFile, opts.KeyFile = cfg.TLS.Cert, cfg.TLS.Key
 		}
+		if cfg.MSSP.Enabled {
+			opts.MSSP = &telnet.MSSP{
+				Hostname: cfg.MSSP.Hostname, Website: cfg.MSSP.Website, Contact: cfg.MSSP.Contact,
+				Port: cfg.Telnet.Port, TLSPort: cfg.TLS.Port,
+				Players: gameServer.Playing, Started: gameServer.Started(),
+			}
+		}
 		if err := telnet.Listen(ctx, opts, gameServer, content.Catalog); err != nil {
 			log.Error().Err(err).Msg("telnet listener")
 			stopForListener(err)

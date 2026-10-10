@@ -96,7 +96,7 @@ func TestPromptEnd_clientSaysDoEOR(t *testing.T) {
 func TestStart_offersEORAndGMCPAndAsksForNAWSAndTTYPE(t *testing.T) {
 	serverEnd, client := net.Pipe()
 	t.Cleanup(func() { _ = client.Close() })
-	go start(serverEnd, &fakeServer{}, nil, "Welcome.\r\n", "test", &addressLimit{max: 1, open: map[string]int{}})
+	go start(serverEnd, &fakeServer{}, nil, listener{banner: "Welcome.\r\n"}, "test", &addressLimit{max: 1, open: map[string]int{}})
 
 	buf := make([]byte, len("Welcome.\r\n")+12)
 	_, err := io.ReadFull(client, buf)

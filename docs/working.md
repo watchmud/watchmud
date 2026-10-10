@@ -54,6 +54,8 @@ The Mudlet add-on still hasn't been run in a real Mudlet: try it before telling 
 - `map`: the rooms around you, drawn.
 - `screenreader [on|off]`, and MTTS: a client that says it reads to a screen reader
   gets words instead of symbols. Wants a blind player to try it before it's announced.
+- MSSP, for listing sites: on in deploy/app.yaml. Once released, submitting the game
+  to the listings is the owner's step.
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

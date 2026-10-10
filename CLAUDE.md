@@ -285,6 +285,13 @@ out with the other offers, a client that answers `WILL` is asked up to three tim
 player has typed `screenreader` this session; at arrival a player whose record is off
 is told the client turned it on, and how to stop it. Nobody blind has tried it yet.
 
+**MSSP** (`telnet/mssp.go`) is for listing sites' crawlers: with `mssp.enabled` in the
+config, `WILL MSSP` goes out with the other offers, and a `DO` gets one subnegotiation
+of name/value pairs -- name, players, uptime, host, ports, website, then `msspFixed`,
+statements about the game kept true by hand (no classes, no levels, no player killing;
+GMCP and UTF-8 yes). PLAYERS is `GameServer.Playing`, an atomic the world goroutine
+stores at every prompt, counting people and not bots; UPTIME is `GameServer.Started`.
+
 **`mudlet/` is the other end of it**: `watchmud.lua`, a Mudlet script drawing health and
 mana bars from `Char.Vitals` and a map from `Room.Info` (rooms keyed on `num`, placed
 at their `grid` -- a step from a neighbour only for a server too old to send one --

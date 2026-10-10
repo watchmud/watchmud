@@ -709,8 +709,10 @@ Additive once the byte loop exists:
 - Then the MUD-specific layer as it earns its keep: `MSSP`, `GMCP`, `MCCP`, `MXP`.
   GMCP done 2026-10-06: `Char.Vitals` and `Room.Info` (CLAUDE.md, telnet/). Mudlet
   hands them to scripts; `mudlet/` is the package that draws bars and a map from them,
-  served from www.watchmud.com (2026-10-06). MSSP waits until the game wants to be listed
-  -- though that may be now: it is small, and r/MUD is the audience a listing reaches.
+  served from www.watchmud.com (2026-10-06). ~~MSSP waits until the game wants to be
+  listed~~ -- MSSP done 2026-10-10 (`telnet/mssp.go`, `mssp:` in the config, on in
+  deploy/app.yaml). Getting listed is the owner's step: submit to mudverse /
+  grapevine / mudstats once it's released. No CONTACT is sent until one is configured.
 - ~~Test against tintin++ specifically, since that's the target.~~ Done 2026-10-06 with
   tintin++ 2.02.20 (Ubuntu's), scripted against a local server: `#action`s on every
   login question fired -- the GA after each prompt is what lets them -- so a new

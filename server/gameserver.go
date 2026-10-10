@@ -44,6 +44,11 @@ type GameServer struct {
 	// lastBeat is unix nanoseconds at the end of the last tick, for the
 	// health check (health.go); zero until Run starts.
 	lastBeat atomic.Int64
+	// playing is how many people -- bots not counted -- were in the world
+	// at the last prompt, for MSSP; started is when New ran. Both safe to
+	// read from another goroutine.
+	playing atomic.Int64
+	started time.Time
 }
 
 func New(w *world.World, c *rules.Catalog, s player.Store) *GameServer {
@@ -59,8 +64,16 @@ func New(w *world.World, c *rules.Catalog, s player.Store) *GameServer {
 		creating:       map[string]bool{},
 		inFlight:       map[gameserver.Conn]bool{},
 		gone:           map[gameserver.Conn]bool{},
+		started:        time.Now(),
 	}
 }
+
+// Playing is how many people were in the world at the last prompt, bots
+// not counted: what a listing site is told.
+func (gs *GameServer) Playing() int { return int(gs.playing.Load()) }
+
+// Started is when the server came up.
+func (gs *GameServer) Started() time.Time { return gs.started }
 
 // SetPasswordCost is bcrypt's cost for passwords made and checked from here
 // on, for a server whose characters are throwaway -- tests and the load test,
@@ -125,7 +138,12 @@ func (gs *GameServer) Run(ctx context.Context) error {
 // A player who has just logged in is in the list by now, so this is also
 // their first prompt; one whose login failed is not, and gets none.
 func (gs *GameServer) prompt() {
+	people := 0
+	defer func() { gs.playing.Store(int64(people)) }()
 	for p := range gs.world.Players() {
+		if !p.IsBot() {
+			people++
+		}
 		p.Send(event.Prompt{
 			CurrentHealth: p.CurrentHealth(),
 			MaxHealth:     p.MaxHealth(),

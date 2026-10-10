@@ -33,6 +33,14 @@ health:
   host: 127.0.0.1
   port: 4080
 
+# MSSP: what a MUD listing site's crawler is told when it connects. The
+# server adds its name, player count (bots not counted), uptime and ports.
+# Contact is left out: an address here is published to every crawler.
+mssp:
+  enabled: true
+  hostname: watchmud.com
+  website: https://www.watchmud.com
+
 # The uri carries the password, so it isn't here: WATCHMUD_MONGO_URI in the
 # environment supplies it (compose.yaml builds it from .env).
 mongo:

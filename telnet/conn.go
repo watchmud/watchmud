@@ -68,6 +68,8 @@ type conn struct {
 	// ttypes is what the client has answered to TTYPE SEND so far: its
 	// name, its terminal, then "MTTS <bits>". Owned by readPump.
 	ttypes []string
+	// mssp is what to tell a crawler that says DO MSSP; nil, none offered.
+	mssp *MSSP
 
 	// How long a line may take to arrive before the connection is dropped,
 	// before login and after. readPump owns readTimeout and switches it
@@ -151,6 +153,9 @@ type Options struct {
 	TLSAddr           string
 	TLSPort           int // told to players on the plain port, so they can find it
 	CertFile, KeyFile string
+
+	// MSSP is what the game tells a listing site's crawler; nil offers none.
+	MSSP *MSSP
 }
 
 func Listen(ctx context.Context, opts Options, gs gameserver.Instance, cat *rules.Catalog) error {
@@ -167,7 +172,7 @@ func Listen(ctx context.Context, opts Options, gs gameserver.Instance, cat *rule
 	if opts.TLSAddr != "" {
 		tlsPort = opts.TLSPort
 	}
-	listeners = append(listeners, listener{ln: ln, banner: plainBanner(tlsPort)})
+	listeners = append(listeners, listener{ln: ln, banner: plainBanner(tlsPort), mssp: opts.MSSP})
 
 	if opts.TLSAddr != "" {
 		cert, err := loadCertificate(opts.CertFile, opts.KeyFile)
@@ -186,6 +191,7 @@ func Listen(ctx context.Context, opts Options, gs gameserver.Instance, cat *rule
 			tls:              tlsConfig(cert),
 			handshakeTimeout: defaultHandshakeTimeout,
 			banner:           "Welcome to WatchMUD.\r\n",
+			mssp:             opts.MSSP,
 		})
 	}
 
@@ -243,6 +249,7 @@ type listener struct {
 	tls              *tls.Config
 	handshakeTimeout time.Duration
 	banner           string
+	mssp             *MSSP
 }
 
 // serve accepts connections from l until ctx is done, refusing any past the
@@ -276,7 +283,7 @@ func serve(ctx context.Context, l listener, gs gameserver.Instance, cat *rules.C
 			continue
 		}
 		if l.tls == nil {
-			start(nc, gs, cat, l.banner, host, limit)
+			start(nc, gs, cat, l, host, limit)
 			continue
 		}
 		// the handshake on its own goroutine: a slow or silent client must
@@ -291,28 +298,33 @@ func serve(ctx context.Context, l listener, gs gameserver.Instance, cat *rules.C
 				return
 			}
 			_ = tc.SetDeadline(time.Time{}) // the conn's pumps set their own
-			start(tc, gs, cat, l.banner, host, limit)
+			start(tc, gs, cat, l, host, limit)
 		}()
 	}
 }
 
 // start runs a connection that has its slot, and gives the slot back when it
 // closes.
-func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, banner, host string, limit *addressLimit) {
+func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, l listener, host string, limit *addressLimit) {
 	log.Info().Msgf("telnet connection from %s", nc.RemoteAddr())
 	c := newConn(nc, gs, cat)
+	c.mssp = l.mssp
 	c.onClose = func() { limit.release(host) }
 	c.mayCreate = func() bool { return limit.mayCreate(host, time.Now()) }
 	c.created = func() { limit.created(host, time.Now()) }
 	go c.writePump()
 	go c.readPump()
-	c.Send(banner)
+	c.Send(l.banner)
 	// after the banner, which is what a person reads first: a MUD client
 	// that says DO EOR gets EOR after each prompt instead of GA, and one that
 	// says WILL NAWS tells us how wide to wrap, and one that says DO GMCP
 	// gets vitals and rooms as data (gmcp.go), and one that says WILL TTYPE
 	// is asked what it is -- MTTS, which says if it reads to a screen reader
-	c.Send(negotiation([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP, IAC, DO, optTTYPE}))
+	offers := []byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP, IAC, DO, optTTYPE}
+	if c.mssp != nil {
+		offers = append(offers, IAC, WILL, optMSSP)
+	}
+	c.Send(negotiation(offers))
 }
 
 func (c *conn) Player() *player.Player {
@@ -992,6 +1004,8 @@ func (c *conn) negotiated(verb, option byte) {
 		c.Send(gmcpOn(false))
 	case option == optTTYPE && verb == WILL:
 		c.askTerminalType()
+	case option == optMSSP && verb == DO && c.mssp != nil:
+		c.Send(negotiation(c.mssp.subnegotiation()))
 	}
 }
 
