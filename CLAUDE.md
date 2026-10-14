@@ -266,8 +266,40 @@ walking exits out from the first room by id when content loads), sent as `"grid"
 a mapper never guesses where a room it recalled, logged or died into goes;
 `TestGrid_theContentFits` fails on an exit that doesn't fit it or two rooms on one
 spot. A room's `num` is an FNV hash of its "zone/room", stable with nothing stored;
-`TestRoomNum_uniqueInTheWorld` fails on a collision in the real content. What a client
+`TestRoomNum_uniqueInTheWorld` fails on a collision in the real content.
+`Comm.Channel.Text` (IRE's shape: channel, talker, the line as shown, plain) goes out
+for every say, tell, shout, ooc and gtell line the player gets -- your own tell's and
+shout's "Ok." aside -- for chat-capture scripts; `watchmud.lua` doesn't use it yet. What a client
 sends back (`Core.Hello`, `Core.Supports.Set`) is ignored.
+
+**Screen-reader mode is a third rendering** (`telnet/spoken.go`, `telnet/ttype.go`).
+`spoken(msg, self)` answers, for the events where symbols or a picture would be read
+out character by character, words instead -- the prompt as "health 80 of 100, mana
+20 of 30. ", the map as a list of ways and rooms, the exits line without brackets,
+"97/100hp" as "97 of 100 health" in the lists and blocks that print it -- and every
+list a line saying how long it is first. Everything else falls through to `render`,
+which is why render's wording tests still read what a sighted player sees.
+`conn.render` picks between them. The mode is `screenReader` on the record, set by
+`screenreader [on|off]` or `toggle screenreader` and sent at arrival as
+`event.ScreenReader` beside `event.Color`; **or the client says so**: `DO TTYPE` goes
+out with the other offers, a client that answers `WILL` is asked up to three times
+(stopping when an answer repeats), and an `MTTS <n>` answer with bit 64 queues
+`screenReaderClient`. The client's word turns the mode on for the session unless the
+player has typed `screenreader` this session; at arrival a player whose record is off
+is told the client turned it on, and how to stop it. Nobody blind has tried it yet.
+
+**MCCP2** (`telnet/mccp.go`): `WILL MCCP2` goes out with the other offers; a client's
+`DO` queues `compress(true)`, and writePump writes the start marker plain and from then
+on `writeRaw` goes through a `zlib.Writer`, flushed after every write so a prompt
+arrives whole. `DONT` closes the stream and output is plain again. Everything above
+`writeRaw` -- frame, GMCP, the prompt marks -- neither knows nor cares.
+
+**MSSP** (`telnet/mssp.go`) is for listing sites' crawlers: with `mssp.enabled` in the
+config, `WILL MSSP` goes out with the other offers, and a `DO` gets one subnegotiation
+of name/value pairs -- name, players, uptime, host, ports, website, then `msspFixed`,
+statements about the game kept true by hand (no classes, no levels, no player killing;
+GMCP and UTF-8 yes). PLAYERS is `GameServer.Playing`, an atomic the world goroutine
+stores at every prompt, counting people and not bots; UPTIME is `GameServer.Started`.
 
 **`mudlet/` is the other end of it**: `watchmud.lua`, a Mudlet script drawing health and
 mana bars from `Char.Vitals` and a map from `Room.Info` (rooms keyed on `num`, placed
@@ -761,6 +793,12 @@ death. A shop is a zone's `shops.json` (room, and objects at a power, named the 
 names them) loaded into `spaces.Zone.Shops`; it sells new instances of its stock without
 end, buys anything worth a coin -- not a `"noSell"` thing, such as the mill's keys,
 which a reset puts back every few minutes -- and never resells what it bought.
+A boss's own drops (the King's blade and crown, the Miller's mallet and gauntlets) are
+`"noSell"` and `"noDonate"` too: `donate` passes them over (`keepUndonatable`, a bag
+holding one included) and `look` says they're hard won. Drops a boss shares with lesser
+mobs (barrow plate, the river-stone pendant) stay tradeable. **Watching it:**
+`World.Economy` -- people's coins and bots' apart, and the donation room's count and
+power -- is logged every `economyLogInterval` (15 minutes) from the heartbeat.
 
 ### Player death
 
@@ -1068,6 +1106,16 @@ through `World.flee` -- the same code the `flee` command uses. `hit`, `hold`/`gr
 breadth-first search out from the player's room, through open exits within the zone,
 answering the first step towards the nearest mob of that name -- a trail, not a map:
 step, then track again. It's how you chase a bandit that ran.
+`goals` (`world/h_goals.go`) reads the manifest's power bands as a ladder: the zones
+the player's power fits and the next one up (the lowest bottom above it), each with
+the walk from the start room as a speedwalk ("5s 2w") -- a breadth-first search through
+every exit, doors included, since a door is one to open. Derived every time, like
+power; a zone with no band is no rung. `TestGoals_theRealLadder` pins the real routes.
+`map` (`world/h_map.go`, drawn by `telnet/map.go`) is the zone's grid around the
+player -- `mapReach` (3) steps each way, their own level only -- sent as rooms with
+relative X/Y and their exits, so the event is data and the renderer decides it's a
+picture: `[ ]` rooms, `-`/`|` ways, `#` a shut door, `^ v +` ways up and down, `*` you.
+Every room of the zone, visited or not -- nothing about travels is stored.
 
 **The moon** (`moon/`, `world/moon.go`): its phase from the date (a mean synodic month
 from a known new moon, checked against the almanac), and night from Seattle's clock --

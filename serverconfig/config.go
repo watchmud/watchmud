@@ -38,6 +38,16 @@ type Config struct {
 	} `yaml:"health"`
 
 	Mongo MongoConfig `yaml:"mongo"`
+
+	// MSSP is what a MUD listing site's crawler is told, beside what the
+	// server knows itself (name, players, uptime, ports). Off unless
+	// enabled; hostname, website and contact are each left out when empty.
+	MSSP struct {
+		Enabled  bool   `yaml:"enabled"`
+		Hostname string `yaml:"hostname"`
+		Website  string `yaml:"website"`
+		Contact  string `yaml:"contact"`
+	} `yaml:"mssp"`
 }
 
 // MongoConfig says where characters are persisted. An empty Uri means the

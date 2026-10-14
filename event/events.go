@@ -369,7 +369,7 @@ type Whispered struct {
 
 // Toggles is "toggle": what a player has switched on.
 type Toggles struct {
-	Color, OOC, Tells, Shouts, Assist bool
+	Color, OOC, Tells, Shouts, Assist, ScreenReader bool
 }
 
 // Toggled is one toggle switched.
@@ -575,6 +575,14 @@ type Shouted struct {
 // player having just asked; without it this is the setting being applied at
 // login, which says nothing.
 type Color struct {
+	On      bool
+	Changed bool
+}
+
+// ScreenReader is whether a player's connection renders for a screen reader:
+// words where there are symbols, lists that say how long they are, no
+// pictures. Changed as Color has it.
+type ScreenReader struct {
 	On      bool
 	Changed bool
 }
@@ -787,6 +795,8 @@ type LookedAtObject struct {
 	Capacity  int
 	Closed    bool
 	Locked    bool
+	// Earned is a boss's own drop: no shop buys it, and it can't be donated.
+	Earned bool
 }
 
 // LookedAtMob is "look <mob>": how it seems, not its numbers -- those are
@@ -902,4 +912,51 @@ type RoomStatusExit struct {
 	RoomId    string
 	ZoneId    string
 	Flags     []rules.RoomFlag
+}
+
+// Goals is "goals": the zones a player's power fits and the next one up,
+// derived from what they wear on every read, like power itself. Nothing about
+// it is stored.
+type Goals struct {
+	Power int
+	// From is the room every Route starts from: the start room, where
+	// recall and death both lead.
+	From string
+	Fits []GoalZone
+	// Next is the zone (or zones, sharing a bottom) just above Fits; empty
+	// once a player has outgrown them all.
+	Next []GoalZone
+}
+
+// GoalZone is one step on the ladder, and the way there from the start room
+// as a speedwalk ("5s 2w"); empty when the start room is in it.
+type GoalZone struct {
+	Name     string
+	Min, Max int
+	Route    string
+}
+
+// Map is "map": the rooms of the player's zone around them, on the same
+// level, from the zone's grid (spaces.LayGrid). X and Y are relative to the
+// player, east and north; the renderer decides whether that's a picture or a
+// list in words.
+type Map struct {
+	Zone  string
+	Rooms []MapRoom
+}
+
+type MapRoom struct {
+	X, Y  int
+	Name  string
+	Here  bool
+	Exits []MapExit
+}
+
+// MapExit is one way out: Leads is the name of where it goes, Closed a shut
+// door, and Away whether it leaves the zone.
+type MapExit struct {
+	Direction rules.Direction
+	Leads     string
+	Closed    bool
+	Away      bool
 }

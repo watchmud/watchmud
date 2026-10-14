@@ -21,6 +21,7 @@ func testRecord() *player.Record {
 		Wizard:       true,
 		Bot:          true,
 		NoColor:      true,
+		ScreenReader: true,
 		NoOOC:        true,
 		NoTell:       true,
 		NoShout:      true,

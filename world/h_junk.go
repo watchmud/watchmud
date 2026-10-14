@@ -15,7 +15,7 @@ import (
 // it took. What's worn stays on, and a bag with anything in it waits until
 // it's emptied: junking what's inside by accident is a loss no one meant.
 func (w *World) handleJunk(msg *gameserver.HandlerParameter, cmd command.Junk) {
-	w.getRidOf(msg, cmd.Target, true, func(inst *object.Instance) bool {
+	w.getRidOf(msg, cmd.Target, keepFull, func(inst *object.Instance) bool {
 		if err := msg.Player.Inventory().Remove(inst); err != nil {
 			log.Error().Err(err).Str("player", msg.Player.Name()).Msg("junk")
 			msg.Fail(event.Unknown)
@@ -36,7 +36,7 @@ func (w *World) handleDonate(msg *gameserver.HandlerParameter, cmd command.Donat
 		msg.Fail(event.NoDonationRoom)
 		return
 	}
-	w.getRidOf(msg, cmd.Target, false, func(inst *object.Instance) bool {
+	w.getRidOf(msg, cmd.Target, keepUndonatable, func(inst *object.Instance) bool {
 		if err := object.Move(inst, msg.Player.Inventory(), donation.Inventory); err != nil {
 			log.Error().Err(err).Str("player", msg.Player.Name()).Msg("donate")
 			msg.Fail(event.Unknown)
@@ -51,11 +51,37 @@ func (w *World) handleDonate(msg *gameserver.HandlerParameter, cmd command.Donat
 	})
 }
 
+// keepFull is junk's refusal: a bag with anything in it waits until it's
+// emptied.
+func keepFull(inst *object.Instance) event.ResultCode {
+	if inst.Contents != nil && inst.Contents.Len() > 0 {
+		return event.NotEmpty
+	}
+	return ""
+}
+
+// keepUndonatable is donate's: a boss's drop, or a bag with one inside,
+// stays with whoever won it (ROADMAP, "Economy inflation").
+func keepUndonatable(inst *object.Instance) event.ResultCode {
+	if inst.Definition.NoDonate() {
+		return event.NoDonate
+	}
+	if inst.Contents != nil {
+		for in := range inst.Contents.All() {
+			if in.Definition.NoDonate() {
+				return event.NoDonate
+			}
+		}
+	}
+	return ""
+}
+
 // getRidOf is junk and donate's shared part: the target, in get's grammar,
 // among what the player carries; worn things passed over (and said so when
-// named alone); a bag with things in it refused when emptyBags; and each of
-// the rest handed to away, which stops everything by answering false.
-func (w *World) getRidOf(msg *gameserver.HandlerParameter, raw string, emptyBags bool, away func(*object.Instance) bool) {
+// named alone); what keep has a reason to refuse passed over the same way;
+// and each of the rest handed to away, which stops everything by answering
+// false.
+func (w *World) getRidOf(msg *gameserver.HandlerParameter, raw string, keep func(*object.Instance) event.ResultCode, away func(*object.Instance) bool) {
 	if raw == "" {
 		msg.Fail(event.NoTarget)
 		return
@@ -81,8 +107,8 @@ func (w *World) getRidOf(msg *gameserver.HandlerParameter, raw string, emptyBags
 			refused = event.TargetInUse
 			continue
 		}
-		if emptyBags && inst.Contents != nil && inst.Contents.Len() > 0 {
-			refused = event.NotEmpty
+		if why := keep(inst); why != "" {
+			refused = why
 			continue
 		}
 		if !away(inst) {

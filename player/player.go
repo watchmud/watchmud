@@ -30,6 +30,9 @@ type Player struct {
 	// noColor is the player turning ANSI color off. Inverted so the zero
 	// value, which is every record written before there was a choice, is on.
 	noColor bool
+	// screenReader is the player asking for text a screen reader reads
+	// well: words where there were symbols, no pictures. Off by default.
+	screenReader bool
 	// noOOC is the player leaving the ooc channel; inverted the same way.
 	noOOC bool
 	// noTell and noShout are tells and shouts switched off, the same way.
@@ -266,6 +269,10 @@ func (p *Player) Spend(n int) bool {
 	return true
 }
 func (p *Player) SetColor(on bool) { p.noColor = !on }
+
+// ScreenReader is whether the player wants screen-reader text.
+func (p *Player) ScreenReader() bool      { return p.screenReader }
+func (p *Player) SetScreenReader(on bool) { p.screenReader = on }
 
 // OOC is whether the player hears the ooc channel.
 func (p *Player) OOC() bool      { return !p.noOOC }

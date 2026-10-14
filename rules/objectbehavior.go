@@ -12,6 +12,9 @@ const (
 	// NoSell is what no shop buys: a key a reset puts back every few minutes
 	// would otherwise be a coin farm.
 	ObjectBehaviorNoSell ObjectBehavior = "noSell"
+	// NoDonate is what can't be sent to the donation room: a boss's own
+	// drop, worn by someone who fought for it rather than left for anyone.
+	ObjectBehaviorNoDonate ObjectBehavior = "noDonate"
 )
 
 var ErrUnknownObjectBehavior = errors.New("unknown object behavior")
@@ -23,6 +26,7 @@ var objectBehaviors = enum[ObjectBehavior]{
 		ObjectBehaviorNone,
 		ObjectBehaviorNoTake,
 		ObjectBehaviorNoSell,
+		ObjectBehaviorNoDonate,
 	},
 }
 

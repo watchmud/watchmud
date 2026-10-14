@@ -77,6 +77,8 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handleLook(msg, cmd)
 	case command.Move:
 		w.handleMove(msg, cmd)
+	case command.ScreenReader:
+		w.handleScreenReader(msg, cmd)
 	case command.Color:
 		w.handleColor(msg, cmd)
 	case command.NoHassle:
@@ -139,6 +141,10 @@ func (w *World) HandleIncomingMessage(msg *gameserver.HandlerParameter) error {
 		w.handlePosition(msg, cmd)
 	case command.Split:
 		w.handleSplit(msg, cmd)
+	case command.Map:
+		w.handleMap(msg, cmd)
+	case command.Goals:
+		w.handleGoals(msg, cmd)
 	case command.Where:
 		w.handleWhere(msg, cmd)
 	case command.Commands:

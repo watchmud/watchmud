@@ -2,6 +2,7 @@ package telnet
 
 import (
 	"bufio"
+	"compress/zlib"
 	"context"
 	"crypto/tls"
 	"errors"
@@ -59,6 +60,20 @@ type conn struct {
 	// last sent, so only a change goes. Owned by writePump.
 	gmcp   bool
 	vitals *vitals
+	// screenReader is whether to render for a screen reader (spoken.go):
+	// the player's saved choice, or the client saying it uses one (MTTS),
+	// unless the player has said otherwise this session (srChosen). All
+	// owned by writePump.
+	screenReader, srClient, srChosen bool
+
+	// ttypes is what the client has answered to TTYPE SEND so far: its
+	// name, its terminal, then "MTTS <bits>". Owned by readPump.
+	ttypes []string
+	// mssp is what to tell a crawler that says DO MSSP; nil, none offered.
+	mssp *MSSP
+	// zout is the compressed stream once the client agrees to MCCP2, nil
+	// until then; writeRaw writes through it. Owned by writePump.
+	zout *zlib.Writer
 
 	// How long a line may take to arrive before the connection is dropped,
 	// before login and after. readPump owns readTimeout and switches it
@@ -142,6 +157,9 @@ type Options struct {
 	TLSAddr           string
 	TLSPort           int // told to players on the plain port, so they can find it
 	CertFile, KeyFile string
+
+	// MSSP is what the game tells a listing site's crawler; nil offers none.
+	MSSP *MSSP
 }
 
 func Listen(ctx context.Context, opts Options, gs gameserver.Instance, cat *rules.Catalog) error {
@@ -158,7 +176,7 @@ func Listen(ctx context.Context, opts Options, gs gameserver.Instance, cat *rule
 	if opts.TLSAddr != "" {
 		tlsPort = opts.TLSPort
 	}
-	listeners = append(listeners, listener{ln: ln, banner: plainBanner(tlsPort)})
+	listeners = append(listeners, listener{ln: ln, banner: plainBanner(tlsPort), mssp: opts.MSSP})
 
 	if opts.TLSAddr != "" {
 		cert, err := loadCertificate(opts.CertFile, opts.KeyFile)
@@ -177,6 +195,7 @@ func Listen(ctx context.Context, opts Options, gs gameserver.Instance, cat *rule
 			tls:              tlsConfig(cert),
 			handshakeTimeout: defaultHandshakeTimeout,
 			banner:           "Welcome to WatchMUD.\r\n",
+			mssp:             opts.MSSP,
 		})
 	}
 
@@ -234,6 +253,7 @@ type listener struct {
 	tls              *tls.Config
 	handshakeTimeout time.Duration
 	banner           string
+	mssp             *MSSP
 }
 
 // serve accepts connections from l until ctx is done, refusing any past the
@@ -267,7 +287,7 @@ func serve(ctx context.Context, l listener, gs gameserver.Instance, cat *rules.C
 			continue
 		}
 		if l.tls == nil {
-			start(nc, gs, cat, l.banner, host, limit)
+			start(nc, gs, cat, l, host, limit)
 			continue
 		}
 		// the handshake on its own goroutine: a slow or silent client must
@@ -282,27 +302,33 @@ func serve(ctx context.Context, l listener, gs gameserver.Instance, cat *rules.C
 				return
 			}
 			_ = tc.SetDeadline(time.Time{}) // the conn's pumps set their own
-			start(tc, gs, cat, l.banner, host, limit)
+			start(tc, gs, cat, l, host, limit)
 		}()
 	}
 }
 
 // start runs a connection that has its slot, and gives the slot back when it
 // closes.
-func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, banner, host string, limit *addressLimit) {
+func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, l listener, host string, limit *addressLimit) {
 	log.Info().Msgf("telnet connection from %s", nc.RemoteAddr())
 	c := newConn(nc, gs, cat)
+	c.mssp = l.mssp
 	c.onClose = func() { limit.release(host) }
 	c.mayCreate = func() bool { return limit.mayCreate(host, time.Now()) }
 	c.created = func() { limit.created(host, time.Now()) }
 	go c.writePump()
 	go c.readPump()
-	c.Send(banner)
+	c.Send(l.banner)
 	// after the banner, which is what a person reads first: a MUD client
 	// that says DO EOR gets EOR after each prompt instead of GA, and one that
 	// says WILL NAWS tells us how wide to wrap, and one that says DO GMCP
-	// gets vitals and rooms as data (gmcp.go)
-	c.Send(negotiation([]byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP}))
+	// gets vitals and rooms as data (gmcp.go), and one that says WILL TTYPE
+	// is asked what it is -- MTTS, which says if it reads to a screen reader
+	offers := []byte{IAC, WILL, optEOR, IAC, DO, optNAWS, IAC, WILL, optGMCP, IAC, DO, optTTYPE, IAC, WILL, optMCCP2}
+	if c.mssp != nil {
+		offers = append(offers, IAC, WILL, optMSSP)
+	}
+	c.Send(negotiation(offers))
 }
 
 func (c *conn) Player() *player.Player {
@@ -790,10 +816,21 @@ func (c *conn) write(msg any) error {
 	case gmcpOn:
 		c.gmcp, c.vitals = bool(m), nil
 		return nil
+	case compress:
+		return c.compress(bool(m))
+	case screenReaderClient:
+		c.srClient = true
+		if !c.srChosen {
+			c.screenReader = true
+		}
+		return nil
 	}
 	if c.gmcp {
-		var data string
-		data, c.vitals = gmcpFor(msg, c.vitals)
+		var data, name string
+		if p := c.Player(); p != nil {
+			name = p.Name()
+		}
+		data, c.vitals = gmcpFor(msg, name, c.vitals)
 		if data != "" {
 			if err := c.writeRaw(data); err != nil {
 				return err
@@ -830,6 +867,12 @@ func (c *conn) writeRaw(text string) error {
 	if err := c.netConn.SetWriteDeadline(time.Now().Add(writeTimeout)); err != nil {
 		return err
 	}
+	if c.zout != nil {
+		if _, err := io.WriteString(c.zout, text); err != nil {
+			return err
+		}
+		return c.zout.Flush() // each write whole on arrival, not when a block fills
+	}
 	_, err := io.WriteString(c.netConn, text)
 	return err
 }
@@ -857,11 +900,42 @@ func (c *conn) frame(msg any) string {
 	if m, ok := msg.(event.Color); ok {
 		c.color = m.On // before rendering, so the answer is in the new setting
 	}
-	text := c.layout(msg)
+	text := ""
+	if m, ok := msg.(event.ScreenReader); ok {
+		text = c.screenReaderSet(m)
+	}
+	text += c.layout(msg)
 	if !c.color {
 		text = plain(text)
 	}
 	return wrap(text, c.width)
+}
+
+// render is render, or spoken where screen-reader mode has words of its own.
+func (c *conn) render(msg any, self string) string {
+	if c.screenReader {
+		if text, ok := spoken(msg, self); ok {
+			return text
+		}
+	}
+	return render(msg, self)
+}
+
+// screenReaderSet takes the world's word on screen-reader mode: the
+// player's own command decides outright, while the saved setting at login
+// only adds to what the client said. A client that says so, for a player
+// who hasn't said, gets told how to turn it off.
+func (c *conn) screenReaderSet(m event.ScreenReader) string {
+	if m.Changed {
+		c.screenReader, c.srChosen = m.On, true
+		return ""
+	}
+	c.screenReader = m.On || c.srClient
+	if c.srClient && !m.On {
+		return "Your client says it reads to a screen reader, so the game will too: " +
+			"words instead of symbols, and no pictures. 'screenreader off' to stop.\n"
+	}
+	return ""
 }
 
 // layout is frame without the color decision.
@@ -883,14 +957,14 @@ func (c *conn) layout(msg any) string {
 			return ""
 		}
 		c.atPrompt = true
-		return render(m, "")
+		return c.render(m, "")
 	}
 
 	name := ""
 	if p := c.Player(); p != nil {
 		name = p.Name()
 	}
-	text := render(msg, name)
+	text := c.render(msg, name)
 	if text == "" {
 		return ""
 	}
@@ -943,14 +1017,25 @@ func (c *conn) negotiated(verb, option byte) {
 		c.Send(gmcpOn(true))
 	case option == optGMCP && verb == DONT:
 		c.Send(gmcpOn(false))
+	case option == optTTYPE && verb == WILL:
+		c.askTerminalType()
+	case option == optMCCP2 && verb == DO:
+		c.Send(compress(true))
+	case option == optMCCP2 && verb == DONT:
+		c.Send(compress(false))
+	case option == optMSSP && verb == DO && c.mssp != nil:
+		c.Send(negotiation(c.mssp.subnegotiation()))
 	}
 }
 
-// subnegotiated hears what a client says about an option. NAWS is the only
-// one listened to: width then height, two bytes each. The height is unused.
+// subnegotiated hears what a client says about an option: NAWS, width then
+// height, two bytes each (the height unused); and TTYPE's answers.
 func (c *conn) subnegotiated(option byte, data []byte) {
 	if option == optNAWS && len(data) >= 4 {
 		c.Send(windowSize(int(data[0])<<8 | int(data[1])))
+	}
+	if option == optTTYPE && len(data) > 0 && data[0] == ttypeIs {
+		c.terminalType(string(data[1:]))
 	}
 }
 

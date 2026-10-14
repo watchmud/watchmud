@@ -174,7 +174,10 @@ a guided storyline that walks you through much of the world. Today a new charact
 the welcome line and whatever the Socialite answers; after the Hollowfields, nothing says
 where to go.
 
-- **`goals` (or `where`): the next zone for your power.** Every zone with a band in
+- ~~**`goals` (or `where`): the next zone for your power.**~~ Done 2026-10-10 as
+  `goals` (`where` was taken): the bands were already in the manifest, so instead of a
+  hand-written hint per zone it works the walk out from the start room and prints it
+  as a speedwalk -- it can't go stale when content moves. Every zone with a band in
   `zone_manifest.json` (`"power": {"min", "max"}`) is a step on the ladder; the command
   names the zones your current power fits, and the one just above, with a line on how to
   get there from Temple Square. Derived on every read like power itself -- no quest
@@ -182,7 +185,10 @@ where to go.
   but a band on each zone and a one-line hint. It reads Hollowfields -> Mill -> Barrow as
   a path without building a quest system. A real quest chain can come later, if this
   turns out to be too thin; build it on the same ladder.
-- **A text `map`.** Mudlet players have a map, drawn from GMCP `Room.Info` by `mudlet/`;
+- ~~**A text `map`.**~~ Done 2026-10-10: `map`, from the grid `spaces.LayGrid` already
+  lays for GMCP, rather than the bot's atlas -- every room of the zone within three
+  steps on your level. The event is rooms and exits, not a picture, so screen-reader
+  mode can say it in words. Mudlet players have a map, drawn from GMCP `Room.Info` by `mudlet/`;
   plain telnet and tintin++ players have nothing but `exits`. A small map around the
   current room, built from the room definitions (the explorer's `bot/atlas.go` already
   does the walk, for a bot), gives everyone one. Under screen-reader mode (Phase 7) it
@@ -701,10 +707,14 @@ Additive once the byte loop exists:
 - ~~`NAWS` (window size) for wrapping; wrap output to the client's width.~~ Done
   2026-10-01: `telnet/wrap.go`; no NAWS, no wrapping.
 - Then the MUD-specific layer as it earns its keep: `MSSP`, `GMCP`, `MCCP`, `MXP`.
+  MCCP2 done 2026-10-10 (`telnet/mccp.go`), MSSP and MTTS the same day. MXP not
+  planned: GMCP covers what a client needs as data, and MXP is markup in the text.
   GMCP done 2026-10-06: `Char.Vitals` and `Room.Info` (CLAUDE.md, telnet/). Mudlet
   hands them to scripts; `mudlet/` is the package that draws bars and a map from them,
-  served from www.watchmud.com (2026-10-06). MSSP waits until the game wants to be listed
-  -- though that may be now: it is small, and r/MUD is the audience a listing reaches.
+  served from www.watchmud.com (2026-10-06). ~~MSSP waits until the game wants to be
+  listed~~ -- MSSP done 2026-10-10 (`telnet/mssp.go`, `mssp:` in the config, on in
+  deploy/app.yaml). Getting listed is the owner's step: submit to mudverse /
+  grapevine / mudstats once it's released. No CONTACT is sent until one is configured.
 - ~~Test against tintin++ specifically, since that's the target.~~ Done 2026-10-06 with
   tintin++ 2.02.20 (Ubuntu's), scripted against a local server: `#action`s on every
   login question fired -- the GA after each prompt is what lets them -- so a new
@@ -712,7 +722,11 @@ Additive once the byte loop exists:
   width tintin sent by NAWS; color came through; say, emote, time, walking, wimpy and
   quit all read right. GMCP was offered and did no harm. (A tintin `#action` on the
   prompt needs `%*` or a regex for "100/100", not `%d`.)
-- **Screen-reader mode** (added 2026-10-08, from the r/MUD thread under "a new player's
+- **Screen-reader mode** -- done 2026-10-10, both parts, *except the last line*: it
+  hasn't had a blind player try it. MTTS is read (`telnet/ttype.go`), bit 64 turns the
+  mode on; `screenreader` is on the record; `telnet/spoken.go` has the words. Only the
+  screen-reader bit is read from MTTS so far -- 256 colors and UTF-8 aren't used yet.
+  (Added 2026-10-08, from the r/MUD thread under "a new player's
   first hour"). A MUD author there had the protocols done and was asking what makes the
   *text* work for blind players; GMCP bars and Mudlet's map do nothing for them. Two
   parts:
@@ -876,15 +890,23 @@ Named so they don't get rediscovered as surprises:
   cheap:
   - **Coin sinks** beyond durability repair. Coins enter from every kill and shop sale;
     count where they leave.
-  - **What bots may donate.** Today it's everything. Cap it at a power (the bottom of the
+  - ~~**What bots may donate.**~~ Already capped, it turned out (checked 2026-10-10):
+    a hunter only donates its ground's `loot` keywords -- pelts, feathers,
+    carapaces from power 1-2 prey -- never what it finds besides. Was: "Today it's everything. Cap it at a power (the bottom of the
     Hollowfields band, say), or junk the rest, so the donation room helps a new character
-    and never stands in for the climb.
-  - **Top drops can't be donated or sold** (`"noSell"` already exists for keys), so a
+    and never stands in for the climb."
+  - ~~**Top drops can't be donated or sold**~~ Done 2026-10-10: `"noDonate"`, with
+    `"noSell"`, on the drops only a boss has (barrow blade, black iron crown, miller's
+    mallet, iron gauntlets). They can still be given, and dropped -- in the donation
+    room too, by walking there; not worth closing until someone does it. (`"noSell"` already exists for keys), so a
     boss's loot is worn by someone who fought for it.
-  - **A stated automation policy.** Triggers, aliases and GMCP-driven bars are welcome;
+  - ~~**A stated automation policy.**~~ Drafted 2026-10-10 as `help rules` -- the
+    owner's to reword; nothing enforces it beyond `freeze`. Triggers, aliases and GMCP-driven bars are welcome;
     a character that hunts while its player is away is a bot, and bots are flagged on
     the record and listed apart in `who`. Write it into `help` before somebody tests it.
-  - **Watch it.** Coins in circulation per character, and the power of what's in the
+  - ~~**Watch it.**~~ Done 2026-10-10: an `economy` log line every 15 minutes
+    (`World.Economy`), people and bots apart -- only who's online, since the world
+    never reads the store. Coins in circulation per character, and the power of what's in the
     donation room, logged on the save pulse. Inflation shows up there long before players
     say so.
 - **Death never costs gear.** (Recorded 2026-10-08, from the same thread: losing hard-won

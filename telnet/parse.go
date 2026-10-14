@@ -181,6 +181,8 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "who":
 		return command.Who{}, nil
 
+	case "screenreader":
+		return command.ScreenReader{Setting: strings.ToLower(rest)}, nil
 	case "color", "colour":
 		return command.Color{Setting: strings.ToLower(rest)}, nil
 
@@ -227,6 +229,10 @@ func parseCommand(tokens []string) (command.Command, error) {
 		return command.Track{Target: rest}, nil
 	case "split":
 		return command.Split{Amount: rest}, nil
+	case "map":
+		return command.Map{}, nil
+	case "goals":
+		return command.Goals{}, nil
 	case "where":
 		return command.Where{}, nil
 	case "commands":

@@ -75,6 +75,8 @@ const (
 	CantNest      ResultCode = "CANT_NEST"
 	CoinsInPurse  ResultCode = "COINS_IN_PURSE"
 	NotEmpty      ResultCode = "NOT_EMPTY"
+	// donate: a boss's drop, or a bag holding one
+	NoDonate ResultCode = "NO_DONATE"
 	// ooc: off the channel, so not heard on it either
 	OffChannel ResultCode = "OFF_CHANNEL"
 	// donate: content names no donation room that exists

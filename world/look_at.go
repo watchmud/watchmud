@@ -54,6 +54,7 @@ func (w *World) lookedAtObject(inst *object.Instance, worn bool) event.LookedAtO
 		Container:     inst.Contents != nil,
 		Closed:        inst.Closed(),
 		Locked:        inst.Lock != nil && inst.Lock.Locked,
+		Earned:        d.NoDonate(),
 	}
 	if d.EquipmentSlot == rules.SlotWield {
 		l.Damage = string(d.Damage)

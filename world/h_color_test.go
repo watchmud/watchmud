@@ -45,3 +45,26 @@ func (s *handleColorSuite) TestColor_onTheRecord() {
 
 	s.Assert().True(s.w.record(s.p).NoColor)
 }
+
+func (s *handleColorSuite) screenReader(setting string) {
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.ScreenReader{Setting: setting})))
+}
+
+// Screen-reader mode is color's twin: off unless asked, kept on the record.
+func (s *handleColorSuite) TestScreenReader() {
+	s.Require().False(s.p.ScreenReader())
+
+	s.screenReader("")
+	s.Assert().True(s.p.ScreenReader(), "a bare screenreader switches it")
+	s.Assert().Equal(event.ScreenReader{On: true, Changed: true}, sent[event.ScreenReader](s.T(), s.r, 0))
+	s.Assert().True(s.w.record(s.p).ScreenReader)
+
+	s.screenReader("off")
+	s.Assert().False(s.p.ScreenReader())
+
+	s.screenReader("loud")
+	s.Assert().Equal(event.Failed{Verb: "screenreader", Code: event.BadRequest}, sent[event.Failed](s.T(), s.r, 2))
+
+	s.Require().NoError(s.w.HandleIncomingMessage(s.handlerParameter(command.Toggle{Name: "screenreader"})))
+	s.Assert().True(s.p.ScreenReader(), "toggle switches it too")
+}

@@ -27,8 +27,8 @@ type helpSection struct {
 var helpSections = []helpSection{
 	{"Moving around", []helpEntry{
 		{"n s e w u d", "walk that way", []string{"n", "s", "e", "w", "u", "d"}},
-		{"exits", "where you can go from here", []string{"exits"}},
-		{"recall", "back to the start", []string{"recall"}},
+		{"exits, map", "where you can go from here; the rooms around you", []string{"exits", "map"}},
+		{"recall, goals", "back to the start; where to go next, and the way", []string{"recall", "goals"}},
 	}},
 	{"Looking", []helpEntry{
 		{"look, look <thing>", "the room, or something in it (l)", []string{"look", "l"}},
@@ -62,7 +62,7 @@ var helpSections = []helpSection{
 		{"sit, rest, sleep, stand", "heal faster off your feet; 'wake' to get up",
 			[]string{"sit", "rest", "sleep", "stand", "wake"}},
 		{"stat, role, abilities", "you; what your gear makes you; what it casts", []string{"stat", "role", "abilities"}},
-		{"color [on|off]", "ANSI color, on or off; just color switches it", []string{"color"}},
+		{"color, screenreader", "ANSI color; words, not symbols. on, off or switch", []string{"color", "screenreader"}},
 	}},
 	{"Talking", []helpEntry{
 		{"say <words>, emote <act>", "to the room ('), or act it out (:)", []string{"say", "'", "emote", ":"}},
@@ -73,8 +73,8 @@ var helpSections = []helpSection{
 			[]string{"follow", "group", "gt", "gtell", "ungroup", "assist", "split"}},
 		{"socials, toggle", "smile, bow, wave and more; what you hear", []string{"socials", "toggle"}},
 		{"bug, idea, typo <words>", "tell whoever runs the game", []string{"bug", "idea", "typo"}},
-		{"who, where, time", "who's playing; who's near you; the hour", []string{"who", "where", "time"}},
-		{"commands, quit", "every command there is; save and leave", []string{"commands", "quit"}},
+		{"who, where, time, quit", "who's on; who's near; the hour; save and leave",
+			[]string{"who", "where", "time", "quit", "commands"}},
 	}},
 }
 
@@ -85,6 +85,16 @@ type helpTopic struct {
 }
 
 var helpTopics = map[string]helpTopic{
+	"rules": {"scripts, bots, and playing fair",
+		"Triggers, aliases, speedwalks, and scripts that draw bars or a map are all\n" +
+			"welcome: play however your client makes it easiest.\n" +
+			"\n" +
+			"A character that plays while nobody is at the keyboard -- hunting, looting,\n" +
+			"selling on its own -- is a bot. Bots are flagged by whoever runs the game and\n" +
+			"listed apart under Bots in 'who'; if you want to run one, say so with 'idea'\n" +
+			"first. An unflagged one may be frozen.\n" +
+			"\n" +
+			"Be decent to each other. 'bug', 'idea' and 'typo' reach whoever runs the game.\n"},
 	"bots": {"who the bots are",
 		"The characters listed under Bots in 'who' are programs, not people. Most\n" +
 			"hunt the Hollowfields, rest when they're hurt, and give what they find to\n" +

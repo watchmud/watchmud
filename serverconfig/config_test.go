@@ -54,6 +54,8 @@ func TestLoad_theDeployConfig(t *testing.T) {
 	assert.Equal(t, "/app/certs/fullchain.pem", cfg.TLS.Cert, "where compose.yaml mounts deploy/certs")
 	assert.Equal(t, "127.0.0.1", cfg.Health.Host, "the healthcheck runs inside the container; nothing outside needs it")
 	assert.NotZero(t, cfg.Health.Port, "compose.yaml's healthcheck asks it")
+	assert.True(t, cfg.MSSP.Enabled, "listing sites can crawl it")
+	assert.Equal(t, "watchmud.com", cfg.MSSP.Hostname)
 }
 
 func TestLoad_tlsIsOptional(t *testing.T) {

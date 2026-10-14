@@ -90,11 +90,12 @@ func (s *locationSuite) TestArrive() {
 	s.Require().Len(s.r.Sent, 1)
 	s.Assert().Equal(event.EnteredGame{Actor: "newcomer"}, sent[event.EnteredGame](s.T(), s.r, 0), "a login is not a first time")
 
-	s.Require().Len(rec.Sent, 3)
-	s.Assert().Equal(event.Color{On: true}, sent[event.Color](s.T(), rec, 0), "the setting, ahead of the room")
-	s.Assert().Equal(s.w.StartRoom.Name, sent[event.RoomDescription](s.T(), rec, 1).Name)
+	s.Require().Len(rec.Sent, 4)
+	s.Assert().Equal(event.Color{On: true}, sent[event.Color](s.T(), rec, 0), "the settings, ahead of the room")
+	s.Assert().Equal(event.ScreenReader{On: false}, sent[event.ScreenReader](s.T(), rec, 1))
+	s.Assert().Equal(s.w.StartRoom.Name, sent[event.RoomDescription](s.T(), rec, 2).Name)
 	// a test player predates the temple token, so is handed one -- after the room
-	s.Assert().IsType(event.Received{}, rec.Sent[2])
+	s.Assert().IsType(event.Received{}, rec.Sent[3])
 }
 
 // A character fresh from creation: the room hears it's their first time.

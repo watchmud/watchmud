@@ -284,6 +284,39 @@ var commandCases = []commandCase{
 		want:  statBlockTank,
 	},
 	{
+		name:  "map",
+		input: "map",
+		want: "Wrathrock\n" +
+			"     [*]-[ ]\n" +
+			"      |\n" +
+			" [ ]-[ ]-[ ]-\n" +
+			"      |\n" +
+			"     [ ]\n" +
+			"      |\n" +
+			"     [ ]\n" +
+			"      |\n" +
+			"You are at the * (Temple Square).\n",
+	},
+	{
+		// testcontent: Wrathrock is the one zone with a band, 1-5, and the
+		// start room is in it
+		name:  "goals with nothing on",
+		input: "goals",
+		want: "Your power is 0.\nNext\n  Wrathrock  power 1-5  you're there\n" +
+			"Nothing suits you yet: wear some gear, and your power will rise.\n" +
+			"Ways are from Temple Square. Better gear raises your power.\n",
+	},
+	{
+		name: "goals when you have outgrown everything",
+		setup: func(_ *world.World, p *player.Player, o *player.Player) {
+			helmet := testHelmet()
+			helmet.Power = 7
+			p.Equipment().Equip(rules.SlotHead, helmet)
+		},
+		input: "goals",
+		want:  "Your power is 7.\nNowhere here is built for you any more: you've outgrown the lot.\n",
+	},
+	{
 		name: "stat shows the power of what is worn",
 		setup: func(_ *world.World, p *player.Player, o *player.Player) {
 			helmet := testHelmet()
@@ -947,6 +980,8 @@ func TestRender_lookedAt(t *testing.T) {
 	assert.Equal(t, "A leather satchel\n  Power 1.\n  Holding 3 of 10.\n", plain(render(bag, "testdood")))
 	box := event.LookedAtObject{Item: "a strongbox", Container: true, Closed: true, Locked: true}
 	assert.Contains(t, plain(render(box, "testdood")), "It's locked.")
+	crown := event.LookedAtObject{Item: "the black iron crown", Power: 15, Earned: true}
+	assert.Contains(t, plain(render(crown, "testdood")), "Hard won: no shop will buy it, and it can't be donated.\n")
 
 	rat := event.LookedAtMob{Name: "giant rat", Health: 40, Fighting: "bob"}
 	assert.Equal(t, "The giant rat is badly hurt, fighting bob.\n", plain(render(rat, "testdood")))
@@ -1077,7 +1112,7 @@ func TestRender_talk(t *testing.T) {
 	assert.Equal(t, "You ask bob, 'psst'\n", plain(render(w, "ann")))
 	assert.Equal(t, "ann asks bob something.\n", plain(render(w, "cal")))
 
-	assert.Equal(t, "Toggles\n  color   on\n  ooc     on\n  tells   off\n  shouts  on\n  assist  on\n  'toggle <name>' switches one.\n",
+	assert.Equal(t, "Toggles\n  color         on\n  ooc           on\n  tells         off\n  shouts        on\n  assist        on\n  screenreader  off\n  'toggle <name>' switches one.\n",
 		plain(render(event.Toggles{Color: true, OOC: true, Shouts: true, Assist: true}, "ann")))
 
 	for line, want := range map[string]command.Command{

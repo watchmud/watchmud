@@ -55,6 +55,14 @@ func render(msg any, self string) string {
 	case event.Welcome:
 		return m.Text + "\n"
 
+	case event.ScreenReader:
+		switch {
+		case !m.Changed:
+			return ""
+		case m.On:
+			return "Screen-reader mode is on: words instead of symbols, and no pictures.\n"
+		}
+		return "Screen-reader mode is off.\n"
 	case event.Color:
 		// conn.frame has already switched; this only answers the player
 		switch {
@@ -144,6 +152,10 @@ func render(msg any, self string) string {
 			return fmt.Sprintf("You split the coins %d ways: %s each.\n", m.Among, coinWord(m.Each))
 		}
 		return fmt.Sprintf("%s splits some coins %d ways: you get %s.\n", m.Actor, m.Among, coinWord(m.Each))
+	case event.Map:
+		return renderMap(m)
+	case event.Goals:
+		return renderGoals(m)
 	case event.WhereList:
 		var rows [][]cell
 		for _, p := range m.Players {
@@ -1070,6 +1082,9 @@ func renderLookedAtObject(m event.LookedAtObject) string {
 	case m.Container:
 		fmt.Fprintf(&b, "  Holding %d.\n", m.Holding)
 	}
+	if m.Earned {
+		b.WriteString("  Hard won: no shop will buy it, and it can't be donated.\n")
+	}
 	if m.Worn {
 		b.WriteString("  You have it on.\n")
 	}
@@ -1206,6 +1221,7 @@ func renderToggles(m event.Toggles) string {
 		{plainCell("tells"), onOff(m.Tells)},
 		{plainCell("shouts"), onOff(m.Shouts)},
 		{plainCell("assist"), onOff(m.Assist)},
+		{plainCell("screenreader"), onOff(m.ScreenReader)},
 	}) + "  'toggle <name>' switches one.\n"
 }
 
@@ -1281,4 +1297,37 @@ func renderCommands() string {
 		}
 	}
 	return paint(colorHeading, "Commands") + "\n" + wrapWords(verbs, 76) + "  'help' says what they do.\n"
+}
+
+// renderGoals is "goals": the zones that suit the player's power, the next
+// step up, and the walk to each from the start room.
+func renderGoals(m event.Goals) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "Your power is %d.\n", m.Power)
+	section := func(heading string, zones []event.GoalZone) {
+		if len(zones) == 0 {
+			return
+		}
+		var rows [][]cell
+		for _, z := range zones {
+			route := z.Route
+			if route == "" {
+				route = "you're there"
+			}
+			rows = append(rows, []cell{colored(colorPlace, z.Name), plainCell(fmt.Sprintf("power %d-%d", z.Min, z.Max)), plainCell(route)})
+		}
+		b.WriteString(paint(colorHeading, heading) + "\n" + table(rows))
+	}
+	section("Right for you now", m.Fits)
+	section("Next", m.Next)
+	switch {
+	case len(m.Fits) == 0 && len(m.Next) == 0:
+		b.WriteString("Nowhere here is built for you any more: you've outgrown the lot.\n")
+	case len(m.Fits) == 0:
+		b.WriteString("Nothing suits you yet: wear some gear, and your power will rise.\n")
+	}
+	if len(m.Fits)+len(m.Next) > 0 {
+		b.WriteString("Ways are from " + m.From + ". Better gear raises your power.\n")
+	}
+	return b.String()
 }

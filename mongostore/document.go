@@ -26,6 +26,7 @@ type playerDoc struct {
 	Wizard       bool   `bson:"wizard,omitempty"`
 	Bot          bool   `bson:"bot,omitempty"`
 	NoColor      bool   `bson:"no_color,omitempty"`
+	ScreenReader bool   `bson:"screen_reader,omitempty"`
 	NoOOC        bool   `bson:"no_ooc,omitempty"`
 	NoTell       bool   `bson:"no_tell,omitempty"`
 	NoShout      bool   `bson:"no_shout,omitempty"`
@@ -122,6 +123,7 @@ func newPlayerDoc(r *player.Record, now time.Time) playerDoc {
 		Wizard:       r.Wizard,
 		Bot:          r.Bot,
 		NoColor:      r.NoColor,
+		ScreenReader: r.ScreenReader,
 		NoOOC:        r.NoOOC,
 		NoTell:       r.NoTell,
 		NoShout:      r.NoShout,
@@ -166,6 +168,7 @@ func (d playerDoc) record() (*player.Record, error) {
 		Wizard:       d.Wizard,
 		Bot:          d.Bot,
 		NoColor:      d.NoColor,
+		ScreenReader: d.ScreenReader,
 		NoOOC:        d.NoOOC,
 		NoTell:       d.NoTell,
 		NoShout:      d.NoShout,
