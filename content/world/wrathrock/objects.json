@@ -109,5 +109,100 @@
     "description_on_ground": "A leather satchel with a long strap lies here.",
     "durability": 0,
     "container": { "portable": true, "capacity": 10 }
+  },
+  {
+    "id": "arming_sword",
+    "name": "arming sword",
+    "category": "WEAPON",
+    "aliases": [
+      "sword",
+      "arming"
+    ],
+    "short_description": "an arming sword",
+    "description_on_ground": "An arming sword with a plain cross-guard lies here, its edge bright from the grindstone.",
+    "equipment_slot": "wield",
+    "damage": "1d6",
+    "roles": {
+      "striker": 2
+    }
+  },
+  {
+    "id": "studded_cap",
+    "name": "studded cap",
+    "category": "ARMOR",
+    "aliases": [
+      "cap",
+      "studded"
+    ],
+    "short_description": "a studded cap",
+    "description_on_ground": "A leather cap set with iron studs sits here.",
+    "equipment_slot": "head",
+    "armor_type": "leather"
+  },
+  {
+    "id": "studded_boots",
+    "name": "studded boots",
+    "category": "ARMOR",
+    "aliases": [
+      "boots",
+      "studded"
+    ],
+    "short_description": "a pair of studded boots",
+    "description_on_ground": "A pair of hobnailed leather boots stands here.",
+    "equipment_slot": "feet",
+    "armor_type": "leather"
+  },
+  {
+    "id": "riding_gloves",
+    "name": "riding gloves",
+    "category": "ARMOR",
+    "aliases": [
+      "gloves",
+      "riding"
+    ],
+    "short_description": "a pair of riding gloves",
+    "description_on_ground": "A pair of supple leather riding gloves has been dropped here.",
+    "equipment_slot": "hands",
+    "armor_type": "leather"
+  },
+  {
+    "id": "quilted_jerkin",
+    "name": "quilted jerkin",
+    "category": "ARMOR",
+    "aliases": [
+      "jerkin",
+      "quilted"
+    ],
+    "short_description": "a quilted jerkin",
+    "description_on_ground": "A jerkin of quilted leather lies folded here.",
+    "equipment_slot": "body",
+    "armor_type": "leather"
+  },
+  {
+    "id": "oilskin_cloak",
+    "name": "oilskin cloak",
+    "category": "ARMOR",
+    "aliases": [
+      "cloak",
+      "oilskin"
+    ],
+    "short_description": "an oilskin cloak",
+    "description_on_ground": "An oilskin cloak, stiff and smelling of wax, is spread out here.",
+    "equipment_slot": "about_body",
+    "armor_type": "cloth"
+  },
+  {
+    "id": "strong_draught",
+    "name": "strong healing draught",
+    "category": "POTION",
+    "aliases": [
+      "draught",
+      "potion",
+      "strong",
+      "healing"
+    ],
+    "short_description": "a strong healing draught",
+    "description_on_ground": "A stoppered vial of something dark red and hot to the touch sits here.",
+    "quaff": "heal"
   }
 ]

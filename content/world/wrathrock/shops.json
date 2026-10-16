@@ -9,7 +9,14 @@
       { "object": "waterskin", "power": 1 },
       { "object": "healing_draught", "power": 2 },
       { "object": "temple_token", "power": 1 },
-      { "object": "leather_satchel", "power": 1 }
+      { "object": "leather_satchel", "power": 1 },
+      { "object": "arming_sword", "power": 4 },
+      { "object": "studded_cap", "power": 4 },
+      { "object": "studded_boots", "power": 4 },
+      { "object": "riding_gloves", "power": 4 },
+      { "object": "quilted_jerkin", "power": 4 },
+      { "object": "oilskin_cloak", "power": 4 },
+      { "object": "strong_draught", "power": 5 }
     ]
   }
 ]
