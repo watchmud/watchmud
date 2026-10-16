@@ -133,3 +133,41 @@ func TestOutfit_readsTheRealText(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, woreRe.MatchString(m[1]), m[1])
 }
+
+// A hunter with 200 coins buys the sword and the jerkin -- 80 each -- on its
+// way out, is refused the cap, and is power 2. And then it goes hunting.
+func TestAdventurer_buysItsKit(t *testing.T) {
+	addr, g := startGameStore(t, 10*time.Millisecond)
+	createCharacter(t, addr, "Wren", "correcthorse")
+	setRecord(t, g, "Wren", func(r *player.Record) { r.Coins = 200 })
+	a := runAdventurer(t, addr, "Wren")
+
+	ok := assert.Eventually(t, func() bool { return a.Stats().Kills >= 1 }, 60*time.Second, 50*time.Millisecond)
+	st := a.Stats()
+	require.True(t, ok, "stats: %+v", st)
+	assert.Equal(t, 2, st.Bought)
+	assert.Equal(t, 2, st.Power, "sword 4, jerkin 4, cloak 1, token 1")
+}
+
+// A dagger worn to a fifth goes to the smith before the bot goes hunting, and
+// a purse too light for the sword learns its price on the way.
+func TestAdventurer_repairsFirst(t *testing.T) {
+	addr, g := startGameStore(t, 10*time.Millisecond)
+	createCharacter(t, addr, "Wren", "correcthorse")
+	setRecord(t, g, "Wren", func(r *player.Record) {
+		r.Coins = 50
+		for i := range r.Inventory {
+			if r.Inventory[i].DefinitionId == "training_dagger" {
+				d := 5
+				r.Inventory[i].Durability = &d
+			}
+		}
+	})
+	a := runAdventurer(t, addr, "Wren")
+
+	ok := assert.Eventually(t, func() bool { return a.Stats().Kills >= 1 }, 60*time.Second, 50*time.Millisecond)
+	st := a.Stats()
+	require.True(t, ok, "stats: %+v", st)
+	assert.Equal(t, 1, st.Repairs)
+	assert.Zero(t, st.Bought)
+}

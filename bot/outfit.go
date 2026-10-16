@@ -117,6 +117,56 @@ func spares() []string {
 	return out
 }
 
+// outfit is a visit to the smith and the store, both off Market Square, and
+// then out: once a town visit, never back to town, so a repair it can't
+// finish doesn't send it round again.
+func (a *Adventurer) outfit(rows []worn, coins int) stateFn {
+	return func(ctx context.Context) (stateFn, error) {
+		if a.attacked {
+			return a.fightThen(a.town), nil
+		}
+		if a.here == home {
+			if _, err := a.walk(ctx, waitIn); err != nil {
+				return nil, err
+			}
+		}
+		if wantsRepair(rows, coins) {
+			if _, err := a.walk(ctx, step{"west", "Smithy"}); err != nil {
+				return nil, err
+			}
+			if _, _, err := a.ask("repair all", repairRe); err != nil {
+				return nil, err
+			}
+			a.count(func(st *Stats) { st.Repairs++ })
+			if _, err := a.walk(ctx, step{"east", "Market Square"}); err != nil {
+				return nil, err
+			}
+			inv, _, err := a.ask("inventory", inventoryRe)
+			if err != nil {
+				return nil, err
+			}
+			coins = readPurse(inv)
+		}
+		if a.affordable(rows, coins) != nil {
+			if _, err := a.walk(ctx, step{"east", "General Store"}); err != nil {
+				return nil, err
+			}
+			if err := a.shop(ctx, rows, coins); err != nil {
+				return nil, err
+			}
+			if _, err := a.walk(ctx, step{"west", "Market Square"}); err != nil {
+				return nil, err
+			}
+		}
+		_, m, err := a.ask("equipment", powerRe)
+		if err != nil {
+			return nil, err
+		}
+		power, _ := strconv.Atoi(m[1])
+		return a.setOut(ctx, power)
+	}
+}
+
 // affordable is the next piece of the kit if the purse covers what it's known
 // to cost -- or its price isn't known yet, and asking is how to learn it.
 func (a *Adventurer) affordable(rows []worn, coins int) *piece {
@@ -168,4 +218,17 @@ func (a *Adventurer) shop(ctx context.Context, rows []worn, coins int) error {
 		a.count(func(st *Stats) { st.Bought++ })
 		a.log("bought and wore %s for %d coins", p.name, price)
 	}
+}
+
+// wantsRepair: something worn is at the mark, and there's a coin to pay with.
+func wantsRepair(rows []worn, coins int) bool {
+	if coins == 0 {
+		return false
+	}
+	for _, r := range rows {
+		if r.needsRepair() {
+			return true
+		}
+	}
+	return false
 }

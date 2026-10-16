@@ -277,9 +277,10 @@ func (a *Adventurer) goHome(ctx context.Context) (stateFn, error) {
 	return a.town, nil
 }
 
-// town rests if it must, then picks a ground its power suits.
+// town rests if it must, sees to its kit if there's something to see to, then
+// sets out.
 func (a *Adventurer) town(ctx context.Context) (stateFn, error) {
-	_, m, err := a.ask("equipment", powerRe)
+	text, m, err := a.ask("equipment", powerRe)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +292,22 @@ func (a *Adventurer) town(ctx context.Context) (stateFn, error) {
 			return a.dead, nil
 		}
 	}
+	rows := readEquipment(text)
+	inv, _, err := a.ask("inventory", inventoryRe)
+	if err != nil {
+		return nil, err
+	}
+	coins := readPurse(inv)
+	if wantsRepair(rows, coins) || a.affordable(rows, coins) != nil {
+		return a.outfit(rows, coins), nil
+	}
 	power, _ := strconv.Atoi(m[1])
+	return a.setOut(ctx, power)
+}
+
+// setOut picks a ground its power suits, or waits in the market for one.
+func (a *Adventurer) setOut(ctx context.Context, power int) (stateFn, error) {
+	a.count(func(st *Stats) { st.Power = power })
 	a.ground = a.pickGround(power)
 	if a.ground == nil {
 		a.log("nowhere to hunt at power %d; waiting in town", power)

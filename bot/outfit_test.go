@@ -147,3 +147,12 @@ func TestShop_aFreeSlot(t *testing.T) {
 	g.say("You wear a studded cap.\r\n<100/100hp> ")
 	require.NoError(t, <-done, "nothing left for the boots' known 80")
 }
+
+// Only with coins to pay: a bot with worn gear and an empty purse would walk
+// to the smith every visit to be told what it can't afford.
+func TestWantsRepair(t *testing.T) {
+	rows := readEquipment(starterEquipment) // the cloak is at 6/20
+	assert.True(t, wantsRepair(rows, 10))
+	assert.False(t, wantsRepair(rows, 0))
+	assert.False(t, wantsRepair(readEquipment(starterEquipment)[:2], 10), "nothing at the mark")
+}
