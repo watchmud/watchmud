@@ -1,7 +1,9 @@
 package bot
 
 import (
+	"context"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -113,4 +115,57 @@ func spares() []string {
 		}
 	}
 	return out
+}
+
+// affordable is the next piece of the kit if the purse covers what it's known
+// to cost -- or its price isn't known yet, and asking is how to learn it.
+func (a *Adventurer) affordable(rows []worn, coins int) *piece {
+	p := nextPiece(rows)
+	if p == nil {
+		return nil
+	}
+	if price, known := a.prices[p.name]; known && coins < price {
+		return nil
+	}
+	return p
+}
+
+// shop is at the General Store: it buys down the kit while the purse lasts,
+// takes off the starter piece in the way, and wears what it bought. A refusal
+// ends it, with the price learned.
+func (a *Adventurer) shop(ctx context.Context, rows []worn, coins int) error {
+	for {
+		p := a.affordable(rows, coins)
+		if p == nil {
+			return nil
+		}
+		if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
+			return err
+		}
+		_, m, err := a.ask("buy "+p.keyword, buyRe)
+		if err != nil {
+			return err
+		}
+		if m[1] == "" {
+			a.prices[p.name], _ = strconv.Atoi(m[2])
+			a.log("%s costs %d; saving up", p.name, a.prices[p.name])
+			return nil
+		}
+		price, _ := strconv.Atoi(m[1])
+		a.prices[p.name] = price
+		coins -= price
+		if _, taken := slotHolds(rows, p.slot); taken {
+			if _, _, err := a.ask("remove "+p.replaces, removedRe); err != nil {
+				return err
+			}
+		}
+		if _, _, err := a.ask("wear "+p.keyword, woreRe); err != nil {
+			return err
+		}
+		// on now: what was in its slot is off, so the loop moves down the kit
+		rows = append(slices.DeleteFunc(slices.Clone(rows), func(r worn) bool { return r.slot == p.slot }),
+			worn{slot: p.slot, item: "a " + p.name, power: 4})
+		a.count(func(st *Stats) { st.Bought++ })
+		a.log("bought and wore %s for %d coins", p.name, price)
+	}
 }

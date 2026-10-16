@@ -104,6 +104,9 @@ type Stats struct {
 	Kills, Looted, Donations, TellsAnswered, Avoided, Deaths, Steps int
 	// Mapped is how many rooms an explorer has on its atlas.
 	Mapped int
+	// Bought is pieces of kit bought, Repairs visits to the smith, Power is
+	// the power the equipment list last said.
+	Bought, Repairs, Power int
 }
 
 // Adventurer is a bot that plays like a player: out to a hunting ground, fights
@@ -122,6 +125,7 @@ type Adventurer struct {
 	here              string // the room it's in, as far as it knows
 	ground            *ground
 	avoiding          map[string]time.Time // ground name -> until
+	prices            map[string]int       // piece name -> coins, as the store said
 	toldAt            map[string]time.Time
 	pendingTells      []tell
 	saidAt            time.Time
@@ -139,6 +143,7 @@ func NewAdventurer(cfg AdventurerConfig) *Adventurer {
 		now:      time.Now,
 		atlas:    newAtlas(),
 		avoiding: map[string]time.Time{},
+		prices:   map[string]int{},
 		toldAt:   map[string]time.Time{},
 	}
 }

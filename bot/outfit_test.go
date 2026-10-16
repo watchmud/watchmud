@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -87,4 +88,62 @@ func TestReplies(t *testing.T) {
 		assert.True(t, repairRe.MatchString(said), said)
 	}
 	assert.Equal(t, []string{"training", "wool", "travelers"}, spares())
+}
+
+func TestAffordable(t *testing.T) {
+	a, _ := adventurer(t)
+	rows := readEquipment(starterEquipment)
+	assert.Equal(t, "arming sword", a.affordable(rows, 0).name, "a price it doesn't know is worth asking")
+	a.prices["arming sword"] = 80
+	assert.Nil(t, a.affordable(rows, 79), "known, and short")
+	assert.NotNil(t, a.affordable(rows, 80))
+}
+
+// Two pieces in a row while the purse lasts: buy, take off what's in the
+// slot, put on what it bought; then a price it learns by being refused.
+func TestShop_buysWearsAndLearns(t *testing.T) {
+	a, g := adventurer(t)
+	a.prices["quilted jerkin"] = 80
+	rows := readEquipment(starterEquipment)
+	done := make(chan error, 1)
+	go func() { done <- a.shop(context.Background(), rows, 170) }()
+
+	assert.Equal(t, "buy arming", g.heard())
+	g.say("You buy an arming sword for 80 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "remove training", g.heard())
+	g.say("You stop using a training dagger.\r\n<100/100hp> ")
+	assert.Equal(t, "wear arming", g.heard())
+	g.say("You wear an arming sword.\r\n<100/100hp> ")
+
+	assert.Equal(t, "buy quilted", g.heard(), "90 left covers the jerkin's 80")
+	g.say("You buy a quilted jerkin for 80 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "remove wool", g.heard())
+	g.say("You stop using a coarse wool tunic.\r\n<100/100hp> ")
+	assert.Equal(t, "wear quilted", g.heard())
+	g.say("You wear a quilted jerkin.\r\n<100/100hp> ")
+
+	assert.Equal(t, "buy studded", g.heard(), "10 left, and the cap's price unknown: ask")
+	g.say("A studded cap would cost 80 coins, and you have 10 coins.\r\n<100/100hp> ")
+	require.NoError(t, <-done)
+
+	assert.Equal(t, 80, a.prices["studded cap"], "learned by being refused")
+	assert.Equal(t, 2, a.Stats().Bought)
+}
+
+// The cap's slot is empty: nothing to take off first.
+func TestShop_aFreeSlot(t *testing.T) {
+	a, g := adventurer(t)
+	rows := []worn{
+		{slot: "wielded", item: "an arming sword", power: 4},
+		{slot: "body", item: "a quilted jerkin", power: 4},
+	}
+	a.prices["studded boots"] = 80
+	done := make(chan error, 1)
+	go func() { done <- a.shop(context.Background(), rows, 80) }()
+
+	assert.Equal(t, "buy studded", g.heard())
+	g.say("You buy a studded cap for 80 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "wear studded", g.heard())
+	g.say("You wear a studded cap.\r\n<100/100hp> ")
+	require.NoError(t, <-done, "nothing left for the boots' known 80")
 }
