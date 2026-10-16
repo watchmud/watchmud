@@ -1,6 +1,6 @@
 # Bots that buy their kit
 
-Status: **agreed 2026-10-15**, option 1 of
+Status: **built 2026-10-15**, option 1 of
 `2026-10-10-bots-that-grow-and-coin-sinks-design.md`, against the power-4 stock the
 General Store got the same day (98e8467).
 

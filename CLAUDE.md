@@ -401,11 +401,28 @@ of a crowd vanishing. A bot with nowhere to hunt waits in Market Square (`waitIn
 Temple Square: that's where every recall, death and new character lands; `consider` gates every kill; it answers each person's tell once per 10
 minutes with the same honest line. Hunting grounds (`bot/grounds.go`) are hand-written
 tables walked against the real content by `TestGrounds_walk`; never add the
-hedge-witch as prey. There are two, the west and east fields: a bot is power 1 for good
-(it never wears loot) and fights nothing above power 2, which is only the farms. It picks
+hedge-witch as prey. There are two, the west and east fields: a bot never wears loot, the
+kit it buys tops out at power 3, and it fights nothing more than a power above itself, so
+its grounds are the farms. It picks
 at random among the grounds its power suits and nobody is using, so bots spread out and a
 player on one sends them to the other. `cmd/watchmud-bots` runs up to 5 (one address, the server's
 cap), reconnecting forever.
+
+**Hunters buy their kit** (`bot/outfit.go`). `town` reads the equipment rows and the
+purse, and goes on an `outfit` visit off Market Square when something worn is at the
+repair mark (broken, or a third left -- the yellow) with a coin to pay, or the next piece
+of `kit` is affordable: `repair all` at the Smithy, then at the General Store `buy`,
+`remove` the starter piece, `wear`, down the kit while the purse lasts. Then `setOut`,
+never back to `town`, so a repair it can't finish can't send it round again. Prices are
+learned from the store's answers, in memory; a reconnect asks again. `buy` and `wear`
+take one word, so each piece has a keyword only it answers to (the studded boots are
+"hobnailed", the cap keeps "studded"); `TestKit_theStoreSellsIt` holds the kit to the
+real store and starting gear. The kit is the store's power-4 pieces, which with the
+power-1 token make power 3. The donation trip also drops the starter pieces by alias
+(`spares`); one still worn answers "You'll have to remove it first.", which `dropRe`
+takes. A test that sets a record while the server runs uses `setRecord`, which waits for
+`GameServer.Playing()` to reach 0 -- the logout's save comes after the hang-up -- and
+`memstore` has a lock for it.
 
 **A wanderer is an `Adventurer` with `Style: Wanderer`** (`bot/wanderer.go`): home leads to
 `wander` instead of `town`. It takes a random exit from each room's `[ Exits: ]` line,

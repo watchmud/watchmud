@@ -62,6 +62,9 @@ The Mudlet add-on still hasn't been run in a real Mudlet: try it before telling 
   Mudlet before release: it's tested against Go's zlib only.
 - MSSP, for listing sites: on in deploy/app.yaml. Once released, submitting the game
   to the listings is the owner's step.
+- The General Store sells a power-4 kit (sword, cap, boots, gloves, jerkin, cloak) and a
+  strong healing draught; hunter bots buy the kit and keep it repaired at the smith.
+  The site guide's store line grows with the release.
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

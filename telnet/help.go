@@ -98,8 +98,9 @@ var helpTopics = map[string]helpTopic{
 	"bots": {"who the bots are",
 		"The characters listed under Bots in 'who' are programs, not people. Most\n" +
 			"hunt the Hollowfields, rest when they're hurt, and give what they find to\n" +
-			"the donation room, east of Temple Square; they leave any hunting ground a\n" +
-			"player is using. Some just wander, stopping a while here and there: they\n" +
+			"the donation room, east of Temple Square; they spend their coins on gear\n" +
+			"from the General Store and on the smith, and they leave any hunting ground\n" +
+			"a player is using. Some just wander, stopping a while here and there: they\n" +
 			"fight only what attacks them and take nothing. A socialite stands in\n" +
 			"Temple Square welcoming new characters: ask it a question, said or told,\n" +
 			"about hunting, recall, healing, gear, repair, shops or roles. The rest\n" +
