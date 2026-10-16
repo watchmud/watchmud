@@ -4,6 +4,7 @@ import (
 	"context"
 	"net"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/watchmud/watchmud/dice"
 	"github.com/watchmud/watchmud/loader"
 	"github.com/watchmud/watchmud/memstore"
+	"github.com/watchmud/watchmud/player"
 	"github.com/watchmud/watchmud/server"
 	"github.com/watchmud/watchmud/telnet"
 	"github.com/watchmud/watchmud/world"
@@ -22,6 +24,20 @@ import (
 // ticking every tick. 10ms is a hundred times the real pace; an hour is a
 // world where no pulse ever comes, so nothing wanders or picks a fight.
 func startGame(t *testing.T, tick time.Duration) string {
+	t.Helper()
+	addr, _ := startGameStore(t, tick)
+	return addr
+}
+
+// game is a running game's store and server, for a test that changes a
+// character's record between their sessions (setRecord).
+type game struct {
+	store *memstore.Store
+	gs    *server.GameServer
+}
+
+// startGameStore is startGame, handing back the game too.
+func startGameStore(t *testing.T, tick time.Duration) (string, *game) {
 	t.Helper()
 	content, err := loader.LoadContent(os.DirFS("../content"))
 	require.NoError(t, err)
@@ -40,7 +56,25 @@ func startGame(t *testing.T, tick time.Duration) string {
 	go func() { _ = telnet.Serve(ctx, ln, gs, content.Catalog); done <- struct{}{} }()
 	go func() { _ = gs.Run(ctx); done <- struct{}{} }()
 	t.Cleanup(func() { cancel(); <-done; <-done })
-	return ln.Addr().String()
+	return ln.Addr().String(), &game{store, gs}
+}
+
+// setRecord changes a logged-out character's record, with nobody playing.
+// Quitting closes the connection before the logout's save -- the server
+// notices the hang-up and logs them out -- so it waits for the world to
+// count nobody in it, which it does in the prompt after that save. An atomic,
+// so the save is seen to have happened.
+func setRecord(t *testing.T, g *game, name string, change func(*player.Record)) {
+	t.Helper()
+	require.Eventually(t, func() bool { return g.gs.Playing() == 0 }, 5*time.Second, 5*time.Millisecond,
+		"still in the world")
+	rec, ok, err := g.store.Load(name)
+	require.NoError(t, err)
+	require.True(t, ok, "no record for %s", name)
+	r := *rec
+	r.Inventory = slices.Clone(rec.Inventory)
+	change(&r)
+	require.NoError(t, g.store.Save(&r))
 }
 
 func dial(t *testing.T, addr string) *Client {

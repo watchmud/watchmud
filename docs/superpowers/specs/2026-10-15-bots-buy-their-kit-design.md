@@ -39,9 +39,12 @@ A hand-written table in `bot/outfit.go`, like the grounds, bought in this order:
 | oilskin cloak | about body | travelers cloak |
 
 Power, averaged and rounded down over everything worn: 1, then 2 after the jerkin, 3
-after the gloves. Each entry names the piece by its full name (`buy` and `wear` take
-an object's name or an alias; "cap" alone would buy the power-2 leather cap, which is
-earlier in the stock), and what it replaces by an alias unique to it ("training",
+after the gloves. Each entry names the piece by its full name, for reading the
+equipment list, and by a keyword for `buy` and `wear`, which take one word: an alias
+only that piece answers to among the store's stock before it, the kit and the starting
+gear ("cap" alone would buy the power-2 leather cap, earlier in the stock; the boots
+answer to "hobnailed", since "studded" was the cap's too). What it replaces is named by
+an alias unique to it ("training",
 "wool", "travelers"), each a word of the piece's short description so the equipment list shows which is worn -- never "cloak", which the oilskin answers to too.
 
 ## The visit

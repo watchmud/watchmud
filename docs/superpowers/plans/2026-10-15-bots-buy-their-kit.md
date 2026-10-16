@@ -31,8 +31,10 @@ answers and kept in memory. The donation trip also drops the starter pieces by a
 - Kit, in order: arming sword (wielded, replaces "training"), quilted jerkin (body,
   replaces "wool"), studded cap (head), studded boots (feet), riding gloves (hands),
   oilskin cloak (about body, replaces "travelers").
-- `buy` and `wear` use the piece's full name. A replaced piece is named by its alias,
-  never "cloak".
+- `buy` and `wear` take one word (`parseTarget`): each piece has a keyword, an alias
+  only it answers to among the store's stock before it, the kit and the starting gear
+  ("hobnailed" for the boots, whose "studded" was the cap's too). A replaced piece is
+  named by its alias, never "cloak".
 - Repair mark: `broken`, or `n/m` with `3n <= m`.
 - No prices or durabilities written into the bot.
 - Only hunters outfit. Grounds, `consider`'s rule, `keepOut` unchanged.
@@ -84,10 +86,12 @@ answers and kept in memory. The donation trip also drops the starter pieces by a
 - Create: `bot/outfit_test.go`
 - Create: `bot/outfit_game_test.go`
 - Modify: `bot/game_test.go`
+- Modify: `memstore/store.go`
+- Modify: `content/world/wrathrock/objects.json` (boots: "hobnailed" for "studded")
 
 **Interfaces:**
 - Produces:
-  - `type piece struct{ name, slot, replaces string }`, `var kit []piece`
+  - `type piece struct{ name, keyword, slot, replaces string }`, `var kit []piece`
   - `type worn struct { slot, item string; power, durability, maxDurability int; broken bool }`
   - `func readEquipment(text string) []worn`
   - `func readPurse(text string) int`
@@ -97,8 +101,11 @@ answers and kept in memory. The donation trip also drops the starter pieces by a
   - `func spares() []string` -- every non-empty `replaces`, in kit order
   - regexps `inventoryRe`, `buyRe` (m[1] bought price, m[2] refused price),
     `repairRe`, `removedRe`, `woreRe`
-  - test helpers: `startGameStore(t, tick) (string, *memstore.Store)`,
-    `setRecord(t, store, name, func(*player.Record))`
+  - test helpers: `startGameStore(t, tick) (string, *game)` (`game{store, gs}`),
+    `setRecord(t, g, name, func(*player.Record))`, which waits for `gs.Playing() == 0`
+    -- the logout save comes after the hang-up -- and copies the record
+  - `memstore.Store` gains a `sync.Mutex` around `Load` and `Save`: a test touching
+    the store beside the server is otherwise a data race under `-race`
 
 - [ ] **Step 1: Write the failing tests (Claude)**
 
@@ -364,17 +371,17 @@ import (
 // starter piece it replaces, a word of that piece's short description, or ""
 // for a slot the starting kit leaves empty. TestKit_theStoreSellsIt holds it
 // to the real content.
-type piece struct{ name, slot, replaces string }
+type piece struct{ name, keyword, slot, replaces string }
 
 // kit is what a hunter buys, in order: power 2 after the jerkin, 3 after the
 // gloves, and no further -- the temple token is power 1 and stays on.
 var kit = []piece{
-	{"arming sword", "wielded", "training"},
-	{"quilted jerkin", "body", "wool"},
-	{"studded cap", "head", ""},
-	{"studded boots", "feet", ""},
-	{"riding gloves", "hands", ""},
-	{"oilskin cloak", "about body", "travelers"},
+	{"arming sword", "arming", "wielded", "training"},
+	{"quilted jerkin", "quilted", "body", "wool"},
+	{"studded cap", "studded", "head", ""},
+	{"studded boots", "hobnailed", "feet", ""},
+	{"riding gloves", "riding", "hands", ""},
+	{"oilskin cloak", "oilskin", "about body", "travelers"},
 }
 
 // worn is one row of the equipment list. Durability and maxDurability are both
@@ -529,21 +536,21 @@ func TestShop_buysWearsAndLearns(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- a.shop(context.Background(), rows, 170) }()
 
-	assert.Equal(t, "buy arming sword", g.heard())
+	assert.Equal(t, "buy arming", g.heard())
 	g.say("You buy an arming sword for 80 coins.\r\n<100/100hp> ")
 	assert.Equal(t, "remove training", g.heard())
 	g.say("You stop using a training dagger.\r\n<100/100hp> ")
-	assert.Equal(t, "wear arming sword", g.heard())
+	assert.Equal(t, "wear arming", g.heard())
 	g.say("You wear an arming sword.\r\n<100/100hp> ")
 
-	assert.Equal(t, "buy quilted jerkin", g.heard(), "90 left covers the jerkin's 80")
+	assert.Equal(t, "buy quilted", g.heard(), "90 left covers the jerkin's 80")
 	g.say("You buy a quilted jerkin for 80 coins.\r\n<100/100hp> ")
 	assert.Equal(t, "remove wool", g.heard())
 	g.say("You stop using a coarse wool tunic.\r\n<100/100hp> ")
-	assert.Equal(t, "wear quilted jerkin", g.heard())
+	assert.Equal(t, "wear quilted", g.heard())
 	g.say("You wear a quilted jerkin.\r\n<100/100hp> ")
 
-	assert.Equal(t, "buy studded cap", g.heard(), "10 left, and the cap's price unknown: ask")
+	assert.Equal(t, "buy studded", g.heard(), "10 left, and the cap's price unknown: ask")
 	g.say("A studded cap would cost 80 coins, and you have 10 coins.\r\n<100/100hp> ")
 	require.NoError(t, <-done)
 
@@ -562,9 +569,9 @@ func TestShop_aFreeSlot(t *testing.T) {
 	done := make(chan error, 1)
 	go func() { done <- a.shop(context.Background(), rows, 80) }()
 
-	assert.Equal(t, "buy studded cap", g.heard())
+	assert.Equal(t, "buy studded", g.heard())
 	g.say("You buy a studded cap for 80 coins.\r\n<100/100hp> ")
-	assert.Equal(t, "wear studded cap", g.heard())
+	assert.Equal(t, "wear studded", g.heard())
 	g.say("You wear a studded cap.\r\n<100/100hp> ")
 	require.NoError(t, <-done, "nothing left for the boots' known 80")
 }
@@ -613,7 +620,7 @@ func (a *Adventurer) shop(ctx context.Context, rows []worn, coins int) error {
 		if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
 			return err
 		}
-		_, m, err := a.ask("buy "+p.name, buyRe)
+		_, m, err := a.ask("buy "+p.keyword, buyRe)
 		if err != nil {
 			return err
 		}
@@ -630,7 +637,7 @@ func (a *Adventurer) shop(ctx context.Context, rows []worn, coins int) error {
 				return err
 			}
 		}
-		if _, _, err := a.ask("wear "+p.name, woreRe); err != nil {
+		if _, _, err := a.ask("wear "+p.keyword, woreRe); err != nil {
 			return err
 		}
 		// on now: what was in its slot is off, so the loop moves down the kit
