@@ -32,7 +32,7 @@ A hand-written table in `bot/outfit.go`, like the grounds, bought in this order:
 | Piece | Slot | Replaces |
 |---|---|---|
 | arming sword | wield | training dagger |
-| quilted jerkin | body | novice tunic |
+| quilted jerkin | body | coarse wool tunic |
 | studded cap | head | -- |
 | studded boots | feet | -- |
 | riding gloves | hands | -- |
@@ -42,7 +42,7 @@ Power, averaged and rounded down over everything worn: 1, then 2 after the jerki
 after the gloves. Each entry names the piece by its full name (`buy` and `wear` take
 an object's name or an alias; "cap" alone would buy the power-2 leather cap, which is
 earlier in the stock), and what it replaces by an alias unique to it ("training",
-"novice", "travelers") -- never "cloak", which the oilskin answers to too.
+"wool", "travelers"), each a word of the piece's short description so the equipment list shows which is worn -- never "cloak", which the oilskin answers to too.
 
 ## The visit
 
@@ -76,7 +76,8 @@ that it goes back only when the purse covers it. A reconnect forgets, and asks a
 **What's removed is donated.** The starter piece stays in the pack, and the donation
 trip sends `drop all.<alias>` for every starter alias on the list, as well as the
 ground's loot -- so a piece removed before a reconnect goes too. Nothing worn is
-dropped: `drop` leaves worn things on. A power-1 tunic in the donation room is no gift
+dropped: `drop` leaves worn things on, answering "You'll have to remove it first." when
+that was all it matched, which the donation trip takes as an answer. A power-1 tunic in the donation room is no gift
 above the farms, and decays like anything else dropped.
 
 **What goes wrong.** An answer it didn't expect is `errLost`, as everywhere else: it
