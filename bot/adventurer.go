@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -184,7 +185,7 @@ var (
 	busyText     = "You're too busy fighting!"
 	killRe       = regexp.MustCompile(`(?m)^(?:Ok\.|You don't see that here\.|You're already fighting!)$`)
 	lootRe       = regexp.MustCompile(`(?m)^(?:You get |There's nothing in there\.$|You don't see that here\.$)`)
-	dropRe       = regexp.MustCompile(`(?m)^(?:Dropped\.|You aren't carrying that\.)$`)
+	dropRe       = regexp.MustCompile(`(?m)^(?:Dropped\.|You aren't carrying that\.|You'll have to remove it first\.)$`)
 	saidRe       = regexp.MustCompile(`(?m)^You say, "`)
 	// What the game says about the bot itself starts a line with "You", and
 	// nothing a player says or emotes can: theirs starts with their name, and
@@ -417,7 +418,8 @@ func (a *Adventurer) donate(ctx context.Context) (stateFn, error) {
 	if _, err := a.walk(ctx, step{"east", "Donation Room"}); err != nil {
 		return nil, err
 	}
-	for _, kw := range a.ground.loot {
+	// what it found, and what it took off for what it bought
+	for _, kw := range append(slices.Clone(a.ground.loot), spares()...) {
 		if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
 			return nil, err
 		}

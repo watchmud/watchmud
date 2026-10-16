@@ -156,3 +156,30 @@ func TestWantsRepair(t *testing.T) {
 	assert.False(t, wantsRepair(rows, 0))
 	assert.False(t, wantsRepair(readEquipment(starterEquipment)[:2], 10), "nothing at the mark")
 }
+
+// The donation trip drops the ground's loot and then the starter pieces --
+// one still worn is an answer, not a lost bot.
+func TestDonate_givesAwayTheStarterPieces(t *testing.T) {
+	a, g := adventurer(t)
+	a.ground = &grounds[0]
+	done := make(chan error, 1)
+	go func() { _, err := a.donate(context.Background()); done <- err }()
+
+	assert.Equal(t, "recall", g.heard())
+	g.say("Temple Square\r\n A square.\r\n[ Exits: e s ]\r\n<100/100hp> ")
+	assert.Equal(t, "east", g.heard())
+	g.say("Donation Room\r\n A room.\r\n[ Exits: w ]\r\n<100/100hp> ")
+	for _, kw := range a.ground.loot {
+		assert.Equal(t, "drop all."+kw, g.heard())
+		g.say("You aren't carrying that.\r\n<100/100hp> ")
+	}
+	assert.Equal(t, "drop all.training", g.heard())
+	g.say("You'll have to remove it first.\r\n<100/100hp> ")
+	assert.Equal(t, "drop all.wool", g.heard())
+	g.say("Dropped.\r\n<100/100hp> ")
+	assert.Equal(t, "drop all.travelers", g.heard())
+	g.say("You aren't carrying that.\r\n<100/100hp> ")
+	assert.Equal(t, "west", g.heard())
+	g.say("Temple Square\r\n A square.\r\n[ Exits: e s ]\r\n<100/100hp> ")
+	require.NoError(t, <-done)
+}
