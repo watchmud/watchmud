@@ -22,8 +22,9 @@ type step struct{ dir, room string }
 // looks in a room -- a room shows descriptions, not keywords.
 type prey struct{ keyword, name, seen string }
 
-// Every bot is power 1 for good -- it never wears what it finds -- and fights
-// nothing more than a power above it, so its grounds are the farms: rats,
+// A bot never wears what it finds, and the kit it buys (outfit.go) tops out
+// at power 3; it fights nothing more than a power above it, so its grounds
+// are the farms: rats,
 // geese, beetles and dogs. The bandit track and the Old Wood are past it, and
 // the hedge-witch is never prey. Two grounds rather than one so a player on
 // one sends the bots to the other, instead of back to town to wait.
