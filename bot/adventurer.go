@@ -127,6 +127,7 @@ type Adventurer struct {
 	ground            *ground
 	avoiding          map[string]time.Time // ground name -> until
 	prices            map[string]int       // piece name -> coins, as the store said
+	repairShort       int                  // the cheapest repair the smith last refused; 0: none
 	toldAt            map[string]time.Time
 	pendingTells      []tell
 	saidAt            time.Time
@@ -299,7 +300,7 @@ func (a *Adventurer) town(ctx context.Context) (stateFn, error) {
 		return nil, err
 	}
 	coins := readPurse(inv)
-	if wantsRepair(rows, coins) || a.affordable(rows, coins) != nil {
+	if a.wantsRepair(rows, coins) || a.affordable(rows, coins) != nil {
 		return a.outfit(rows, coins), nil
 	}
 	power, _ := strconv.Atoi(m[1])

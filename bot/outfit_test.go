@@ -151,10 +151,32 @@ func TestShop_aFreeSlot(t *testing.T) {
 // Only with coins to pay: a bot with worn gear and an empty purse would walk
 // to the smith every visit to be told what it can't afford.
 func TestWantsRepair(t *testing.T) {
+	a, _ := adventurer(t)
 	rows := readEquipment(starterEquipment) // the cloak is at 6/20
-	assert.True(t, wantsRepair(rows, 10))
-	assert.False(t, wantsRepair(rows, 0))
-	assert.False(t, wantsRepair(readEquipment(starterEquipment)[:2], 10), "nothing at the mark")
+	assert.True(t, a.wantsRepair(rows, 10))
+	assert.False(t, a.wantsRepair(rows, 0))
+	assert.False(t, a.wantsRepair(readEquipment(starterEquipment)[:2], 10), "nothing at the mark")
+}
+
+// Refused once, it goes back only when the purse covers the cheapest piece
+// the smith wouldn't mend -- not every visit to be told again.
+func TestWantsRepair_notUntilItCanPay(t *testing.T) {
+	a, _ := adventurer(t)
+	rows := readEquipment(starterEquipment)
+	a.repairShort = 7
+	assert.False(t, a.wantsRepair(rows, 6), "still short")
+	assert.True(t, a.wantsRepair(rows, 7))
+}
+
+func TestCheapestRefused(t *testing.T) {
+	said := "The smith works on a training dagger until it's as good as new, for 2 coins.\n" +
+		"A travelers cloak would cost 9 coins, and you have 3 coins.\n" +
+		"A coarse wool tunic would cost 4 coins, and you have 3 coins.\n"
+	assert.Equal(t, 4, cheapestRefused(said))
+	assert.Zero(t, cheapestRefused("The smith works on a training dagger until it's as good as new, for 2 coins.\n"),
+		"everything mended")
+	assert.Zero(t, cheapestRefused(`Bob says, "A cloak would cost 1 coin, and you have 0 coins."`+"\n"),
+		"only the smith's own lines")
 }
 
 // The donation trip drops the ground's loot and then the starter pieces --
@@ -182,4 +204,27 @@ func TestDonate_givesAwayTheStarterPieces(t *testing.T) {
 	assert.Equal(t, "west", g.heard())
 	g.say("Temple Square\r\n A square.\r\n[ Exits: e s ]\r\n<100/100hp> ")
 	require.NoError(t, <-done)
+}
+
+// The smith's refusal is remembered, so the next town visit with the same
+// purse goes straight out.
+func TestOutfit_learnsWhatRepairCosts(t *testing.T) {
+	a, g := adventurer(t)
+	a.here = "Market Square"
+	a.prices["arming sword"] = 80 // nothing to buy with 3 coins
+	rows := readEquipment(starterEquipment)
+	go func() { _, _ = a.outfit(rows, 3)(context.Background()) }()
+
+	assert.Equal(t, "west", g.heard())
+	g.say("Smithy\r\n A forge.\r\n[ Exits: e ]\r\n<100/100hp> ")
+	assert.Equal(t, "repair all", g.heard())
+	g.say("A travelers cloak would cost 7 coins, and you have 3 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "east", g.heard())
+	g.say("Market Square\r\n A market.\r\n[ Exits: n e w ]\r\n<100/100hp> ")
+	assert.Equal(t, "inventory", g.heard())
+	g.say("Inventory\r\n  a waterskin  power 1\r\nYou have 3 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "equipment", g.heard(), "no store: the sword's 80 is out of reach")
+
+	assert.Equal(t, 7, a.repairShort)
+	assert.False(t, a.wantsRepair(rows, 3), "not back to the smith until it has 7")
 }

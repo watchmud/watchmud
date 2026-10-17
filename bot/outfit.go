@@ -46,6 +46,7 @@ var (
 	// what the store says to a buy: bought, at a price, or what it would cost
 	buyRe     = regexp.MustCompile(`(?m)^(?:You buy .+ for (\d+) coins?\.|[A-Z].* would cost (\d+) coins?, and you have \d+ coins?\.)$`)
 	repairRe  = regexp.MustCompile(`(?m)^(?:The smith works on |[A-Z].* would cost \d+ coins?, and you have |That doesn't need repairing\.$)`)
+	refusedRe = regexp.MustCompile(`(?m)^[A-Z].* would cost (\d+) coins?, and you have \d+ coins?\.$`)
 	removedRe = regexp.MustCompile(`(?m)^You stop using .+\.$`)
 	woreRe    = regexp.MustCompile(`(?m)^You wear .+\.$`)
 )
@@ -130,13 +131,15 @@ func (a *Adventurer) outfit(rows []worn, coins int) stateFn {
 				return nil, err
 			}
 		}
-		if wantsRepair(rows, coins) {
+		if a.wantsRepair(rows, coins) {
 			if _, err := a.walk(ctx, step{"west", "Smithy"}); err != nil {
 				return nil, err
 			}
-			if _, _, err := a.ask("repair all", repairRe); err != nil {
+			said, _, err := a.ask("repair all", repairRe)
+			if err != nil {
 				return nil, err
 			}
+			a.repairShort = cheapestRefused(said)
 			a.count(func(st *Stats) { st.Repairs++ })
 			if _, err := a.walk(ctx, step{"east", "Market Square"}); err != nil {
 				return nil, err
@@ -220,9 +223,11 @@ func (a *Adventurer) shop(ctx context.Context, rows []worn, coins int) error {
 	}
 }
 
-// wantsRepair: something worn is at the mark, and there's a coin to pay with.
-func wantsRepair(rows []worn, coins int) bool {
-	if coins == 0 {
+// wantsRepair: something worn is at the mark, and there's a coin to pay with
+// -- and at least what the smith last refused, so a bot short of a repair
+// doesn't walk over every visit to be told so again.
+func (a *Adventurer) wantsRepair(rows []worn, coins int) bool {
+	if coins == 0 || coins < a.repairShort {
 		return false
 	}
 	for _, r := range rows {
@@ -231,4 +236,17 @@ func wantsRepair(rows []worn, coins int) bool {
 		}
 	}
 	return false
+}
+
+// cheapestRefused is the least the smith said a repair it wouldn't do would
+// cost, or 0 if it refused nothing.
+func cheapestRefused(text string) int {
+	least := 0
+	for _, m := range refusedRe.FindAllStringSubmatch(text, -1) {
+		n, _ := strconv.Atoi(m[1])
+		if least == 0 || n < least {
+			least = n
+		}
+	}
+	return least
 }

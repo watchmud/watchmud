@@ -414,7 +414,8 @@ repair mark (broken, or a third left -- the yellow) with a coin to pay, or the n
 of `kit` is affordable: `repair all` at the Smithy, then at the General Store `buy`,
 `remove` the starter piece, `wear`, down the kit while the purse lasts. Then `setOut`,
 never back to `town`, so a repair it can't finish can't send it round again. Prices are
-learned from the store's answers, in memory; a reconnect asks again. `buy` and `wear`
+learned from the store's answers, in memory; a reconnect asks again. So is the cheapest
+repair the smith refused (`repairShort`): short of it, a bot doesn't go back to be told. `buy` and `wear`
 take one word, so each piece has a keyword only it answers to (the studded boots are
 "hobnailed", the cap keeps "studded"); `TestKit_theStoreSellsIt` holds the kit to the
 real store and starting gear. The kit is the store's power-4 pieces, which with the
