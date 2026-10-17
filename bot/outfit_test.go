@@ -217,7 +217,7 @@ func TestOutfit_learnsWhatRepairCosts(t *testing.T) {
 
 	assert.Equal(t, "west", g.heard())
 	g.say("Smithy\r\n A forge.\r\n[ Exits: e ]\r\n<100/100hp> ")
-	assert.Equal(t, "repair all", g.heard())
+	assert.Equal(t, "repair travelers", g.heard(), "the cloak, the one piece worn down")
 	g.say("A travelers cloak would cost 7 coins, and you have 3 coins.\r\n<100/100hp> ")
 	assert.Equal(t, "east", g.heard())
 	g.say("Market Square\r\n A market.\r\n[ Exits: n e w ]\r\n<100/100hp> ")
@@ -227,4 +227,49 @@ func TestOutfit_learnsWhatRepairCosts(t *testing.T) {
 
 	assert.Equal(t, 7, a.repairShort)
 	assert.False(t, a.wantsRepair(rows, 3), "not back to the smith until it has 7")
+}
+
+// The word the smith is asked for a worn piece: its keyword if it's from the
+// kit, the starter alias if it's what the kit replaces, nothing for the rest.
+func TestRepairWord(t *testing.T) {
+	rows := readEquipment(starterEquipment)
+	assert.Equal(t, "training", rows[0].repairWord())
+	assert.Equal(t, "wool", rows[1].repairWord())
+	assert.Equal(t, "travelers", rows[2].repairWord())
+	assert.Empty(t, rows[3].repairWord(), "the token: nothing in the kit for the neck")
+	assert.Equal(t, "hobnailed", worn{slot: "feet", item: "a pair of studded boots"}.repairWord())
+	assert.Empty(t, worn{slot: "head", item: "a bandit hood"}.repairWord(), "not the kit's")
+}
+
+// Each worn piece that has seen any wear, by name -- never "repair all",
+// which would mend the starter pieces in the pack on their way to be donated.
+// The cheapest refusal is what it remembers.
+func TestOutfit_mendsWhatsWornByName(t *testing.T) {
+	a, g := adventurer(t)
+	a.here = "Market Square"
+	a.prices["quilted jerkin"] = 80
+	rows := []worn{
+		{slot: "wielded", item: "an arming sword", power: 4, durability: 20, maxDurability: 25},
+		{slot: "body", item: "a coarse wool tunic", power: 1, durability: 20, maxDurability: 20},
+		{slot: "about body", item: "a travelers cloak", power: 1, durability: 5, maxDurability: 20},
+		{slot: "head", item: "a studded cap", power: 4, broken: true, maxDurability: 20},
+		{slot: "neck", item: "a temple token", power: 1},
+	}
+	go func() { _, _ = a.outfit(rows, 9)(context.Background()) }()
+
+	assert.Equal(t, "west", g.heard())
+	g.say("Smithy\r\n A forge.\r\n[ Exits: e ]\r\n<100/100hp> ")
+	assert.Equal(t, "repair arming", g.heard(), "worn a little: mended while it's here")
+	g.say("The smith works on an arming sword until it's as good as new, for 6 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "repair travelers", g.heard(), "the tunic is as new: not asked")
+	g.say("A travelers cloak would cost 5 coins, and you have 3 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "repair studded", g.heard())
+	g.say("A studded cap would cost 40 coins, and you have 3 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "east", g.heard(), "nothing asked for the token")
+	g.say("Market Square\r\n A market.\r\n[ Exits: n e w ]\r\n<100/100hp> ")
+	assert.Equal(t, "inventory", g.heard())
+	g.say("Inventory\r\n  a waterskin  power 1\r\nYou have 3 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "equipment", g.heard())
+
+	assert.Equal(t, 5, a.repairShort, "the cheaper of the two refusals")
 }

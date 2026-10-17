@@ -63,6 +63,8 @@ Whether that Mudlet took up MCCP2 wasn't checked; text arrived fine either way.
 - The welcome banner always comes before the name question (it could lose a race,
   and a bot waiting for the banner then missed the question). Nothing for the site.
 - `cons` is `consider` too, beside `con`. Nothing for the site.
+- Hunter bots ask the smith for each worn piece by name instead of `repair all`, so
+  the starter pieces they're about to donate aren't mended first. Nothing for the site.
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

@@ -69,6 +69,28 @@ func (w worn) needsRepair() bool {
 	return w.broken || (w.maxDurability > 0 && 3*w.durability <= w.maxDurability)
 }
 
+// damaged: anything off new, not just at the mark. Once at the smith, a piece
+// worn a little is mended too: the cost is in proportion to the wear.
+func (w worn) damaged() bool {
+	return w.broken || w.durability < w.maxDurability
+}
+
+// repairWord is what the smith is asked for this row: the kit piece's
+// keyword, or the alias of the starter piece the kit replaces in its slot;
+// "" for anything else -- the token, which never wears, or what it didn't buy.
+func (w worn) repairWord() string {
+	for _, p := range kit {
+		switch {
+		case p.slot != w.slot:
+		case strings.HasSuffix(w.item, " "+p.name):
+			return p.keyword
+		case p.replaces != "" && strings.Contains(w.item, p.replaces):
+			return p.replaces
+		}
+	}
+	return ""
+}
+
 func readPurse(text string) int {
 	m := purseRe.FindStringSubmatch(text)
 	if m == nil {
@@ -135,11 +157,9 @@ func (a *Adventurer) outfit(rows []worn, coins int) stateFn {
 			if _, err := a.walk(ctx, step{"west", "Smithy"}); err != nil {
 				return nil, err
 			}
-			said, _, err := a.ask("repair all", repairRe)
-			if err != nil {
+			if err := a.atSmith(rows); err != nil {
 				return nil, err
 			}
-			a.repairShort = cheapestRefused(said)
 			a.count(func(st *Stats) { st.Repairs++ })
 			if _, err := a.walk(ctx, step{"east", "Market Square"}); err != nil {
 				return nil, err
@@ -221,6 +241,28 @@ func (a *Adventurer) shop(ctx context.Context, rows []worn, coins int) error {
 		a.count(func(st *Stats) { st.Bought++ })
 		a.log("bought and wore %s for %d coins", p.name, price)
 	}
+}
+
+// atSmith is at the smith: each worn piece that's seen wear, asked for by the
+// word only it answers to -- never "repair all", which would mend the starter
+// pieces in the pack too, on their way to the donation room. The cheapest
+// refusal is remembered (repairShort), and none clears it.
+func (a *Adventurer) atSmith(rows []worn) error {
+	a.repairShort = 0
+	for _, r := range rows {
+		word := r.repairWord()
+		if word == "" || !r.damaged() {
+			continue
+		}
+		said, _, err := a.ask("repair "+word, repairRe)
+		if err != nil {
+			return err
+		}
+		if n := cheapestRefused(said); n > 0 && (a.repairShort == 0 || n < a.repairShort) {
+			a.repairShort = n
+		}
+	}
+	return nil
 }
 
 // wantsRepair: something worn is at the mark, and there's a coin to pay with

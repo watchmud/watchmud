@@ -411,7 +411,9 @@ cap), reconnecting forever.
 **Hunters buy their kit** (`bot/outfit.go`). `town` reads the equipment rows and the
 purse, and goes on an `outfit` visit off Market Square when something worn is at the
 repair mark (broken, or a third left -- the yellow) with a coin to pay, or the next piece
-of `kit` is affordable: `repair all` at the Smithy, then at the General Store `buy`,
+of `kit` is affordable: at the Smithy, `repair <word>` for each worn piece off new
+(`repairWord`: never `repair all`, which would mend the starter pieces in the pack on
+their way to be donated), then at the General Store `buy`,
 `remove` the starter piece, `wear`, down the kit while the purse lasts. Then `setOut`,
 never back to `town`, so a repair it can't finish can't send it round again. Prices are
 learned from the store's answers, in memory; a reconnect asks again. So is the cheapest
