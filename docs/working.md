@@ -55,7 +55,9 @@ Shipped but not announced on the site, on purpose:
   step.
 - `help rules` is a draft automation policy, to be reworded.
 
-**On master, not yet released:** nothing yet.
+**On master, not yet released:**
+- The welcome banner always comes before the name question (it could lose a race,
+  and a bot waiting for the banner then missed the question). Nothing for the site.
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots

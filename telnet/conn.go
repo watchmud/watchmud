@@ -317,7 +317,6 @@ func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, l listener, 
 	c.mayCreate = func() bool { return limit.mayCreate(host, time.Now()) }
 	c.created = func() { limit.created(host, time.Now()) }
 	go c.writePump()
-	go c.readPump()
 	c.Send(l.banner)
 	// after the banner, which is what a person reads first: a MUD client
 	// that says DO EOR gets EOR after each prompt instead of GA, and one that
@@ -329,6 +328,8 @@ func start(nc net.Conn, gs gameserver.Instance, cat *rules.Catalog, l listener, 
 		offers = append(offers, IAC, WILL, optMSSP)
 	}
 	c.Send(negotiation(offers))
+	// only now: login's first question mustn't beat the banner onto the queue
+	go c.readPump()
 }
 
 func (c *conn) Player() *player.Player {
