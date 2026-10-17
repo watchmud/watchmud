@@ -308,7 +308,7 @@ You hit angry goose for 3 damage.
   <ol class="steps">
     <li>Type <code>help</code> to see every command. You can't break anything by experimenting.</li>
     <li>Type <code>equipment</code>. You start with a little gear already on.</li>
-    <li>Walk <code>south</code> through the market and out the south gate, down the trail to the <strong>Hollowfields</strong>, the farmland where beginners hunt.</li>
+    <li>Type <code>goals</code> to see where to hunt and how to get there. Then walk <code>south</code> through the market and out the south gate, down the trail to the <strong>Hollowfields</strong>, the farmland where beginners hunt.</li>
     <li>Before fighting anything, <code>consider</code> it. "A fair fight" or easier is fine. "Would probably kill you" means exactly that.</li>
     <li>After a kill, <code>get all from corpse</code> to loot it. That picks up any coins too.</li>
     <li>When you're hurt, stop and wait. Health comes back on its own when you aren't fighting.</li>
@@ -349,8 +349,9 @@ You hit angry goose for 3 damage.
         <tr class="group"><td colspan="2">Getting around</td></tr>
         <tr><td><code>n s e w u d</code></td><td>Walk north, south, east, west, up or down</td></tr>
         <tr><td><code>look</code></td><td>Describe the room again (<code>l</code> for short), or <code>look goose</code> for one thing in it: a creature, a player, or an item's power, condition and what it lets you cast. <code>examine</code> works too</td></tr>
-        <tr><td><code>exits</code></td><td>Where you can go from here</td></tr>
+        <tr><td><code>exits</code>, <code>map</code></td><td>Where you can go from here; <code>map</code> draws the rooms around you</td></tr>
         <tr><td><code>recall</code></td><td>Straight back to Temple Square, once a minute. It's the temple token you wear that lets you: lose it and the General Store sells another</td></tr>
+        <tr><td><code>goals</code></td><td>Where your power is a match for what lives there, the next place up, and the way to each from Temple Square</td></tr>
         <tr class="group"><td colspan="2">Things</td></tr>
         <tr><td><code>get knife</code></td><td>Pick something up. <code>get all</code> takes everything; <code>get 2.knife</code> takes the second knife</td></tr>
         <tr><td><code>get all from corpse</code></td><td>Loot what a mob dropped</td></tr>
@@ -366,7 +367,7 @@ You hit angry goose for 3 damage.
         <tr><td><code>repair all</code></td><td>Mend worn-out gear, for coins, at the smithy west of Market Square</td></tr>
         <tr class="group"><td colspan="2">Trading, at the General Store east of Market Square</td></tr>
         <tr><td><code>list</code></td><td>What's for sale, and the price</td></tr>
-        <tr><td><code>buy sword</code></td><td>Buy something on the list</td></tr>
+        <tr><td><code>buy sword</code></td><td>Buy something on the list. Past the beginner's gear there's a sturdier kit, from an arming sword to an oilskin cloak, at 80 coins a piece</td></tr>
         <tr><td><code>sell pelt</code></td><td>Sell something you're carrying. <code>sell all.pelt</code> sells every pelt</td></tr>
         <tr><td><code>value pelt</code></td><td>Ask what the shopkeeper would pay, without selling</td></tr>
         <tr class="group"><td colspan="2">Fighting</td></tr>
@@ -379,7 +380,7 @@ You hit angry goose for 3 damage.
         <tr><td><code>cast stun goose</code></td><td>The mob skips its next two swings, if your weapon grants it</td></tr>
         <tr><td><code>cast ward Ana</code></td><td>A shield that takes the next hits before Ana's health does, for half a minute, if something you're wearing grants it. Just <code>cast ward</code> for yourself</td></tr>
         <tr><td><code>cast assess goose</code></td><td>A mob's exact health, armor and damage, and who it's fighting, if something you're wearing grants it. It starts no fight</td></tr>
-        <tr><td><code>quaff draught</code></td><td>Drink a healing draught (the General Store sells them). Works mid-fight; one every ten seconds</td></tr>
+        <tr><td><code>quaff draught</code></td><td>Drink a healing draught (the General Store sells them, and a strong one that heals more). Works mid-fight; one every ten seconds</td></tr>
         <tr><td><code>wimpy 20</code></td><td>Run on your own when a fight takes you below 20 health. <code>wimpy 0</code> to stand your ground</td></tr>
         <tr><td><code>track bandit</code></td><td>Which way the nearest one went. Take that step and track again: it's how you catch a bandit that ran</td></tr>
         <tr class="group"><td colspan="2">You</td></tr>
@@ -422,7 +423,7 @@ You hit angry goose for 3 damage.
     </div>
     <div>
       <dt>Some characters are programs.</dt>
-      <dd>Anyone listed under <strong>Bots</strong> in <code>who</code> is a program. Most hunt the fields and give their loot to the donation room, east of Temple Square, stepping aside when you arrive; some just wander. One stands in Temple Square to welcome newcomers and answer questions: ask it about hunting, recall, healing, gear, repair, shops or roles. Type <code>help bots</code> for more.</dd>
+      <dd>Anyone listed under <strong>Bots</strong> in <code>who</code> is a program. Most hunt the fields, spend their coins on gear at the General Store and the smith, and give their loot to the donation room, east of Temple Square, stepping aside when you arrive; some just wander. One stands in Temple Square to welcome newcomers and answer questions: ask it about hunting, recall, healing, gear, repair, shops or roles. Type <code>help bots</code> for more.</dd>
     </div>
     <div>
       <dt>Text keeps arriving while you type.</dt>

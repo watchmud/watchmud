@@ -34,37 +34,28 @@ and LEVELS.md are the plan of record; this is the rest.
 - **A `site/` change describing unreleased features waits** to be pushed with its
   release; pushing `site/` to master publishes it immediately.
 
-## Where things stand (2026-10-07)
+## Where things stand (2026-10-17)
 
-Released: **v0.11.0** -- the Drowned Mill and its miller; doors, locks, keys and
-chests; bags, `put` and `give`; `look <thing>` at last; potions; groups, follow and
-assist; positions; the ooc channel, socials, emote, reply, whisper and ask; `track`,
-`wimpy`, `split`, `where`, `time` and the moon over Seattle; `junk` and `donate`; the
-janitor, the crows, the shopkeeper and fleeing bandits; player reports; the wizard
-toolkit and moderation; lists as aligned tables; the explorer bot, the load test and
-the fight simulator; the Mudlet add-on. Earlier: provoke, stun, ward, assess, GMCP
-(v0.10.0), nohassle, slay, smite (v0.9.0), heal and mana (v0.8.0), the economy
-(v0.7.0), bots on foot and NAWS (v0.6.0), color and repair (v0.5.0), the inhabitant
-bots (v0.4.0).
+Released: **v0.12.0** -- `goals` and `map`; screen-reader mode and MTTS; MCCP2, MSSP
+and GMCP `Comm.Channel.Text`; boss drops that can't be sold or donated, `help rules`
+and the `economy` log; the General Store's power-4 kit and strong draught, and hunter
+bots that buy the kit and keep it repaired. Earlier: the Drowned Mill, doors and
+chests, bags, potions, groups, positions, ooc and socials, the janitor and crows
+(v0.11.0), provoke, stun, ward, assess, GMCP (v0.10.0), nohassle, slay, smite
+(v0.9.0), heal and mana (v0.8.0), the economy (v0.7.0), bots on foot and NAWS
+(v0.6.0), color and repair (v0.5.0), the inhabitant bots (v0.4.0).
 
-The Mudlet add-on still hasn't been run in a real Mudlet: try it before telling players.
+Shipped but not announced on the site, on purpose:
+- Screen-reader mode wants a blind player to try it before it's announced.
+- MCCP2 and the Mudlet add-on still haven't been run in a real Mudlet (MCCP2 is
+  tested against Go's zlib only): try them before telling players.
+- `Comm.Channel.Text` has no user yet -- a chat tab in `watchmud.lua` would, once
+  someone can try it in Mudlet.
+- MSSP is on in deploy/app.yaml; submitting the game to the listings is the owner's
+  step.
+- `help rules` is a draft automation policy, to be reworded.
 
-**On master, not yet released** -- each needs its line in the site guide when it ships:
-- `goals`: the zones your power fits, the next one, and the walk to each.
-- `map`: the rooms around you, drawn.
-- `screenreader [on|off]`, and MTTS: a client that says it reads to a screen reader
-  gets words instead of symbols. Wants a blind player to try it before it's announced.
-- Boss-only drops can't be sold or donated; `help rules` (a draft automation policy,
-  to be reworded); an `economy` log line every 15 minutes.
-- GMCP `Comm.Channel.Text` for chat-capture scripts (the Mudlet add-on doesn't use it
-  yet -- a chat tab in `watchmud.lua` would, once someone can try it in Mudlet).
-- MCCP2 compression, for clients that ask (Mudlet, tintin). Worth a try in a real
-  Mudlet before release: it's tested against Go's zlib only.
-- MSSP, for listing sites: on in deploy/app.yaml. Once released, submitting the game
-  to the listings is the owner's step.
-- The General Store sells a power-4 kit (sword, cap, boots, gloves, jerkin, cloak) and a
-  strong healing draught; hunter bots buy the kit and keep it repaired at the smith.
-  The site guide's store line grows with the release.
+**On master, not yet released:** nothing yet.
 
 **Next, roughly:** tuning the mill and the King once players have tried them; the bots
 ROADMAP lists (explore-and-map, bots
