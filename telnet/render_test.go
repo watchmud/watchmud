@@ -339,6 +339,11 @@ var commandCases = []commandCase{
 		want:  "Little Drone looks like a fair fight. (power 1; you are 0)\n",
 	},
 	{
+		name:  "consider, as cons",
+		input: "cons little",
+		want:  "Little Drone looks like a fair fight. (power 1; you are 0)\n",
+	},
+	{
 		name:  "consider something that isn't here",
 		input: "consider dragon",
 		want:  "You don't see that here.\n",

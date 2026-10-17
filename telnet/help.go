@@ -34,7 +34,7 @@ var helpSections = []helpSection{
 		{"look, look <thing>", "the room, or something in it (l)", []string{"look", "l"}},
 		{"look in <corpse>, track", "what it's holding; which way a mob went",
 			[]string{"look", "track"}},
-		{"consider <mob>", "how a fight with it would go (con)", []string{"consider", "con"}},
+		{"consider <mob>", "how a fight with it would go (con, cons)", []string{"consider", "con", "cons"}},
 	}},
 	{"Things", []helpEntry{
 		{"get <item>", "pick it up; get all, get 2.knife", []string{"get"}},

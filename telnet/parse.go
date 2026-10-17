@@ -202,7 +202,7 @@ func parseCommand(tokens []string) (command.Command, error) {
 	case "abilities", "abil":
 		return command.Abilities{}, nil
 
-	case "consider", "con":
+	case "consider", "con", "cons":
 		return command.Consider{Target: rest}, nil
 
 	case "kill", "attack", "hit":
