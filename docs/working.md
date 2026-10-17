@@ -47,13 +47,17 @@ chests, bags, potions, groups, positions, ooc and socials, the janitor and crows
 
 Shipped but not announced on the site, on purpose:
 - Screen-reader mode wants a blind player to try it before it's announced.
-- MCCP2 and the Mudlet add-on still haven't been run in a real Mudlet (MCCP2 is
-  tested against Go's zlib only): try them before telling players.
-- `Comm.Channel.Text` has no user yet -- a chat tab in `watchmud.lua` would, once
-  someone can try it in Mudlet.
+- `Comm.Channel.Text` is read by Mudlet 5's starter chat pane; `watchmud.lua`
+  doesn't use it yet.
 - MSSP is on in deploy/app.yaml; submitting the game to the listings is the owner's
   step.
 - `help rules` is a draft automation policy, to be reworded.
+
+The Mudlet add-on works in a real Mudlet: 5.0.1, against v0.12.0, on 2026-10-17 --
+`Room.Info` and `Char.Vitals` arrive and the map draws. Mudlet 5 also builds a
+starter UI of its own (a dock on the right: map, chat, vitals, fed by GMCP) whose
+map stays empty without the add-on; how the two share the screen isn't settled.
+Whether that Mudlet took up MCCP2 wasn't checked; text arrived fine either way.
 
 **On master, not yet released:**
 - The welcome banner always comes before the name question (it could lose a race,
