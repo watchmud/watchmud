@@ -28,6 +28,19 @@ var kit = []piece{
 	{"oilskin cloak", "oilskin", "about body", "travelers"},
 }
 
+// find is something a ground's prey drop that's worth wearing: its short
+// description exactly as equipment and inventory show it, a keyword only it
+// answers to among the kit, the store, the starting gear and the other finds,
+// and its slot as the equipment list shows it. TestFinds_theContentHasThem
+// holds it to the real content.
+type find struct{ item, keyword, slot string }
+
+var finds = []find{
+	{"a leather bandit hood", "hood", "head"},
+	{"a knotted cudgel", "cudgel", "wielded"},
+	{"a boar-hide jerkin", "boar", "body"},
+}
+
 // worn is one row of the equipment list. Durability and maxDurability are both
 // zero for gear that never wears out.
 type worn struct {
@@ -41,6 +54,9 @@ var (
 	// a row: two spaces in, columns two or more spaces apart, the condition
 	// last or not there at all
 	equipmentRowRe = regexp.MustCompile(`(?m)^  (\S+(?: \S+)?)  +(.+?)  +power (\d+)(?:  +(?:(broken)|(\d+)/(\d+)))?$`)
+	// an inventory row: no slot column, and identical things folded into one
+	// line with a count
+	inventoryRowRe = regexp.MustCompile(`(?m)^  (.+?)(?: \(x(\d+)\))?  +power (\d+)(?:  +(?:(broken)|\d+/\d+))?$`)
 	purseRe        = regexp.MustCompile(`(?m)^You have (\d+) coins?\.$`)
 	inventoryRe    = regexp.MustCompile(`(?m)^(?:Inventory|You aren't carrying anything\.)$`)
 	// what the store says to a buy: bought, at a price, or what it would cost
@@ -63,6 +79,27 @@ func readEquipment(text string) []worn {
 	return rows
 }
 
+// carried is one row of the inventory list: what isn't worn. Count is how
+// many identical ones the row folds together.
+type carried struct {
+	item         string
+	power, count int
+	broken       bool
+}
+
+func readInventory(text string) []carried {
+	var out []carried
+	for _, m := range inventoryRowRe.FindAllStringSubmatch(text, -1) {
+		c := carried{item: m[1], count: 1, broken: m[4] != ""}
+		if m[2] != "" {
+			c.count, _ = strconv.Atoi(m[2])
+		}
+		c.power, _ = strconv.Atoi(m[3])
+		out = append(out, c)
+	}
+	return out
+}
+
 // needsRepair: broken, or down to a third -- the mark that turns yellow for a
 // player.
 func (w worn) needsRepair() bool {
@@ -76,8 +113,9 @@ func (w worn) damaged() bool {
 }
 
 // repairWord is what the smith is asked for this row: the kit piece's
-// keyword, or the alias of the starter piece the kit replaces in its slot;
-// "" for anything else -- the token, which never wears, or what it didn't buy.
+// keyword, the alias of the starter piece the kit replaces in its slot, or a
+// find's keyword; "" for anything else -- the token, which never wears, or
+// what it didn't buy or find. It's also the word that takes the row off.
 func (w worn) repairWord() string {
 	for _, p := range kit {
 		switch {
@@ -86,6 +124,11 @@ func (w worn) repairWord() string {
 			return p.keyword
 		case p.replaces != "" && strings.Contains(w.item, p.replaces):
 			return p.replaces
+		}
+	}
+	for _, f := range finds {
+		if f.item == w.item {
+			return f.keyword
 		}
 	}
 	return ""
@@ -126,6 +169,50 @@ func nextPiece(rows []worn) *piece {
 		// something else is there, and nothing it knows takes it off
 	}
 	return nil
+}
+
+// swap is a find to put on: the best copy's power, how many unbroken copies
+// the pack holds, and the word that takes off what's in its slot now -- ""
+// when the slot is empty.
+type swap struct {
+	on            find
+	power, copies int
+	off           string
+}
+
+// upgrades is what to wear of what it found: for each find, the best unbroken
+// copy carried, if it's strictly above what its slot holds -- an empty slot
+// or a broken row counts as 0 -- and the slot holds nothing it can't name and
+// so can't take off. Each find has a slot of its own, so this is one a slot.
+func upgrades(rows []worn, pack []carried) []swap {
+	var out []swap
+	for _, f := range finds {
+		best, copies := 0, 0
+		for _, c := range pack {
+			if c.item != f.item || c.broken {
+				continue
+			}
+			copies += c.count
+			best = max(best, c.power)
+		}
+		if copies == 0 {
+			continue
+		}
+		off, now := "", 0
+		if r, taken := slotHolds(rows, f.slot); taken {
+			off = r.repairWord()
+			if off == "" {
+				continue
+			}
+			if !r.broken {
+				now = r.power
+			}
+		}
+		if best > now {
+			out = append(out, swap{on: f, power: best, copies: copies, off: off})
+		}
+	}
+	return out
 }
 
 // spares is what a hunter has taken off and gives away: the starter pieces,

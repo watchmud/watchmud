@@ -11,6 +11,7 @@ import (
 	"github.com/watchmud/watchmud/loader"
 	"github.com/watchmud/watchmud/object"
 	"github.com/watchmud/watchmud/player"
+	"github.com/watchmud/watchmud/rules"
 )
 
 // The kit against the real content. Each piece is something the General
@@ -70,6 +71,48 @@ func TestKit_theStoreSellsIt(t *testing.T) {
 		assert.True(t, found, "%q names nothing in the starting kit", p.replaces)
 		for _, d := range kitDefs {
 			assert.False(t, d.Matches(p.replaces), "%q also takes off %s", p.replaces, d.Name)
+		}
+	}
+}
+
+// The finds against the real content: each is something the Hollowfields
+// drop, with that short description (what equipment and inventory show),
+// worn in that slot, and answering to its keyword -- which nothing in the kit,
+// the store or the starting gear answers to, so remove, wear, drop and repair
+// by it never touch anything else.
+func TestFinds_theContentHasThem(t *testing.T) {
+	content, err := loader.LoadContent(os.DirFS("../content"))
+	require.NoError(t, err)
+	slotShown := map[rules.EquipmentSlot]string{rules.SlotWield: "wielded", rules.SlotHead: "head", rules.SlotBody: "body"}
+	others := []*object.Definition{}
+	for _, s := range content.Zones["wrathrock"].Shops["general_store"].Stock {
+		others = append(others, s.Object)
+	}
+	for _, g := range content.Catalog.StartingGear {
+		others = append(others, content.Zones[g.ZoneId].ObjectDefinitions[g.DefinitionId])
+	}
+
+	for _, f := range finds {
+		var def *object.Definition
+		for _, d := range content.Zones["hollowfield"].ObjectDefinitions {
+			if d.ShortDescription == f.item {
+				def = d
+			}
+		}
+		require.NotNil(t, def, "nothing in the Hollowfields is %q", f.item)
+		assert.Equal(t, f.slot, slotShown[def.EquipmentSlot], "%s's slot", f.item)
+		assert.True(t, def.Matches(f.keyword), "%s doesn't answer to %q", f.item, f.keyword)
+		for _, d := range others {
+			assert.False(t, d.Matches(f.keyword), "%q is %s's too", f.keyword, d.Name)
+		}
+		for _, g := range finds {
+			if g.item != f.item {
+				for _, d := range content.Zones["hollowfield"].ObjectDefinitions {
+					if d.ShortDescription == g.item {
+						assert.False(t, d.Matches(f.keyword), "%q is %s's too", f.keyword, g.item)
+					}
+				}
+			}
 		}
 	}
 }

@@ -273,3 +273,56 @@ func TestOutfit_mendsWhatsWornByName(t *testing.T) {
 
 	assert.Equal(t, 5, a.repairShort, "the cheaper of the two refusals")
 }
+
+// What it carries, as the inventory list shows it: a folded line is one entry
+// with its count, and neither the heading nor the purse is an item.
+func TestReadInventory(t *testing.T) {
+	inv := readInventory("Inventory\n" +
+		"  a leather bandit hood (x2)  power 4  20/20\n" +
+		"  a knotted cudgel            power 5  25/25\n" +
+		"  a studded cap               power 4  broken\n" +
+		"  a long goose feather        power 1\n" +
+		"You have 12 coins.\n")
+	assert.Equal(t, []carried{
+		{item: "a leather bandit hood", power: 4, count: 2},
+		{item: "a knotted cudgel", power: 5, count: 1},
+		{item: "a studded cap", power: 4, count: 1, broken: true},
+		{item: "a long goose feather", power: 1, count: 1},
+	}, inv)
+	assert.Empty(t, readInventory("You aren't carrying anything.\nYou have 3 coins.\n"))
+}
+
+// A find being worn goes to the smith by its own keyword.
+func TestRepairWord_finds(t *testing.T) {
+	assert.Equal(t, "hood", worn{slot: "head", item: "a leather bandit hood"}.repairWord())
+	assert.Equal(t, "cudgel", worn{slot: "wielded", item: "a knotted cudgel"}.repairWord())
+	assert.Equal(t, "boar", worn{slot: "body", item: "a boar-hide jerkin"}.repairWord())
+}
+
+// What goes on: the best unbroken copy of a find, only above what the slot
+// holds now, and only where it can take that off.
+func TestUpgrades(t *testing.T) {
+	kitOn := []worn{
+		{slot: "wielded", item: "an arming sword", power: 4},
+		{slot: "body", item: "a quilted jerkin", power: 4},
+		{slot: "head", item: "a studded cap", power: 4},
+	}
+	pack := []carried{
+		{item: "a leather bandit hood", power: 4, count: 2},
+		{item: "a leather bandit hood", power: 5, count: 1},
+		{item: "a knotted cudgel", power: 4, count: 1},
+		{item: "a boar-hide jerkin", power: 6, count: 1, broken: true},
+	}
+	assert.Equal(t, []swap{{on: finds[0], power: 5, copies: 3, off: "studded"}}, upgrades(kitOn, pack),
+		"the better hood only: an equal cudgel stays in the pack, a broken jerkin counts for nothing")
+
+	oneHood := []carried{{item: "a leather bandit hood", power: 4, count: 1}}
+	assert.Equal(t, []swap{{on: finds[0], power: 4, copies: 1, off: ""}}, upgrades(nil, oneHood),
+		"an empty slot is power 0")
+	brokenCap := []worn{{slot: "head", item: "a studded cap", power: 4, broken: true}}
+	assert.Equal(t, []swap{{on: finds[0], power: 4, copies: 1, off: "studded"}}, upgrades(brokenCap, oneHood),
+		"a broken row counts for nothing")
+	strange := []worn{{slot: "head", item: "a jester's cap", power: 1}}
+	assert.Empty(t, upgrades(strange, oneHood), "it can't take off what it can't name")
+	assert.Empty(t, upgrades(kitOn, nil), "nothing found, nothing to wear")
+}
