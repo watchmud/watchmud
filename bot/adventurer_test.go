@@ -3,7 +3,9 @@ package bot
 import (
 	"bufio"
 	"context"
+	"maps"
 	"net"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -194,12 +196,18 @@ func TestRest_pollsUntilRested(t *testing.T) {
 // first in the list.
 func TestPickGround_spreadsOut(t *testing.T) {
 	a, _ := adventurer(t)
-	seen := map[string]int{}
-	for range 100 {
-		seen[a.pickGround(1).name]++
-	}
-	for _, g := range grounds {
-		assert.Positive(t, seen[g.name], "never chose %s", g.name)
+	for _, tc := range []struct {
+		power int
+		want  []string
+	}{
+		{1, []string{"the west fields", "the east fields"}},
+		{3, []string{"the bandit track", "the boar wood"}},
+	} {
+		seen := map[string]int{}
+		for range 100 {
+			seen[a.pickGround(tc.power).name]++
+		}
+		assert.ElementsMatch(t, tc.want, slices.Collect(maps.Keys(seen)), "at power %d", tc.power)
 	}
 	assert.Nil(t, a.pickGround(99), "nothing suits power 99")
 }

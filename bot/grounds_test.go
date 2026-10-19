@@ -2,11 +2,15 @@ package bot
 
 import (
 	"fmt"
+	"os"
+	"slices"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/watchmud/watchmud/loader"
+	"github.com/watchmud/watchmud/spaces"
 )
 
 // Every ground's route and patrol, walked against the real content in a world
@@ -102,4 +106,60 @@ func TestPhrases(t *testing.T) {
 		}
 	}
 	assert.Nil(t, phrases["nobody"][momentKill])
+}
+
+// No ground walks a bot past something that would attack it and is more than
+// a power above the weakest bot that hunts there -- measured from 1 for the
+// farms, a new character's power, as TestKeepOut_safe does: the moonstruck
+// wild dogs (2) roam the whole zone. A power-4 bot would call a wolf a fair
+// fight, so only the routes keep it out of the Deep Wood.
+func TestGrounds_safe(t *testing.T) {
+	content, err := loader.LoadContent(os.DirFS("../content"))
+	require.NoError(t, err)
+	byName := map[string]*spaces.Room{}
+	for _, z := range content.Zones {
+		for _, r := range z.Rooms {
+			byName[r.Name] = r
+		}
+	}
+	for _, g := range grounds {
+		danger := dangerAbove(t, content, max(g.minPower, 1)+1)
+		for _, s := range append(slices.Clone(g.route), g.patrol...) {
+			r, ok := byName[s.room]
+			require.True(t, ok, "%s names a room that doesn't exist: %q", g.name, s.room)
+			assert.Empty(t, danger[r], "%s walks a power-%d bot through %s", g.name, g.minPower, s.room)
+		}
+	}
+}
+
+// Every prey is a real mob: its name, the line it shows in a room, and a
+// keyword it answers to.
+func TestGrounds_preyIsReal(t *testing.T) {
+	content, err := loader.LoadContent(os.DirFS("../content"))
+	require.NoError(t, err)
+	for _, g := range grounds {
+		for _, p := range g.prey {
+			found := false
+			for _, z := range content.Zones {
+				for _, def := range z.MobileDefinitions {
+					if def.Name == p.name && def.DescriptionInRoom == p.seen && slices.Contains(def.Aliases, p.keyword) {
+						found = true
+					}
+				}
+			}
+			assert.True(t, found, "%s: no %q seen as %q answering to %q", g.name, p.name, p.seen, p.keyword)
+		}
+	}
+}
+
+// The farms are for new characters; a bot in the whole store kit is power 3
+// and climbs.
+func TestGrounds_bands(t *testing.T) {
+	require.Len(t, grounds, 4)
+	for _, g := range grounds[:2] {
+		assert.Equal(t, 2, g.maxPower, g.name)
+	}
+	for _, g := range grounds[2:] {
+		assert.Equal(t, 3, g.minPower, g.name)
+	}
 }

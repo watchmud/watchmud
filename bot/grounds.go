@@ -22,12 +22,14 @@ type step struct{ dir, room string }
 // looks in a room -- a room shows descriptions, not keywords.
 type prey struct{ keyword, name, seen string }
 
-// A bot never wears what it finds, and the kit it buys (outfit.go) tops out
-// at power 3; it fights nothing more than a power above it, so its grounds
-// are the farms: rats,
-// geese, beetles and dogs. The bandit track and the Old Wood are past it, and
-// the hedge-witch is never prey. Two grounds rather than one so a player on
-// one sends the bots to the other, instead of back to town to wait.
+// The farms -- rats, geese, beetles and dogs -- are for new characters and a
+// bot still buying its kit: they stop at power 2. A bot in the whole store kit
+// is power 3 and hunts the bandit track and the boar wood instead, never
+// further: south of the Edge of the Old Wood are the wolves, power 5 and
+// aggressive, which a bot that grows to 4 would call a fair fight, and south
+// of the Woodcutter's Clearing is the hedge-witch, who is never prey.
+// TestGrounds_safe holds every route to that. Two grounds to each band so a
+// player on one sends the bots to the other, instead of back to town to wait.
 var hollowfieldsRoute = []step{
 	{"south", "Market Square"},
 	{"south", "South Gate"},
@@ -41,7 +43,7 @@ var grounds = []ground{{
 	// 0, not the zone's 1: broken gear stops counting toward power, and a bot
 	// whose kit has all worn out is power 0. It should still hunt rats.
 	minPower: 0,
-	maxPower: 5,
+	maxPower: 2,
 	route:    hollowfieldsRoute,
 	patrol: []step{
 		{"west", "The Millpond"},
@@ -60,7 +62,7 @@ var grounds = []ground{{
 }, {
 	name:     "the east fields",
 	minPower: 0,
-	maxPower: 5,
+	maxPower: 2,
 	route:    hollowfieldsRoute,
 	patrol: []step{
 		{"east", "Along the Hedgerow"},
@@ -73,6 +75,48 @@ var grounds = []ground{{
 		{"dog", "wild dog", "A mangy wild dog watches you, hackles up."},
 	},
 	loot: []string{"pelt"},
+}, {
+	name:     "the bandit track",
+	minPower: 3,
+	maxPower: 5,
+	route:    hollowfieldsRoute,
+	patrol: []step{
+		{"east", "Along the Hedgerow"},
+		{"south", "The Wheat Field"},
+		{"south", "A Narrow Track"},
+		{"east", "The Bandit Camp"},
+		{"west", "A Narrow Track"},
+		{"north", "The Wheat Field"},
+		{"west", "Farm Lane"},
+		{"north", "The Waystone"},
+	},
+	prey: []prey{
+		{"lookout", "bandit lookout", "A bandit lookout leans on a stick, pretending not to watch the path."},
+		// "thug", not "bandit": the lookout answers to bandit too, and a bandit
+		// that fled can end up standing beside it
+		{"thug", "bandit", "A bandit in a patched jerkin fingers a cudgel."},
+	},
+	loot: []string{"hood", "cudgel"},
+}, {
+	name:     "the boar wood",
+	minPower: 3,
+	maxPower: 5,
+	route:    hollowfieldsRoute,
+	patrol: []step{
+		{"south", "Farm Lane"},
+		{"south", "The Old Bridge"},
+		{"south", "The Edge of the Old Wood"},
+		{"west", "The Woodcutter's Clearing"},
+		{"east", "The Edge of the Old Wood"},
+		{"north", "The Old Bridge"},
+		{"north", "Farm Lane"},
+		{"north", "The Waystone"},
+	},
+	prey: []prey{
+		{"boar", "wild boar", "A wild boar roots at the ground, tusks muddy."},
+	},
+	// the jerkin answers to "boar"; "jerkin" is the quilted one's too
+	loot: []string{"boar"},
 }}
 
 // preyIn is the kinds of prey in a room's description, once each.
