@@ -65,9 +65,12 @@ Whether that Mudlet took up MCCP2 wasn't checked; text arrived fine either way.
 - `cons` is `consider` too, beside `con`. Nothing for the site.
 - Hunter bots ask the smith for each worn piece by name instead of `repair all`, so
   the starter pieces they're about to donate aren't mended first. Nothing for the site.
+- Hunter bots in the whole store kit (power 3) leave the farms to new players and
+  hunt the bandit track and the boar wood, wearing a better hood, cudgel or jerkin
+  when one drops and donating the rest. Nothing for the site.
 
-**Next, roughly:** tuning the mill and the King once players have tried them; the bots
-ROADMAP lists (explore-and-map, bots
-that wear what they find). The Barrow-King's AC waits for a real group to try him.
+**Next, roughly:** more power 4-5 areas off what's there, for players and then the
+bots (the owner's call, 2026-10-18; a design conversation first); tuning the mill and
+the King once players have tried them; hunters routing by the explorer's atlas. The Barrow-King's AC waits for a real group to try him.
 Leftovers: `watchmud.games` DNS points nowhere. (An unhealthy game now fails the
 `uptime` workflow, once it is on master.)

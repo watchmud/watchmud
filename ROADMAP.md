@@ -167,7 +167,11 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
   following that map instead of hand-written grounds is the next step), and bots that **wear
   the upgrades they find** and grow into the Barrow -- a first step done 2026-10-15:
   hunters buy the General Store's power-4 kit and keep it repaired (`bot/outfit.go`;
-  options in `docs/superpowers/specs/2026-10-10-bots-that-grow-and-coin-sinks-design.md`).
+  options in `docs/superpowers/specs/2026-10-10-bots-that-grow-and-coin-sinks-design.md`),
+  and a second 2026-10-19: in the kit they leave the farms to new players, hunt the
+  bandit track and the boar wood, and wear a better hood, cudgel or jerkin when one
+  drops (`docs/superpowers/specs/2026-10-18-hunters-climb-design.md`). Next: more power
+  4-5 content for players, and bots onto it.
 
 **Then: a new player's first hour.** (Added 2026-10-08, from an r/MUD thread on how
 player expectations have shifted since MMOs -- notes in Obsidian, "Expectations of MUDs

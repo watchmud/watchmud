@@ -65,6 +65,8 @@ var (
 	refusedRe = regexp.MustCompile(`(?m)^[A-Z].* would cost (\d+) coins?, and you have \d+ coins?\.$`)
 	removedRe = regexp.MustCompile(`(?m)^You stop using .+\.$`)
 	woreRe    = regexp.MustCompile(`(?m)^You wear .+\.$`)
+	// look at a thing: its power line, or nothing there
+	lookedRe = regexp.MustCompile(`(?m)^(?:  (?:.+\. )?Power (\d+)\.|You don't see that here\.)$`)
 )
 
 func readEquipment(text string) []worn {
@@ -328,6 +330,46 @@ func (a *Adventurer) shop(ctx context.Context, rows []worn, coins int) error {
 		a.count(func(st *Stats) { st.Bought++ })
 		a.log("bought and wore %s for %d coins", p.name, price)
 	}
+}
+
+// wearBest puts on the best copy of sw's find it carries, after taking off
+// what's in the slot. Wear takes the first copy in the pack, oldest first, so
+// it looks before it wears, and drops a lesser copy -- it's in the donation
+// room, where that was going anyway -- until the first is the best. It
+// answers the word that took off what was there, for the donation.
+func (a *Adventurer) wearBest(ctx context.Context, sw swap) (string, error) {
+	if sw.off != "" {
+		if _, _, err := a.ask("remove "+sw.off, removedRe); err != nil {
+			return "", err
+		}
+	}
+	kw := sw.on.keyword
+	// once for every copy it counted, and once more for the one it just took
+	// off, when that was a copy too
+	for range sw.copies + 1 {
+		if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
+			return "", err
+		}
+		_, m, err := a.ask("look "+kw, lookedRe)
+		if err != nil {
+			return "", err
+		}
+		if m[1] == "" {
+			break // nothing there: it miscounted
+		}
+		if power, _ := strconv.Atoi(m[1]); power >= sw.power {
+			if _, _, err := a.ask("wear "+kw, woreRe); err != nil {
+				return "", err
+			}
+			a.count(func(st *Stats) { st.Upgrades++ })
+			a.log("wore %s, power %d", sw.on.item, power)
+			return sw.off, nil
+		}
+		if _, _, err := a.ask("drop "+kw, dropRe); err != nil {
+			return "", err
+		}
+	}
+	return sw.off, nil
 }
 
 // atSmith is at the smith: each worn piece that's seen wear, asked for by the

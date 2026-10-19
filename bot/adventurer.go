@@ -106,8 +106,10 @@ type Stats struct {
 	// Mapped is how many rooms an explorer has on its atlas.
 	Mapped int
 	// Bought is pieces of kit bought, Repairs visits to the smith, Power is
-	// the power the equipment list last said.
-	Bought, Repairs, Power int
+	// the power the equipment list last said, Upgrades finds it put on.
+	Bought, Repairs, Power, Upgrades int
+	// Ground is the ground it last set out for.
+	Ground string
 }
 
 // Adventurer is a bot that plays like a player: out to a hunting ground, fights
@@ -321,6 +323,8 @@ func (a *Adventurer) setOut(ctx context.Context, power int) (stateFn, error) {
 		return a.waitThen(a.cfg.Pace.Idle, a.town), nil
 	}
 	a.log("off to %s at power %d", a.ground.name, power)
+	name := a.ground.name
+	a.count(func(st *Stats) { st.Ground = name })
 	return a.travel, nil
 }
 
@@ -409,6 +413,8 @@ func (a *Adventurer) yieldGround(g *ground, i int, who, room string) stateFn {
 }
 
 // donate takes what it found to the donation room, east of Temple Square.
+// There, before it gives anything away, it puts on what it found that's
+// better than what it wears.
 func (a *Adventurer) donate(ctx context.Context) (stateFn, error) {
 	if a.attacked {
 		return a.fightThen(a.donate), nil
@@ -419,8 +425,33 @@ func (a *Adventurer) donate(ctx context.Context) (stateFn, error) {
 	if _, err := a.walk(ctx, step{"east", "Donation Room"}); err != nil {
 		return nil, err
 	}
-	// what it found, and what it took off for what it bought
-	for _, kw := range append(slices.Clone(a.ground.loot), spares()...) {
+	inv, _, err := a.ask("inventory", inventoryRe)
+	if err != nil {
+		return nil, err
+	}
+	eq, _, err := a.ask("equipment", powerRe)
+	if err != nil {
+		return nil, err
+	}
+	var off []string
+	for _, sw := range upgrades(readEquipment(eq), readInventory(inv)) {
+		removed, err := a.wearBest(ctx, sw)
+		if err != nil {
+			return nil, err
+		}
+		if removed != "" {
+			off = append(off, removed)
+		}
+	}
+	// what it found, what it took off for what it bought, and what it took
+	// off for what it found -- each word once
+	var words []string
+	for _, kw := range slices.Concat(a.ground.loot, spares(), off) {
+		if !slices.Contains(words, kw) {
+			words = append(words, kw)
+		}
+	}
+	for _, kw := range words {
 		if err := a.pause(ctx, a.cfg.Pace.Think); err != nil {
 			return nil, err
 		}

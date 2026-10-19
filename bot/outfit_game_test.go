@@ -214,3 +214,19 @@ func TestAdventurer_repairsFirst(t *testing.T) {
 	assert.Equal(t, 1, st.Repairs)
 	assert.Zero(t, st.Bought)
 }
+
+// The whole climb, against the real content: coins enough for the kit, the
+// kit bought and worn, power 3, and a kill on a ground past the farms.
+func TestAdventurer_climbs(t *testing.T) {
+	addr, g := startGameStore(t, 10*time.Millisecond)
+	createCharacter(t, addr, "Wren", "correcthorse")
+	setRecord(t, g, "Wren", func(r *player.Record) { r.Coins = 2000 })
+	a := runAdventurer(t, addr, "Wren")
+
+	ok := assert.Eventually(t, func() bool { return a.Stats().Kills >= 1 }, 60*time.Second, 50*time.Millisecond)
+	st := a.Stats()
+	require.True(t, ok, "stats: %+v", st)
+	assert.Equal(t, len(kit), st.Bought)
+	assert.Equal(t, 3, st.Power)
+	assert.Contains(t, []string{"the bandit track", "the boar wood"}, st.Ground)
+}

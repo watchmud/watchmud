@@ -2,6 +2,7 @@ package bot
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -191,6 +192,10 @@ func TestDonate_givesAwayTheStarterPieces(t *testing.T) {
 	g.say("Temple Square\r\n A square.\r\n[ Exits: e s ]\r\n<100/100hp> ")
 	assert.Equal(t, "east", g.heard())
 	g.say("Donation Room\r\n A room.\r\n[ Exits: w ]\r\n<100/100hp> ")
+	assert.Equal(t, "inventory", g.heard())
+	g.say("Inventory\r\n  a fat rat pelt  power 1\r\nYou have 9 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "equipment", g.heard(), "a farm bot has nothing to swap: it reads, then gives away what it always did")
+	g.say(strings.ReplaceAll(starterEquipment, "\n", "\r\n") + "<100/100hp> ")
 	for _, kw := range a.ground.loot {
 		assert.Equal(t, "drop all."+kw, g.heard())
 		g.say("You aren't carrying that.\r\n<100/100hp> ")
@@ -325,4 +330,57 @@ func TestUpgrades(t *testing.T) {
 	strange := []worn{{slot: "head", item: "a jester's cap", power: 1}}
 	assert.Empty(t, upgrades(strange, oneHood), "it can't take off what it can't name")
 	assert.Empty(t, upgrades(kitOn, nil), "nothing found, nothing to wear")
+}
+
+// In the donation room, before it gives anything away: the better hood goes
+// on, and the cap it replaces goes with the rest. Two hoods in the pack, the
+// lesser first -- wear takes the first match -- so it looks before it wears,
+// and gives the lesser away.
+func TestDonate_wearsTheBestCopy(t *testing.T) {
+	a, g := adventurer(t)
+	a.ground = &grounds[2]
+	done := make(chan error, 1)
+	go func() { _, err := a.donate(context.Background()); done <- err }()
+
+	assert.Equal(t, "recall", g.heard())
+	g.say("Temple Square\r\n A square.\r\n[ Exits: e s ]\r\n<100/100hp> ")
+	assert.Equal(t, "east", g.heard())
+	g.say("Donation Room\r\n A room.\r\n[ Exits: w ]\r\n<100/100hp> ")
+	assert.Equal(t, "inventory", g.heard())
+	g.say("Inventory\r\n  a leather bandit hood  power 4  20/20\r\n  a leather bandit hood  power 5  20/20\r\nYou have 9 coins.\r\n<100/100hp> ")
+	assert.Equal(t, "equipment", g.heard())
+	g.say("Equipment (power 3)\r\n  head  a studded cap  power 4  20/20\r\n  neck  a temple token  power 1\r\n<100/100hp> ")
+	assert.Equal(t, "remove studded", g.heard())
+	g.say("You stop using a studded cap.\r\n<100/100hp> ")
+	assert.Equal(t, "look hood", g.heard())
+	g.say("A leather bandit hood\r\n  Leather armor, worn on the head. Power 4.\r\n<100/100hp> ")
+	assert.Equal(t, "drop hood", g.heard(), "the lesser copy, first in the pack")
+	g.say("Dropped.\r\n<100/100hp> ")
+	assert.Equal(t, "look hood", g.heard())
+	g.say("A leather bandit hood\r\n  Leather armor, worn on the head. Power 5.\r\n<100/100hp> ")
+	assert.Equal(t, "wear hood", g.heard())
+	g.say("You wear a leather bandit hood.\r\n<100/100hp> ")
+	for _, kw := range []string{"hood", "cudgel", "training", "wool", "travelers", "studded"} {
+		assert.Equal(t, "drop all."+kw, g.heard(), "the ground's loot, the starter spares, then what came off")
+		g.say("You aren't carrying that.\r\n<100/100hp> ")
+	}
+	assert.Equal(t, "west", g.heard())
+	g.say("Temple Square\r\n A square.\r\n[ Exits: e s ]\r\n<100/100hp> ")
+	require.NoError(t, <-done)
+	assert.Equal(t, 1, a.Stats().Upgrades)
+}
+
+// A miscounted pack -- the copy it meant to look at gone -- ends the swap
+// with nothing worn rather than waiting on an answer that never comes.
+func TestWearBest_nothingThere(t *testing.T) {
+	a, g := adventurer(t)
+	done := make(chan error, 1)
+	go func() {
+		_, err := a.wearBest(context.Background(), swap{on: finds[1], power: 5, copies: 1})
+		done <- err
+	}()
+	assert.Equal(t, "look cudgel", g.heard())
+	g.say("You don't see that here.\r\n<100/100hp> ")
+	require.NoError(t, <-done)
+	assert.Zero(t, a.Stats().Upgrades)
 }

@@ -401,9 +401,14 @@ of a crowd vanishing. A bot with nowhere to hunt waits in Market Square (`waitIn
 Temple Square: that's where every recall, death and new character lands; `consider` gates every kill; it answers each person's tell once per 10
 minutes with the same honest line. Hunting grounds (`bot/grounds.go`) are hand-written
 tables walked against the real content by `TestGrounds_walk`; never add the
-hedge-witch as prey. There are two, the west and east fields: a bot never wears loot, the
-kit it buys tops out at power 3, and it fights nothing more than a power above itself, so
-its grounds are the farms. It picks
+hedge-witch as prey. There are four, two to a band: the west and east fields (power 0-2:
+new characters' farms, and a bot still buying its kit, or one whose kit has broken),
+and the bandit track and the boar wood (3-5: a bot in the whole kit). It fights nothing
+more than a power above itself, so a bot grown to 4 would call a wolf fair: only the
+routes keep it out of the Deep Wood, and `TestGrounds_safe` fails on any route or
+patrol room where something aggressive above a ground's `minPower`+1 (from 1, for the
+farms) can be. `TestGrounds_preyIsReal` holds each prey's name, room line and keyword
+to mobs.json. It picks
 at random among the grounds its power suits and nobody is using, so bots spread out and a
 player on one sends them to the other. `cmd/watchmud-bots` runs up to 5 (one address, the server's
 cap), reconnecting forever.
@@ -423,7 +428,19 @@ take one word, so each piece has a keyword only it answers to (the studded boots
 real store and starting gear. The kit is the store's power-4 pieces, which with the
 power-1 token make power 3. The donation trip also drops the starter pieces by alias
 (`spares`); one still worn answers "You'll have to remove it first.", which `dropRe`
-takes. A test that sets a record while the server runs uses `setRecord`, which waits for
+takes.
+**It wears the better find** (`finds`, beside `kit`: the hood, the cudgel and the
+boar-hide jerkin, each by its short description and a keyword only it answers to --
+"boar", since the quilted jerkin is "jerkin" too; `TestFinds_theContentHasThem`). On the
+donation trip, in the Donation Room before dropping anything, it reads `inventory`
+(`readInventory`; a folded `(x2)` row counts two) and `equipment`; `upgrades` names,
+per find, the best unbroken copy carried if it's strictly above its slot's row (empty or
+broken is 0) and the slot holds something `repairWord` can name, and so take off.
+`wearBest` removes that, then `look <kw>`s the first copy before `wear`ing it and drops
+a lesser one -- wear takes the first match, oldest first, which is the one just taken
+off -- until the first is the best. What came off is donated with the ground's loot.
+`repairWord` knows the finds, so a worn hood goes to the smith like a worn cap.
+A test that sets a record while the server runs uses `setRecord`, which waits for
 `GameServer.Playing()` to reach 0 -- the logout's save comes after the hang-up -- and
 `memstore` has a lock for it.
 
