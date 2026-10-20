@@ -1,0 +1,543 @@
+[
+  {
+    "id": "road_east",
+    "name": "The East Road",
+    "description": "An old cart road runs east from the bandits' fires, its ruts gone to weeds. The grass along it is grey, and the further east you look the greyer it gets. Bandits use the road. Nobody else does.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_zone": "hollowfield",
+        "dest_room": "bandit_camp"
+      },
+      {
+        "direction": "east",
+        "dest_room": "road_scorched"
+      }
+    ]
+  },
+  {
+    "id": "road_scorched",
+    "name": "Scorched Ground",
+    "description": "The grass is gone here, burned down to black stubble that crunches underfoot. A milestone lies split in two across the road; the half you can read says EMBERFALL 1.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "road_east"
+      },
+      {
+        "direction": "east",
+        "dest_room": "road_ashfall"
+      }
+    ]
+  },
+  {
+    "id": "road_ashfall",
+    "name": "The Ash-Strewn Road",
+    "description": "Ash lies ankle deep and drifts like snow when the wind moves. Shapes in it might be carts, or might be people who were on the road the day it happened. The walls of a town stand ahead, black against the sky.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "road_scorched"
+      },
+      {
+        "direction": "east",
+        "dest_room": "town_gate"
+      }
+    ]
+  },
+  {
+    "id": "town_gate",
+    "name": "The Broken Gate of Emberfall",
+    "description": "Emberfall's gate was thrown outward, both leaves, and they lie flat in the road like something stepped through them. The arch above still stands, scorched clean of whatever was carved there. Beyond it, the town.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "road_ashfall"
+      },
+      {
+        "direction": "east",
+        "dest_room": "gatehouse_street"
+      }
+    ]
+  },
+  {
+    "id": "gatehouse_street",
+    "name": "Gatehouse Street",
+    "description": "The first street inside the walls, lined with houses whose roofs fell in and whose doors hang open. Crude marks have been daubed on the walls in something dark -- orc marks, staking a claim. A tavern sign still swings to the north.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "town_gate"
+      },
+      {
+        "direction": "north",
+        "dest_room": "broken_flagon"
+      },
+      {
+        "direction": "east",
+        "dest_room": "cinder_market"
+      }
+    ]
+  },
+  {
+    "id": "broken_flagon",
+    "name": "The Broken Flagon",
+    "description": "A tavern, or the shell of one. The tables are kindling now and the casks are staved in, and someone has been sleeping by the cold hearth on a heap of stolen cloaks. It smells of old beer and older smoke.",
+    "exits": [
+      {
+        "direction": "south",
+        "dest_room": "gatehouse_street"
+      }
+    ]
+  },
+  {
+    "id": "cinder_market",
+    "name": "The Cinder Market",
+    "description": "The town's market square, its stalls burned to their frames. A fountain in the middle is cracked and dry, and the cobbles around it have melted and run like wax. Streets lead off every way, and every way is ruined.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "gatehouse_street"
+      },
+      {
+        "direction": "north",
+        "dest_room": "chandlers_lane"
+      },
+      {
+        "direction": "south",
+        "dest_room": "well_street"
+      },
+      {
+        "direction": "east",
+        "dest_room": "lamplighters_row"
+      }
+    ]
+  },
+  {
+    "id": "chandlers_lane",
+    "name": "Chandlers' Lane",
+    "description": "A narrow lane of candle-makers' shops, and the wax that ran out of them in the fire has set in long pale tongues across the stones. A house to the east has fallen into the lane. North, a chapel's broken spire.",
+    "exits": [
+      {
+        "direction": "south",
+        "dest_room": "cinder_market"
+      },
+      {
+        "direction": "north",
+        "dest_room": "burned_chapel"
+      },
+      {
+        "direction": "east",
+        "dest_room": "collapsed_house"
+      }
+    ]
+  },
+  {
+    "id": "burned_chapel",
+    "name": "The Burned Chapel",
+    "description": "The chapel roof is gone and the sky looks in. Pews lie overturned, and the altar has been split by a blow that went down into the floor beneath it. Whoever prayed here, it didn't help.",
+    "exits": [
+      {
+        "direction": "south",
+        "dest_room": "chandlers_lane"
+      }
+    ]
+  },
+  {
+    "id": "collapsed_house",
+    "name": "A Collapsed House",
+    "description": "Two floors of a house came down into one, and you pick your way across beams and broken crockery. In the corner, under a fallen wardrobe, something has made a nest of bones.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "chandlers_lane"
+      }
+    ]
+  },
+  {
+    "id": "well_street",
+    "name": "Well Street",
+    "description": "A street of better houses running south from the market, their fronts blackened and their shutters torn off. The heat here was strong enough to crack the paving stones in long straight lines, all pointing east.",
+    "exits": [
+      {
+        "direction": "north",
+        "dest_room": "cinder_market"
+      },
+      {
+        "direction": "west",
+        "dest_room": "cold_forge"
+      },
+      {
+        "direction": "south",
+        "dest_room": "old_well"
+      }
+    ]
+  },
+  {
+    "id": "old_well",
+    "name": "The Old Well",
+    "description": "A little square with a well at its heart. The windlass is gone and the rope with it, but iron rungs run down inside the shaft into the dark, and a stink comes up out of it that is not water.",
+    "exits": [
+      {
+        "direction": "north",
+        "dest_room": "well_street"
+      },
+      {
+        "direction": "down",
+        "dest_room": "beneath_the_well"
+      }
+    ]
+  },
+  {
+    "id": "cold_forge",
+    "name": "The Cold Forge",
+    "description": "A smith's forge, its fire out for good and its anvil cracked through. Tongs and half-made blades lie where they were dropped. Someone has been back since and taken everything that was finished.",
+    "exits": [
+      {
+        "direction": "east",
+        "dest_room": "well_street"
+      }
+    ]
+  },
+  {
+    "id": "lamplighters_row",
+    "name": "Lamplighters' Row",
+    "description": "The lamps that lined this street are melted stumps now, every one bent away from the east as though a great wind came down the row. At the end of it, the guild's wall.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "cinder_market"
+      },
+      {
+        "direction": "south",
+        "dest_room": "ruined_apothecary"
+      },
+      {
+        "direction": "east",
+        "dest_room": "guild_wall"
+      }
+    ]
+  },
+  {
+    "id": "ruined_apothecary",
+    "name": "The Ruined Apothecary",
+    "description": "Shelves of jars, mostly smashed, and the floor is sticky with a hundred remedies run together. A few jars at the back are still sealed, and something in one of them is moving.",
+    "exits": [
+      {
+        "direction": "north",
+        "dest_room": "lamplighters_row"
+      }
+    ]
+  },
+  {
+    "id": "guild_wall",
+    "name": "Before the Guild Wall",
+    "description": "A high wall of grey stone runs across the end of the street, scorched but standing -- the only thing in Emberfall built to last, and it nearly did. Over it you can see the tower, broken at the top, and the air above it shimmers like heat.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "lamplighters_row"
+      },
+      {
+        "direction": "east",
+        "dest_room": "guild_gate"
+      }
+    ]
+  },
+  {
+    "id": "guild_gate",
+    "name": "The Shattered Guild Gate",
+    "description": "The guild's gate was iron and is now a twisted sculpture of iron, blown inward and fused to the gateposts. You squeeze through where it tore. Inside, the ground is glassy and smooth.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "guild_wall"
+      },
+      {
+        "direction": "south",
+        "dest_room": "refectory"
+      },
+      {
+        "direction": "east",
+        "dest_room": "great_court"
+      }
+    ]
+  },
+  {
+    "id": "refectory",
+    "name": "The Guild Refectory",
+    "description": "The long hall where the mages ate. The tables are still laid, every plate and cup under a skin of ash, as though everyone stood up at once in the middle of supper and never came back.",
+    "exits": [
+      {
+        "direction": "north",
+        "dest_room": "guild_gate"
+      }
+    ]
+  },
+  {
+    "id": "great_court",
+    "name": "The Great Courtyard",
+    "description": "A wide courtyard paved in white stone, cracked from the centre outward in a great star. The guild's buildings stand around it with their windows blown out. East, the tower's foot. The light here is wrong, faintly red, and comes from no direction.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "guild_gate"
+      },
+      {
+        "direction": "north",
+        "dest_room": "burned_library"
+      },
+      {
+        "direction": "south",
+        "dest_room": "arcanists_workshop"
+      },
+      {
+        "direction": "east",
+        "dest_room": "tower_door"
+      }
+    ]
+  },
+  {
+    "id": "burned_library",
+    "name": "The Burned Library",
+    "description": "Shelves to the ceiling, and the ceiling half gone. Most of the books are ash; a few, chained to their lecterns, came through with their covers scorched and their pages whispering when no wind blows. A stair climbs to what's left of the roof.",
+    "exits": [
+      {
+        "direction": "south",
+        "dest_room": "great_court"
+      },
+      {
+        "direction": "up",
+        "dest_room": "library_roof"
+      },
+      {
+        "direction": "east",
+        "dest_room": "scriptorium"
+      }
+    ]
+  },
+  {
+    "id": "library_roof",
+    "name": "On the Library Roof",
+    "description": "The broken roof of the library, open to the wind. Bones are heaped in the gutters, big ones, cracked for the marrow, and the slates are scored with long scratches. Something with wings roosts here.",
+    "exits": [
+      {
+        "direction": "down",
+        "dest_room": "burned_library"
+      }
+    ]
+  },
+  {
+    "id": "scriptorium",
+    "name": "The Scriptorium",
+    "description": "Desks in rows where apprentices copied spells, their inkwells boiled dry. The pages left on the desks have burned only along certain lines, as though the words themselves caught fire.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "burned_library"
+      }
+    ]
+  },
+  {
+    "id": "arcanists_workshop",
+    "name": "The Arcanists' Workshop",
+    "description": "Benches of glass and copper and coiled wire, all of it slagged together into something that crackles faintly when you come near. Rods of black iron run down through the floor. A trapdoor has been torn up from below.",
+    "exits": [
+      {
+        "direction": "north",
+        "dest_room": "great_court"
+      },
+      {
+        "direction": "east",
+        "dest_room": "dormitory"
+      },
+      {
+        "direction": "down",
+        "dest_room": "under_the_workshop"
+      }
+    ]
+  },
+  {
+    "id": "dormitory",
+    "name": "The Apprentices' Dormitory",
+    "description": "Rows of narrow beds under a sagging roof, each with its little chest at the foot, most of them broken open. The apprentices' names are carved into the bedposts. None of them is here.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "arcanists_workshop"
+      }
+    ]
+  },
+  {
+    "id": "tower_door",
+    "name": "At the Foot of the Tower",
+    "description": "The tower rises from here, its stones fused smooth, its top broken off ragged like a snapped bone. Its door is black iron, shut, and warm to the touch. Sigils carved around it still glow, very faintly, and you get the feeling they are holding something in.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "great_court"
+      },
+      {
+        "direction": "east",
+        "dest_room": "tower",
+        "door": {
+          "name": "tower door",
+          "aliases": [
+            "door",
+            "iron",
+            "tower"
+          ],
+          "closed": true,
+          "locked": true,
+          "key": "tower_key"
+        }
+      }
+    ]
+  },
+  {
+    "id": "tower",
+    "name": "Inside the Tower",
+    "description": "The ground floor of the guild tower. The air is hot and tastes of metal.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "tower_door"
+      }
+    ]
+  },
+  {
+    "id": "beneath_the_well",
+    "name": "Beneath the Old Well",
+    "description": "The well shaft opens into a sewer, brick-vaulted and low. The water is black and slow, and things float in it you would rather not look at. Iron rungs lead back up into the light.",
+    "exits": [
+      {
+        "direction": "up",
+        "dest_room": "old_well"
+      },
+      {
+        "direction": "west",
+        "dest_room": "flooded_culvert"
+      },
+      {
+        "direction": "east",
+        "dest_room": "main_sewer"
+      }
+    ]
+  },
+  {
+    "id": "flooded_culvert",
+    "name": "A Flooded Culvert",
+    "description": "The tunnel narrows and dips, and the water rises to your waist. Something has dammed the culvert's end with rubbish and bones, and the stink is very bad.",
+    "exits": [
+      {
+        "direction": "east",
+        "dest_room": "beneath_the_well"
+      }
+    ]
+  },
+  {
+    "id": "main_sewer",
+    "name": "The Main Sewer",
+    "description": "The great drain under Emberfall, wide enough for a cart, with walkways along both sides. Scratches cover the walls at the height of a tall man's shoulder, in an alphabet nobody here ever learned.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "beneath_the_well"
+      },
+      {
+        "direction": "east",
+        "dest_room": "sewer_junction"
+      }
+    ]
+  },
+  {
+    "id": "sewer_junction",
+    "name": "A Sewer Junction",
+    "description": "Four tunnels meet in a round chamber under a grate, and grey daylight falls through it onto a heap of gnawed things. The water here is warm, and steams.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "main_sewer"
+      },
+      {
+        "direction": "north",
+        "dest_room": "overflow_chamber"
+      },
+      {
+        "direction": "east",
+        "dest_room": "beneath_the_wall"
+      }
+    ]
+  },
+  {
+    "id": "overflow_chamber",
+    "name": "The Overflow Chamber",
+    "description": "A tall cistern built to take the floods, its walls slick with something darker than water. Ledges run around it at different heights, and on some of them, things are sleeping.",
+    "exits": [
+      {
+        "direction": "south",
+        "dest_room": "sewer_junction"
+      }
+    ]
+  },
+  {
+    "id": "beneath_the_wall",
+    "name": "Beneath the Guild Wall",
+    "description": "The tunnel passes under the guild's foundations, and the brick turns to grey stone, scored and blistered. The warmth is stronger here, and so is the red light, seeping from cracks in the vault.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "sewer_junction"
+      },
+      {
+        "direction": "east",
+        "dest_room": "ichor_pool"
+      }
+    ]
+  },
+  {
+    "id": "ichor_pool",
+    "name": "The Ichor Pool",
+    "description": "The sewer opens into a cavern half-filled with a thick, glowing liquid that is not water and never was. It bubbles slowly. Whatever came through the portal bled here, or is still bleeding.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "beneath_the_wall"
+      },
+      {
+        "direction": "north",
+        "dest_room": "under_the_workshop"
+      },
+      {
+        "direction": "east",
+        "dest_room": "daemon_warren"
+      }
+    ]
+  },
+  {
+    "id": "under_the_workshop",
+    "name": "Beneath the Workshop Floor",
+    "description": "A low space among the foundations where the workshop's iron rods come down through the ceiling and into the earth. They hum. A torn-up trapdoor overhead lets in the guild's red light.",
+    "exits": [
+      {
+        "direction": "south",
+        "dest_room": "ichor_pool"
+      },
+      {
+        "direction": "up",
+        "dest_room": "arcanists_workshop"
+      }
+    ]
+  },
+  {
+    "id": "daemon_warren",
+    "name": "The Daemon Warren",
+    "description": "A burrow dug out of the earth beside the sewer, its walls smoothed by the passage of many bodies. It is very warm and smells of sulphur and of meat. Things live here that were not born in this world.",
+    "exits": [
+      {
+        "direction": "west",
+        "dest_room": "ichor_pool"
+      }
+    ]
+  }
+]

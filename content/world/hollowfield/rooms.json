@@ -91,9 +91,10 @@
   {
     "id": "bandit_camp",
     "name": "The Bandit Camp",
-    "description": "A ring of lean-tos around a smoky fire, with stolen sacks of grain stacked under a tarp. The people who live here did not invite you and are not pleased to see you.",
+    "description": "A ring of lean-tos around a smoky fire, with stolen sacks of grain stacked under a tarp. The people who live here did not invite you and are not pleased to see you. Past the camp, a cart road runs east into a grey haze.",
     "exits": [
-      { "direction": "west", "dest_room": "bandit_trail" }
+      { "direction": "west", "dest_room": "bandit_trail" },
+      { "direction": "east", "dest_zone": "emberfall", "dest_room": "road_east" }
     ]
   },
   {

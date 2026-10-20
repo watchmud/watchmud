@@ -43,5 +43,13 @@
     "lifetime_minutes": 5,
     "enabled": true,
     "power": { "min": 4, "max": 7 }
+  },
+  {
+    "id": "emberfall",
+    "name": "The Ruins of Emberfall",
+    "reset_mode": "always",
+    "lifetime_minutes": 5,
+    "enabled": true,
+    "power": { "min": 4, "max": 5 }
   }
 ]

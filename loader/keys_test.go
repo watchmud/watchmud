@@ -12,6 +12,8 @@ import (
 // Every lock in the real content has a key a player can come by -- a reset
 // puts one down (and not only inside what it locks), a mob placed somewhere
 // drops one, or a shop sells one -- so no door or chest is shut for good.
+// Except what's sealed on purpose: the tower in Emberfall waits for whatever
+// opens it later (TestEmberfall_theTowerIsSealed holds it shut).
 func TestKeys_everyLockHasAKeyToBeHad(t *testing.T) {
 	c, err := LoadContent(os.DirFS("../content"))
 	require.NoError(t, err)
@@ -64,8 +66,9 @@ func TestKeys_everyLockHasAKeyToBeHad(t *testing.T) {
 
 	// a key only ever inside a container is to be had if that container
 	// isn't the one it locks
+	sealed := map[string]bool{"emberfall/tower_key": true}
 	reachable := func(key, locks string) bool {
-		if obtainable[key] {
+		if obtainable[key] || sealed[key] {
 			return true
 		}
 		for _, in := range insideOnly[key] {

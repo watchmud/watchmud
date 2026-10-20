@@ -1,0 +1,11 @@
+[
+  {
+    "id": "tower_key",
+    "name": "tower key",
+    "category": "OTHER",
+    "aliases": [ "key", "tower" ],
+    "short_description": "a black iron key",
+    "description_on_ground": "A key of black iron lies here, warm to the touch, sigils running down its shaft.",
+    "behaviors": [ "noSell" ]
+  }
+]

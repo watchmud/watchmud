@@ -18,12 +18,13 @@ type door struct{ from, dir string }
 // keepOut is the doors a wanderer never takes: what's past them would kill a
 // power-1 bot that only fights back. South of the Edge of the Old Wood is the
 // wolves, and behind them the Overturned Oak and the whole Barrow; west of the
-// Millpond is the Drowned Mill.
+// Millpond is the Drowned Mill; east of the Bandit Camp, the Ruins of Emberfall.
 // TestKeepOut_safe walks the real content without these and fails if anything
 // aggressive above power 2 is still in reach.
 var keepOut = []door{
 	{"The Edge of the Old Wood", "south"},
 	{"The Millpond", "west"},
+	{"The Bandit Camp", "east"},
 }
 
 // roomBlockRe is any room description: the name, an optional indented

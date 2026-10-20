@@ -18,7 +18,7 @@ import (
 	"github.com/watchmud/watchmud/testdice"
 )
 
-// The real ladder: Hollowfields, then the Mill, then the Barrow, each with
+// The real ladder: Hollowfields, then Emberfall and the Mill, then the Barrow, each with
 // the walk there from Temple Square. A route that changes here is content
 // that moved -- check the welcome line and the site guide say the same.
 func TestGoals_theRealLadder(t *testing.T) {
@@ -47,6 +47,7 @@ func TestGoals_theRealLadder(t *testing.T) {
 
 	hollowfields := event.GoalZone{Name: "The Hollowfields", Min: 1, Max: 5, Route: "5s"}
 	mill := event.GoalZone{Name: "The Drowned Mill", Min: 4, Max: 7, Route: "5s 2w"}
+	emberfall := event.GoalZone{Name: "The Ruins of Emberfall", Min: 4, Max: 5, Route: "5s e 2s 2e"}
 	barrow := event.GoalZone{Name: "The Sunken Barrow", Min: 6, Max: 10, Route: "9s e d"}
 
 	g := goals(0)
@@ -56,10 +57,10 @@ func TestGoals_theRealLadder(t *testing.T) {
 
 	g = goals(1)
 	assert.Equal(t, []event.GoalZone{hollowfields}, g.Fits)
-	assert.Equal(t, []event.GoalZone{mill}, g.Next)
+	assert.Equal(t, []event.GoalZone{emberfall, mill}, g.Next, "two rungs start at 4")
 
 	g = goals(5)
-	assert.Equal(t, []event.GoalZone{hollowfields, mill}, g.Fits, "bands overlap")
+	assert.Equal(t, []event.GoalZone{hollowfields, emberfall, mill}, g.Fits, "bands overlap")
 	assert.Equal(t, []event.GoalZone{barrow}, g.Next)
 
 	g = goals(11)
