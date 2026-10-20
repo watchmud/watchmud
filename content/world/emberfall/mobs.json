@@ -1,0 +1,181 @@
+[
+  {
+    "id": "orc_scout",
+    "name": "orc scout",
+    "aliases": [
+      "orc",
+      "scout"
+    ],
+    "short_description": "An orc scout.",
+    "description_in_room": "An orc scout picks through the rubble, ears twitching at every sound.",
+    "max_health": 40,
+    "wandering_definition": {
+      "can_wander": true,
+      "check_frequency_seconds": 30,
+      "check_percentage": 30,
+      "wander_style": "random"
+    },
+    "ac": 15,
+    "damage": "1d8",
+    "power": 4,
+    "aggressive": false,
+    "loot": [
+      {
+        "object": "orc_tusk",
+        "chance": 50
+      },
+      {
+        "object": "guild_wand",
+        "chance": 5
+      }
+    ]
+  },
+  {
+    "id": "orc_warrior",
+    "name": "orc warrior",
+    "aliases": [
+      "orc",
+      "warrior"
+    ],
+    "short_description": "An orc warrior.",
+    "description_in_room": "An orc warrior in scavenged mail sits on a broken beam, sharpening a notched blade.",
+    "max_health": 44,
+    "wandering_definition": {
+      "can_wander": false
+    },
+    "ac": 15,
+    "damage": "1d8",
+    "power": 4,
+    "aggressive": false,
+    "loot": [
+      {
+        "object": "orc_tusk",
+        "chance": 60
+      },
+      {
+        "object": "orc_war_helm",
+        "chance": 10
+      }
+    ]
+  },
+  {
+    "id": "imp",
+    "name": "imp",
+    "aliases": [
+      "imp",
+      "daemon"
+    ],
+    "short_description": "An imp.",
+    "description_in_room": "An imp, red and no bigger than a cat, crouches here grinning with too many teeth.",
+    "max_health": 34,
+    "wandering_definition": {
+      "can_wander": false
+    },
+    "ac": 15,
+    "damage": "1d10",
+    "power": 4,
+    "aggressive": true,
+    "loot": [
+      {
+        "object": "daemon_ichor",
+        "chance": 40
+      },
+      {
+        "object": "mending_crystal",
+        "chance": 8
+      }
+    ]
+  },
+  {
+    "id": "lesser_daemon",
+    "name": "lesser daemon",
+    "aliases": [
+      "daemon",
+      "lesser"
+    ],
+    "short_description": "A lesser daemon.",
+    "description_in_room": "A lesser daemon, all ridged hide and curling horns, turns burning eyes on you.",
+    "max_health": 48,
+    "wandering_definition": {
+      "can_wander": false
+    },
+    "ac": 15,
+    "damage": "2d6",
+    "power": 5,
+    "aggressive": true,
+    "loot": [
+      {
+        "object": "daemon_horn",
+        "chance": 50
+      },
+      {
+        "object": "daemon_ichor",
+        "chance": 30
+      },
+      {
+        "object": "thunder_rod",
+        "chance": 8
+      }
+    ]
+  },
+  {
+    "id": "guild_construct",
+    "name": "guild construct",
+    "aliases": [
+      "construct",
+      "golem"
+    ],
+    "short_description": "A guild construct.",
+    "description_in_room": "A guild construct of brass and black iron stands here, still doing the last thing it was told to do.",
+    "max_health": 52,
+    "wandering_definition": {
+      "can_wander": false
+    },
+    "ac": 16,
+    "damage": "1d10",
+    "power": 5,
+    "aggressive": false,
+    "loot": [
+      {
+        "object": "mage_circlet",
+        "chance": 12
+      },
+      {
+        "object": "warded_robe",
+        "chance": 10
+      },
+      {
+        "object": "guild_wand",
+        "chance": 10
+      }
+    ]
+  },
+  {
+    "id": "wyvern",
+    "name": "wyvern",
+    "aliases": [
+      "wyvern",
+      "drake"
+    ],
+    "short_description": "A wyvern.",
+    "description_in_room": "A wyvern crouches on its folded wings, barbed tail swaying, watching you with one gold eye.",
+    "max_health": 52,
+    "wandering_definition": {
+      "can_wander": false
+    },
+    "ac": 15,
+    "damage": "2d6",
+    "power": 5,
+    "aggressive": true,
+    "loot": [
+      {
+        "object": "wyvern_scale",
+        "chance": 60
+      },
+      {
+        "object": "warded_robe",
+        "chance": 8
+      }
+    ]
+  }
+]

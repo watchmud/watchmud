@@ -2,6 +2,8 @@ package loader
 
 import (
 	"os"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -68,4 +70,72 @@ func TestEmberfall_size(t *testing.T) {
 		}
 	}
 	assert.True(t, down, "no way down into the sewers")
+}
+
+// Every monster is in the zone's band, and the way in is quiet: nothing
+// aggressive is put on the road, and nothing aggressive wanders, so nothing
+// aggressive can come to it.
+func TestEmberfall_mobsInBand(t *testing.T) {
+	_, z := emberfall(t)
+	require.NotEmpty(t, z.MobileDefinitions)
+	for id, mob := range z.MobileDefinitions {
+		assert.GreaterOrEqual(t, mob.Power, 4, id)
+		assert.LessOrEqual(t, mob.Power, 5, id)
+		if mob.HasFlag(rules.MobileFlagAggressive) {
+			assert.False(t, mob.Wandering.CanWander, "%s is aggressive and wanders", id)
+		}
+	}
+	placed := 0
+	for _, cmd := range z.Commands {
+		cm, ok := cmd.(spaces.CreateMobile)
+		if !ok {
+			continue
+		}
+		placed++
+		mob := z.MobileDefinitions[cm.MobileDefinitionId]
+		require.NotNil(t, mob, cm.MobileDefinitionId)
+		if strings.HasPrefix(cm.RoomId, "road_") || cm.RoomId == "town_gate" {
+			assert.False(t, mob.HasFlag(rules.MobileFlagAggressive), "%s is aggressive on the road, in %s", cm.MobileDefinitionId, cm.RoomId)
+		}
+	}
+	assert.Positive(t, placed, "a reset puts the monsters down")
+}
+
+// Nothing here is a boss's own until the tower opens: everything that drops
+// can be sold and donated. Components are plain things, worn by nobody.
+func TestEmberfall_lootIsTradeable(t *testing.T) {
+	_, z := emberfall(t)
+	components := 0
+	for id, def := range z.ObjectDefinitions {
+		if id == "tower_key" {
+			continue // a key, which nothing gives
+		}
+		assert.False(t, slices.Contains(def.Behaviors, rules.ObjectBehaviorNoSell), "%s is noSell", id)
+		assert.False(t, slices.Contains(def.Behaviors, rules.ObjectBehaviorNoDonate), "%s is noDonate", id)
+		if def.ObjectCategory == rules.ObjectCategoryOther {
+			components++
+			assert.Equal(t, rules.SlotNone, def.EquipmentSlot, "%s is a component and wearable", id)
+		}
+	}
+	assert.GreaterOrEqual(t, components, 4, "orc tusk, daemon horn, ichor, wyvern scale")
+}
+
+// The guild's gear: things that let you cast, dropped by what lives here.
+func TestEmberfall_artifactsGrant(t *testing.T) {
+	_, z := emberfall(t)
+	dropped := map[string]bool{}
+	for _, mob := range z.MobileDefinitions {
+		for _, l := range mob.Loot {
+			dropped[l.Object.ObjectId.Ref()] = true
+		}
+	}
+	artifacts := 0
+	for id, def := range z.ObjectDefinitions {
+		if len(def.Abilities) == 0 {
+			continue
+		}
+		artifacts++
+		assert.True(t, dropped[def.ObjectId.Ref()], "%s grants %v and nothing drops it", id, def.Abilities)
+	}
+	assert.GreaterOrEqual(t, artifacts, 4)
 }

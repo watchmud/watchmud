@@ -3,9 +3,166 @@
     "id": "tower_key",
     "name": "tower key",
     "category": "OTHER",
-    "aliases": [ "key", "tower" ],
+    "aliases": [
+      "key",
+      "tower"
+    ],
     "short_description": "a black iron key",
     "description_on_ground": "A key of black iron lies here, warm to the touch, sigils running down its shaft.",
-    "behaviors": [ "noSell" ]
+    "behaviors": [
+      "noSell"
+    ]
+  },
+  {
+    "id": "orc_tusk",
+    "name": "orc tusk",
+    "category": "OTHER",
+    "aliases": [
+      "tusk",
+      "orc"
+    ],
+    "short_description": "an orc tusk",
+    "description_on_ground": "A yellowed orc tusk, roots and all, lies here."
+  },
+  {
+    "id": "daemon_ichor",
+    "name": "daemon ichor",
+    "category": "OTHER",
+    "aliases": [
+      "ichor",
+      "vial"
+    ],
+    "short_description": "a vial of daemon ichor",
+    "description_on_ground": "A stoppered vial of something thick and faintly glowing lies here."
+  },
+  {
+    "id": "daemon_horn",
+    "name": "daemon horn",
+    "category": "OTHER",
+    "aliases": [
+      "horn",
+      "daemon"
+    ],
+    "short_description": "a daemon's horn",
+    "description_on_ground": "A curling black horn, still warm at the root, lies here."
+  },
+  {
+    "id": "wyvern_scale",
+    "name": "wyvern scale",
+    "category": "OTHER",
+    "aliases": [
+      "scale",
+      "wyvern"
+    ],
+    "short_description": "a wyvern scale",
+    "description_on_ground": "A scale the size of a hand, green-gold and hard as horn, lies here."
+  },
+  {
+    "id": "guild_wand",
+    "name": "guild wand",
+    "category": "WEAPON",
+    "aliases": [
+      "wand",
+      "guild"
+    ],
+    "short_description": "a scorched guild wand",
+    "description_on_ground": "A wand of black wood bound in copper wire lies here, its tip scorched.",
+    "equipment_slot": "wield",
+    "damage": "1d4",
+    "roles": {
+      "striker": 3
+    },
+    "abilities": [
+      "smite"
+    ]
+  },
+  {
+    "id": "thunder_rod",
+    "name": "thunder rod",
+    "category": "WEAPON",
+    "aliases": [
+      "rod",
+      "thunder"
+    ],
+    "short_description": "a crackling iron rod",
+    "description_on_ground": "A rod of black iron lies here, and the air around it crackles.",
+    "equipment_slot": "wield",
+    "damage": "1d8",
+    "roles": {
+      "striker": 2
+    },
+    "abilities": [
+      "stun"
+    ]
+  },
+  {
+    "id": "mage_circlet",
+    "name": "mage's circlet",
+    "category": "ARMOR",
+    "aliases": [
+      "circlet",
+      "mage"
+    ],
+    "short_description": "a silver mage's circlet",
+    "description_on_ground": "A thin silver circlet set with a clouded stone lies here.",
+    "equipment_slot": "head",
+    "armor_type": "cloth",
+    "abilities": [
+      "assess"
+    ]
+  },
+  {
+    "id": "warded_robe",
+    "name": "warded robe",
+    "category": "ARMOR",
+    "aliases": [
+      "robe",
+      "warded"
+    ],
+    "short_description": "a warded guild robe",
+    "description_on_ground": "A grey robe stitched with silver sigils lies here, unburned in all this ash.",
+    "equipment_slot": "about_body",
+    "armor_type": "cloth",
+    "roles": {
+      "healer": 2
+    },
+    "abilities": [
+      "ward"
+    ]
+  },
+  {
+    "id": "mending_crystal",
+    "name": "mending crystal",
+    "category": "TREASURE",
+    "aliases": [
+      "crystal",
+      "mending"
+    ],
+    "short_description": "a cracked mending crystal",
+    "description_on_ground": "A cracked crystal lies here, glowing a soft and steady blue.",
+    "equipment_slot": "hold",
+    "roles": {
+      "healer": 3
+    },
+    "abilities": [
+      "heal"
+    ]
+  },
+  {
+    "id": "orc_war_helm",
+    "name": "orc war-helm",
+    "category": "ARMOR",
+    "aliases": [
+      "helm",
+      "war-helm",
+      "orc"
+    ],
+    "short_description": "a dented orc war-helm",
+    "description_on_ground": "A heavy orc war-helm, dented and spiked, lies here.",
+    "equipment_slot": "head",
+    "armor_type": "plate",
+    "abilities": [
+      "provoke"
+    ]
   }
 ]

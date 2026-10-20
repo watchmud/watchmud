@@ -1,0 +1,152 @@
+[
+  {
+    "type": "CreateMobile",
+    "mobile_id": "orc_scout",
+    "room_id": "gatehouse_street",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "orc_scout",
+    "room_id": "cinder_market",
+    "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "orc_scout",
+    "room_id": "well_street",
+    "instance_max": 3
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "orc_scout",
+    "room_id": "lamplighters_row",
+    "instance_max": 4
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "orc_warrior",
+    "room_id": "broken_flagon",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "orc_warrior",
+    "room_id": "cinder_market",
+    "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "orc_warrior",
+    "room_id": "cold_forge",
+    "instance_max": 3
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "orc_warrior",
+    "room_id": "burned_chapel",
+    "instance_max": 4
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "orc_warrior",
+    "room_id": "refectory",
+    "instance_max": 5
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "imp",
+    "room_id": "ruined_apothecary",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "imp",
+    "room_id": "beneath_the_well",
+    "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "imp",
+    "room_id": "flooded_culvert",
+    "instance_max": 3
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "imp",
+    "room_id": "main_sewer",
+    "instance_max": 4
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "imp",
+    "room_id": "dormitory",
+    "instance_max": 5
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "lesser_daemon",
+    "room_id": "sewer_junction",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "lesser_daemon",
+    "room_id": "overflow_chamber",
+    "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "lesser_daemon",
+    "room_id": "ichor_pool",
+    "instance_max": 3
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "lesser_daemon",
+    "room_id": "daemon_warren",
+    "instance_max": 4
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "lesser_daemon",
+    "room_id": "daemon_warren",
+    "instance_max": 5
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "guild_construct",
+    "room_id": "arcanists_workshop",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "guild_construct",
+    "room_id": "scriptorium",
+    "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "guild_construct",
+    "room_id": "burned_library",
+    "instance_max": 3
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "wyvern",
+    "room_id": "library_roof",
+    "instance_max": 1
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "wyvern",
+    "room_id": "library_roof",
+    "instance_max": 2
+  },
+  {
+    "type": "CreateMobile",
+    "mobile_id": "wyvern",
+    "room_id": "great_court",
+    "instance_max": 3
+  }
+]
