@@ -31,6 +31,7 @@ var effects = map[string]effect{
 	"ward":    wardEffect,
 	"assess":  assessEffect,
 	"recall":  recallEffect,
+	"bolt":    boltEffect,
 }
 
 // checkEffects refuses a catalog naming an ability the engine cant do -
@@ -56,13 +57,28 @@ func healEffect(w *World, c cast) {
 }
 
 // smiteEffect is a blow that always lands -- mana and the cooldown are its
-// cost -- harder for a stronger weapon. In the order a melee blow goes: the
-// hit, the wear, then the death or the fight it starts.
+// cost -- harder for a stronger weapon.
 func smiteEffect(w *World, c cast) {
+	w.landBlow(c, func(damage int) any {
+		return event.Smote{Actor: c.caster.Name(), Target: c.foe.Name(), Damage: damage}
+	})
+}
+
+// boltEffect is smite's blow in the guild's fire, under its own name and words.
+func boltEffect(w *World, c cast) {
+	w.landBlow(c, func(damage int) any {
+		return event.Bolted{Actor: c.caster.Name(), Target: c.foe.Name(), Damage: damage}
+	})
+}
+
+// landBlow is a blow that always lands, in the order a melee blow goes: the
+// hit, told to the room as notice says, the wear, then the death or the fight
+// it starts.
+func (w *World) landBlow(c cast, notice func(damage int) any) {
 	room := w.playerRoom(c.caster)
 	damage := c.ability.Amount.For(c.power)
 	dead := c.foe.TakeMeleeDamage(damage)
-	room.Notify(event.Smote{Actor: c.caster.Name(), Target: c.foe.Name(), Damage: damage})
+	room.Notify(notice(damage))
 	w.wearFromBlow(c.caster, c.foe, room)
 	if dead {
 		w.combatantDied(c.foe, room)

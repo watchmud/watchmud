@@ -414,6 +414,11 @@ func render(msg any, self string) string {
 		}
 		return m.Actor + " smites " + m.Target + "!\n"
 
+	case event.Bolted:
+		if m.Actor == self {
+			return fmt.Sprintf("You hurl a bolt of fire at %s! (%d)\n", m.Target, m.Damage)
+		}
+		return m.Actor + " hurls a bolt of fire at " + m.Target + "!\n"
 	case event.Provoked:
 		switch {
 		case m.Actor == self && m.Already:

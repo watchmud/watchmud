@@ -19,6 +19,14 @@
     "amount": { "base": 8, "per_power": 3 }
   },
   {
+    "id": "bolt",
+    "name": "bolt",
+    "mana": 20,
+    "cooldown": "15s",
+    "target": "foe",
+    "amount": { "base": 6, "per_power": 3 }
+  },
+  {
     "id": "provoke",
     "name": "provoke",
     "mana": 15,

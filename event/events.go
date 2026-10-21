@@ -727,6 +727,14 @@ type Smote struct {
 	Damage int
 }
 
+// Bolted goes to the whole room: a bolt is smite's blow in the guild's fire,
+// so it always lands too.
+type Bolted struct {
+	Actor  string
+	Target string
+	Damage int
+}
+
 // Provoked goes to the whole room: Target has turned on Actor. Already means
 // it was fighting them anyway, and the cast was wasted.
 type Provoked struct {

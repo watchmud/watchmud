@@ -421,6 +421,13 @@ var commandCases = []commandCase{
 		want:  "At what? You aren't fighting anything.\n",
 	},
 	{
+		name:      "bolt a mob",
+		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { wieldTestWand(p) },
+		input:     "cast bolt little",
+		want:      "You hurl a bolt of fire at Little Drone! (9)\n",
+		wantOther: "testdood hurls a bolt of fire at Little Drone!\n",
+	},
+	{
 		name:  "recall without a token",
 		input: "recall",
 		want:  "Nothing you're wearing lets you recall -- a temple token does; the General Store sells them.\n",
@@ -629,6 +636,18 @@ func wieldTestMace(p *player.Player) {
 		nil, "a mace", "A mace is here.", rules.SlotWield, rules.ArmorTypeNone, nil)
 	d.Damage = "1d6"
 	d.Abilities = []string{"smite"}
+	inst := object.NewInstance(uuid.New(), d)
+	inst.Power = 1
+	_ = p.Inventory().Add(inst)
+	p.Equipment().Equip(rules.SlotWield, inst)
+}
+
+// wieldTestWand wields something granting bolt at power 1
+func wieldTestWand(p *player.Player) {
+	d := object.NewDefinition("wand", "wand", "wrathrock", rules.ObjectCategoryWeapon,
+		nil, "a wand", "A wand is here.", rules.SlotWield, rules.ArmorTypeNone, nil)
+	d.Damage = "1d4"
+	d.Abilities = []string{"bolt"}
 	inst := object.NewInstance(uuid.New(), d)
 	inst.Power = 1
 	_ = p.Inventory().Add(inst)
