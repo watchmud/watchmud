@@ -52,6 +52,7 @@ const (
 	NotReady       ResultCode = "NOT_READY"
 	NotEnoughMana  ResultCode = "NOT_ENOUGH_MANA"
 	NoFoe          ResultCode = "NO_FOE"
+	NoFoes         ResultCode = "NO_FOES"
 
 	// doors
 	NoDoor        ResultCode = "NO_DOOR"

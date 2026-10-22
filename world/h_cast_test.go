@@ -136,7 +136,7 @@ func (s *handleCastSuite) TestRefusals() {
 	s.cast("", "")
 	s.Assert().Equal(event.NoTarget, s.failed())
 
-	s.cast("fireball", "")
+	s.cast("meteor", "")
 	s.Assert().Equal(event.UnknownAbility, s.failed())
 
 	s.cast("heal", "")

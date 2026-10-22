@@ -147,6 +147,10 @@
       {
         "object": "guild_wand",
         "chance": 10
+      },
+      {
+        "object": "fireball_staff",
+        "chance": 3
       }
     ]
   },
@@ -175,6 +179,10 @@
       {
         "object": "warded_robe",
         "chance": 8
+      },
+      {
+        "object": "fireball_staff",
+        "chance": 3
       }
     ]
   }

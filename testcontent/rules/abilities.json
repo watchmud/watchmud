@@ -27,6 +27,14 @@
     "amount": { "base": 6, "per_power": 3 }
   },
   {
+    "id": "fireball",
+    "name": "fireball",
+    "mana": 40,
+    "cooldown": "60s",
+    "target": "room",
+    "amount": { "base": 4, "per_power": 2 }
+  },
+  {
     "id": "provoke",
     "name": "provoke",
     "mana": 15,

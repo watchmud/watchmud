@@ -94,6 +94,9 @@ const (
 	// TargetMob is a mob in the caster's room too, but never refused for
 	// where it is or what it is: looking at something isn't fighting it.
 	TargetMob AbilityTarget = "mob"
+	// TargetRoom is every mob in the caster's room that could be fought, at
+	// once: nothing to name, nothing to aim.
+	TargetRoom AbilityTarget = "room"
 )
 
 func (t AbilityTarget) valid() bool {
@@ -112,6 +115,7 @@ var abilityTargets = enum[AbilityTarget]{
 		TargetFriend,
 		TargetFoe,
 		TargetMob,
+		TargetRoom,
 	},
 }
 

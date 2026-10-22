@@ -428,6 +428,24 @@ var commandCases = []commandCase{
 		wantOther: "testdood hurls a bolt of fire at Little Drone!\n",
 	},
 	{
+		name:      "fireball the room",
+		setup:     func(_ *world.World, p *player.Player, _ *player.Player) { wieldTestStaff(p) },
+		input:     "cast fireball",
+		want:      "You hurl a fireball! It engulfs Target Drone and Little Drone. (6)\n",
+		wantOther: "testdood hurls a fireball! It engulfs Target Drone and Little Drone.\n",
+	},
+	{
+		name: "fireball with nothing to hit",
+		setup: func(w *world.World, p *player.Player, _ *player.Player) {
+			wieldTestStaff(p)
+			for _, m := range w.StartRoom.Mobiles() {
+				w.RemoveMobile(m)
+			}
+		},
+		input: "cast fireball",
+		want:  "There's nothing here to hit.\n",
+	},
+	{
 		name:  "recall without a token",
 		input: "recall",
 		want:  "Nothing you're wearing lets you recall -- a temple token does; the General Store sells them.\n",
@@ -648,6 +666,18 @@ func wieldTestWand(p *player.Player) {
 		nil, "a wand", "A wand is here.", rules.SlotWield, rules.ArmorTypeNone, nil)
 	d.Damage = "1d4"
 	d.Abilities = []string{"bolt"}
+	inst := object.NewInstance(uuid.New(), d)
+	inst.Power = 1
+	_ = p.Inventory().Add(inst)
+	p.Equipment().Equip(rules.SlotWield, inst)
+}
+
+// wieldTestStaff wields something granting fireball at power 1
+func wieldTestStaff(p *player.Player) {
+	d := object.NewDefinition("staff", "staff", "wrathrock", rules.ObjectCategoryWeapon,
+		nil, "a staff", "A staff is here.", rules.SlotWield, rules.ArmorTypeNone, nil)
+	d.Damage = "1d6"
+	d.Abilities = []string{"fireball"}
 	inst := object.NewInstance(uuid.New(), d)
 	inst.Power = 1
 	_ = p.Inventory().Add(inst)
@@ -1208,4 +1238,11 @@ func TestRender_moon(t *testing.T) {
 	assert.Equal(t, "Full moon tonight. Be careful.\n", plain(render(event.MoonWarning{}, "ann")))
 	assert.Equal(t, "It's 10:00 pm in Wrathrock, Saturday, September 26: night.\nThe moon is full.\n",
 		plain(render(event.TimeOfDay{Clock: "10:00 pm", Day: "Saturday, September 26", Part: "night", Moon: "full"}, "ann")))
+}
+
+func TestAndList(t *testing.T) {
+	assert.Equal(t, "", andList(nil))
+	assert.Equal(t, "a rat", andList([]string{"a rat"}))
+	assert.Equal(t, "a rat and a goose", andList([]string{"a rat", "a goose"}))
+	assert.Equal(t, "a rat, a goose and a wolf", andList([]string{"a rat", "a goose", "a wolf"}))
 }

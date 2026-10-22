@@ -46,6 +46,13 @@ func TestAbility_noCooldownIsZero(t *testing.T) {
 	assert.Zero(t, a.Cooldown)
 }
 
+// room is every foe in the caster's room at once: fireball's
+func TestAbility_roomTarget(t *testing.T) {
+	var a Ability
+	require.NoError(t, json.Unmarshal([]byte(`{"id": "x", "name": "x", "target": "room"}`), &a))
+	assert.Equal(t, TargetRoom, a.Target)
+}
+
 func TestAbilityAmount_for(t *testing.T) {
 	amt := AbilityAmount{Base: 10, PerPower: 2}
 	assert.Equal(t, 10, amt.For(0))

@@ -86,6 +86,8 @@ func (w *World) castTarget(c *cast, target string) event.ResultCode {
 		return w.castFoe(c, target)
 	case rules.TargetMob:
 		return w.castMob(c, target)
+	case rules.TargetRoom:
+		return w.castRoom(c)
 	}
 	c.caster.Log().Error().Msgf("cast %s: target kind %q not handled yet", c.ability.Id, c.ability.Target)
 	return event.InternalError
@@ -126,5 +128,24 @@ func (w *World) castMob(c *cast, target string) event.ResultCode {
 		return event.TargetNotFound
 	}
 	c.foe = mob
+	return ""
+}
+
+// castRoom finds everything a room ability hits: every mob in the caster's
+// room a player could fight. Refused where kill would be -- a no-fight room --
+// and when there's nothing to hit. Any target typed is ignored: it's the room.
+func (w *World) castRoom(c *cast) event.ResultCode {
+	room := w.playerRoom(c.caster)
+	if room.Flag(rules.RoomFlagNoFight) {
+		return event.NoFightRoom
+	}
+	for _, mob := range room.Mobiles() {
+		if !mob.Definition.HasFlag(rules.MobileFlagPlayerCantFight) {
+			c.foes = append(c.foes, mob)
+		}
+	}
+	if len(c.foes) == 0 {
+		return event.NoFoes
+	}
 	return ""
 }

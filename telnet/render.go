@@ -419,6 +419,12 @@ func render(msg any, self string) string {
 			return fmt.Sprintf("You hurl a bolt of fire at %s! (%d)\n", m.Target, m.Damage)
 		}
 		return m.Actor + " hurls a bolt of fire at " + m.Target + "!\n"
+
+	case event.Fireballed:
+		if m.Actor == self {
+			return fmt.Sprintf("You hurl a fireball! It engulfs %s. (%d)\n", andList(m.Targets), m.Damage)
+		}
+		return m.Actor + " hurls a fireball! It engulfs " + andList(m.Targets) + ".\n"
 	case event.Provoked:
 		switch {
 		case m.Actor == self && m.Already:
@@ -1177,6 +1183,14 @@ func renderGroupList(m event.GroupList) string {
 		})
 	}
 	return paint(colorHeading, "Group") + "\n" + table(rows)
+}
+
+// andList is names the way a sentence says them: "a", "a and b", "a, b and c".
+func andList(names []string) string {
+	if len(names) < 2 {
+		return strings.Join(names, "")
+	}
+	return strings.Join(names[:len(names)-1], ", ") + " and " + names[len(names)-1]
 }
 
 // wrapWords lays words out in lines of at most width, two spaces in.

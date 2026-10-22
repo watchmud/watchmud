@@ -164,5 +164,24 @@
     "abilities": [
       "provoke"
     ]
+  },
+  {
+    "id": "fireball_staff",
+    "name": "fireball staff",
+    "category": "WEAPON",
+    "aliases": [
+      "staff",
+      "fireball"
+    ],
+    "short_description": "a charred guild staff",
+    "description_on_ground": "A tall staff of black wood lies here, its iron head still glowing like a coal.",
+    "equipment_slot": "wield",
+    "damage": "1d6",
+    "roles": {
+      "striker": 3
+    },
+    "abilities": [
+      "fireball"
+    ]
   }
 ]

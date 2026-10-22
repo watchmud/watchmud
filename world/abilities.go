@@ -12,8 +12,9 @@ import (
 // cast is one use of an ability, already checked and paid for.
 type cast struct {
 	caster  *player.Player
-	target  *player.Player   // for self and friend
-	foe     *mobile.Instance // for foe and mob
+	target  *player.Player     // for self and friend
+	foe     *mobile.Instance   // for foe and mob
+	foes    []*mobile.Instance // for room
 	ability *rules.Ability
 	power   int // of the item granting it
 }
@@ -24,14 +25,15 @@ type effect func(w *World, c cast)
 
 // effects is every ability the engine knows how to do, by rules.Ability id.
 var effects = map[string]effect{
-	"heal":    healEffect,
-	"smite":   smiteEffect,
-	"provoke": provokeEffect,
-	"stun":    stunEffect,
-	"ward":    wardEffect,
-	"assess":  assessEffect,
-	"recall":  recallEffect,
-	"bolt":    boltEffect,
+	"heal":     healEffect,
+	"smite":    smiteEffect,
+	"provoke":  provokeEffect,
+	"stun":     stunEffect,
+	"ward":     wardEffect,
+	"assess":   assessEffect,
+	"recall":   recallEffect,
+	"bolt":     boltEffect,
+	"fireball": fireballEffect,
 }
 
 // checkEffects refuses a catalog naming an ability the engine cant do -
@@ -69,6 +71,35 @@ func boltEffect(w *World, c cast) {
 	w.landBlow(c, func(damage int) any {
 		return event.Bolted{Actor: c.caster.Name(), Target: c.foe.Name(), Damage: damage}
 	})
+}
+
+// fireballEffect is the guild's fire: every foe in the room burns for the same
+// damage, and every one left standing comes for the caster. In a blow's
+// order -- the fire, the wear (once, however many it hit), the deaths -- and
+// then the fights. One death can take the others with it (a summoner's summons
+// crumble), so a foe no longer anywhere is passed over.
+func fireballEffect(w *World, c cast) {
+	room := w.playerRoom(c.caster)
+	damage := c.ability.Amount.For(c.power)
+	targets := make([]string, 0, len(c.foes))
+	dead := make([]bool, len(c.foes))
+	for i, foe := range c.foes {
+		targets = append(targets, foe.Name())
+		dead[i] = foe.TakeMeleeDamage(damage)
+	}
+	room.Notify(event.Fireballed{Actor: c.caster.Name(), Targets: targets, Damage: damage})
+	w.wearFromBlow(c.caster, c.foes[0], room)
+	for i, foe := range c.foes {
+		if dead[i] && w.roomOf(foe) != nil {
+			w.combatantDied(foe, room)
+		}
+	}
+	for i, foe := range c.foes {
+		if !dead[i] && w.roomOf(foe) != nil {
+			c.foe = foe
+			w.openFight(c)
+		}
+	}
 }
 
 // landBlow is a blow that always lands, in the order a melee blow goes: the

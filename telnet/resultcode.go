@@ -179,6 +179,7 @@ var failureByCode = map[string]string{
 	"NOT_DRINKABLE":   "That isn't something to drink.",
 	"NOT_ENOUGH_MANA": "You don't have enough mana.",
 	"NO_FOE":          "At what? You aren't fighting anything.",
+	"NO_FOES":         "There's nothing here to hit.",
 
 	// containers
 	"NOT_A_CONTAINER":  "That's not a container.",

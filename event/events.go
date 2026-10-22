@@ -735,6 +735,14 @@ type Bolted struct {
 	Damage int
 }
 
+// Fireballed goes to the whole room: one fire, every target is hit, each for
+// the same damage, in the order they stand in the room.
+type Fireballed struct {
+	Actor   string
+	Targets []string
+	Damage  int
+}
+
 // Provoked goes to the whole room: Target has turned on Actor. Already means
 // it was fighting them anyway, and the cast was wasted.
 type Provoked struct {
