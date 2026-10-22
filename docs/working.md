@@ -68,9 +68,17 @@ Whether that Mudlet took up MCCP2 wasn't checked; text arrived fine either way.
 - Hunter bots in the whole store kit (power 3) leave the farms to new players and
   hunt the bandit track and the boar wood, wearing a better hood, cudgel or jerkin
   when one drops and donating the rest. Nothing for the site.
+- The Ruins of Emberfall (4-5), east past the Bandit Camp: 35 rooms, orcs, imps,
+  daemons, guild constructs and wyverns, components for crafting later, and guild
+  gear. Two abilities with it: `bolt` (the guild wand) and `fireball` (the fireball
+  staff: every mob in the room, and every one comes for you). **For the site, at
+  release:** Emberfall in the getting-started list beside the Hollowfields,
+  `cast bolt` and `cast fireball` in the Fighting table, and the guild wand beside the
+  cudgel in the spells FAQ.
 
-**Next, roughly:** more power 4-5 areas off what's there, for players and then the
-bots (the owner's call, 2026-10-18; a design conversation first); tuning the mill and
+**Next, roughly:** hunting grounds for the bots in Emberfall (tables in the
+hunters-climb shape); crafting from Emberfall's components, its own design; the
+sealed tower, a boss or the portal, when there's one to put there; tuning the mill and
 the King once players have tried them; hunters routing by the explorer's atlas. The Barrow-King's AC waits for a real group to try him.
 Leftovers: `watchmud.games` DNS points nowhere. (An unhealthy game now fails the
 `uptime` workflow, once it is on master.)

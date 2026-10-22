@@ -171,6 +171,22 @@ behind a locked iron grate; the rusted key drops from millhands (25%), so reachi
 is a hunt first. His strongbox in the pit is locked too, and its key is in the grain bin
 up in the loft: a river-stone pendant and eelskin boots at power 7, put back each reset. Every number is a first guess.
 
+**The Ruins of Emberfall** (4-5, east past the Bandit Camp; 2026-10-21, spec in
+`docs/superpowers/specs/2026-10-20-ruined-town-design.md`) is the biggest place, and the
+first meant for one player at 4-5: 35 rooms of a town wrecked when its mages' guild
+opened a portal by accident. Orc scouts and warriors (4) in the streets, not
+aggressive; imps (4) and lesser daemons (5) in the sewers, aggressive; guild
+constructs (5) and wyverns (5, aggressive) in the guild compound, around a tower
+sealed until something opens it. Nothing aggressive wanders, so the road in is quiet.
+They're tougher than their power reads elsewhere, because the store kit beats
+everything in the Hollowfields: in it at power 4 the sim gives 94-98% against the 4s,
+about 55% against constructs and daemons, 45% against a wyvern, and under 12% against
+any 5 at power 3. Drops: components that wait for crafting and sell meanwhile (orc
+tusk, daemon ichor and horn, wyvern scale), and guild gear, one ability each -- guild
+wand (bolt), thunder rod (stun), mage's circlet (assess), warded robe (ward), mending
+crystal (heal), orc war-helm (provoke), and at 3% from constructs and wyverns the
+fireball staff. Nothing is `noSell` or `noDonate` until the tower has a boss.
+
 **The Barrow-King is a group fight, and it takes all three kinds of gear.** Nothing may
 branch on a role, so each has to be something the gear actually does:
 

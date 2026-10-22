@@ -170,8 +170,10 @@ throne room and looted a goose), and a way to make an empty world feel inhabited
   options in `docs/superpowers/specs/2026-10-10-bots-that-grow-and-coin-sinks-design.md`),
   and a second 2026-10-19: in the kit they leave the farms to new players, hunt the
   bandit track and the boar wood, and wear a better hood, cudgel or jerkin when one
-  drops (`docs/superpowers/specs/2026-10-18-hunters-climb-design.md`). Next: more power
-  4-5 content for players, and bots onto it.
+  drops (`docs/superpowers/specs/2026-10-18-hunters-climb-design.md`). Power 4-5
+  content for players followed 2026-10-21: the Ruins of Emberfall, east past the Bandit
+  Camp (`docs/superpowers/specs/2026-10-20-ruined-town-design.md`), with bolt and
+  fireball. Next: hunting grounds for the bots there.
 
 **Then: a new player's first hour.** (Added 2026-10-08, from an r/MUD thread on how
 player expectations have shifted since MMOs -- notes in Obsidian, "Expectations of MUDs

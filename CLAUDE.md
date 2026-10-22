@@ -451,7 +451,8 @@ never straight back unless it's a dead end, lingers in one room in four
 ground's prey, and a wanderer has no ground. Everything else is the hunter's code:
 tells, fleeing, resting, recall, dying. It is power 1 too, so **`keepOut`** lists the
 doors it never takes (today: south from the Edge of the Old Wood, which shuts off the
-wolves and the whole Barrow, and west from the Millpond, the Drowned Mill). `TestKeepOut_safe` walks the real content from the start
+wolves and the whole Barrow; west from the Millpond, the Drowned Mill; and east from the
+Bandit Camp, the Ruins of Emberfall). `TestKeepOut_safe` walks the real content from the start
 room without those doors and fails if anything aggressive above power 2 is in reach --
 new dangerous content needs a door in `keepOut`, not a looser test.
 `WATCHMUD_WANDERERS` names them, beside `WATCHMUD_BOTS`; the five-bot cap is for both
@@ -731,6 +732,21 @@ mob's exact health, AC, power and damage dice, who it's swinging at and the stun
 left (`event.Assessed`) -- the numbers `consider` only hints at and a fight never shows.
 The room sees the caster look; only the caster gets the numbers. It touches nothing,
 and works mid-fight, in a no-fight room, and on a mob that can't be fought.
+**Bolt** (`foe`, granted by the guild wand) is smite's blow under its own name and
+words ("You hurl a bolt of fire at..."): `landBlow` is the one body -- the hit, the
+wear, the death or the fight -- and each effect hands it the event to tell the room
+(`event.Smote`, `event.Bolted`). A second blow-shaped ability is another `landBlow`
+caller, not a copy.
+**Fireball** (granted by the fireball staff) is the first `room` ability:
+`castRoom` resolves to every mob in the caster's room a player could fight (`cast.foes`),
+refused in a no-fight room or with nothing to hit (`NO_FOES`), and any target typed
+is ignored. Every foe burns for the same damage before any dies, the room is told
+once (`event.Fireballed`, every name), the staff wears once, then the deaths in the
+order they stood, then **everything left standing is drawn in** through `openFight`:
+an idle mob turns on the caster, one already fighting someone else stays on them.
+That's on purpose -- it's the dangerous spell. One death can take others with it (a
+summoner's summons crumble), so a foe `roomOf` can't place is passed over rather
+than dying twice. It never touches a player.
 **Potions** are the one way to use an ability without wearing it: `"quaff": "heal"` on
 an object (`object.Definition.Quaff`; the loader refuses an unknown id or one not aimed
 at `self`/`friend`). `quaff <potion>` (`drink`, `world/h_quaff.go`) runs that ability's
